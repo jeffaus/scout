@@ -1,0 +1,55 @@
+# Application
+web/app/plugins/*
+!web/app/plugins/.gitkeep
+web/app/mu-plugins/*/
+web/app/upgrade
+web/app/uploads/*
+!web/app/uploads/.gitkeep
+
+# WordPress
+web/wp
+web/.htaccess
+
+# Logs
+*.log
+
+# Dotenv
+.env
+.env.*
+!.env.example
+
+# Composer
+/vendor
+
+# WP-CLI
+wp-cli.local.yml
+
+# Generic
+.DS_Store
+.DS_STORE
+*.log
+error_log
+error_log_dev
+
+# Ignore LDE symlink
+/public
+
+# W3Total Cache
+web/app/cache
+web/app/w3tc-config
+web/app/db.php
+web/app/advanced-cache.php
+web/app/object-cache.php
+
+# Include these plugins
+!web/app/plugins/advanced-custom-fields-pro
+!web/app/plugins/gravityforms
+!web/app/plugins/gravityformscampaignmonitor
+
+# Include Salient plugins
+!web/app/plugins/js_composer_salient
+!web/app/plugins/salient-*
+
+# Ignore dynamic salient stylesheet
+web/app/themes/salient/css/salient-dynamic-styles.css
+
