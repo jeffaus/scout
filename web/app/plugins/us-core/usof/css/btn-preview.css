@@ -1,0 +1,45 @@
+
+/* Buttons Preview */
+.usof-btn-preview {
+	display: flex;
+	align-items: center;
+	height: 60px;
+	cursor: pointer;
+	}
+	.usof-btn {
+		text-align: center;
+		line-height: 1.2; /* fixed value for all buttons */
+		padding: 0.8em 1.8em; /* fallback value */
+		position: relative;
+		transition: background 0.3s, border-color 0.3s, box-shadow 0.3s, opacity 0.3s, color 0.3s;
+		-webkit-tap-highlight-color: rgba(0,0,0,0);
+		}
+	.usof-btn-preview.hov_slide .usof-btn {
+		overflow: hidden;
+		}
+		.usof-btn-before {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			border-radius: inherit;
+			border-width: 2px;
+			border-style: solid;
+			border-color: inherit;
+			}
+		.usof-btn-label {
+			position: relative;
+			z-index: 1;
+			}
+		.usof-btn-after {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			height: 0;
+			transition: height 0.3s;
+			}
+		.usof-btn-preview.hov_slide .usof-btn:hover .usof-btn-after {
+			height: 100%;
+			}

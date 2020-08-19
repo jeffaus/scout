@@ -1,13 +1,6 @@
-# A Wordpress site by Pivotal Agency
+# A Wordpress site by Spritely
 
 ## Installation
-
-### a) Automated
-
-
-[Run a single command](https://github.com/pvtl/install-scripts/tree/master/wordpress#%EF%B8%8F-setup-the-site-locally)
-
-### b) Manual
 
 #### 1. Clone this repo
 

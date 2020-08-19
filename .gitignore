@@ -45,6 +45,7 @@ web/app/object-cache.php
 !web/app/plugins/advanced-custom-fields-pro
 !web/app/plugins/gravityforms
 !web/app/plugins/gravityformscampaignmonitor
+!web/app/plugins/us-core
 
 # Include Salient plugins
 !web/app/plugins/js_composer_salient
