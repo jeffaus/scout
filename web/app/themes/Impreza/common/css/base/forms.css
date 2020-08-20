@@ -66,7 +66,6 @@
 	.w-form-row.for_checkboxes label,
 	.w-form-row.for_radio label {
 		display: flex;
-		align-items: center;
 		padding: 0.2rem 0;
 		}
 		.w-form-checkbox,
@@ -137,7 +136,7 @@
 .w-form.layout_hor .w-form-row.for_submit {
 	width: auto;
 	}
-.w-form.layout_hor .w-form-row.has_label ~ .w-form-row.for_submit {
+.w-form.layout_hor .w-form-row.has_label:not(.move_label) ~ .w-form-row.for_submit {
 	align-self: flex-end;
 	}
 
@@ -259,6 +258,13 @@
 .widget_us_login > .g-preloader {
 	display: block;
 	margin: 1rem auto;
+	}
+.widget_us_login .w-form-h,
+.widget_us_login .w-form-row {
+	margin-left: 0;
+	margin-right: 0;
+	padding-left: 0;
+	padding-right: 0;
 	}
 .w-profile {
 	padding: 1.5rem;

@@ -59,7 +59,12 @@ if ( empty( $addons ) ) {
 
 // Transient hook for automatical updates of bundled plugins
 add_action( 'site_transient_update_plugins', 'us_addons_transient_update' );
-function us_addons_transient_update( $trans ) {
+function us_addons_transient_update( $transient ) {
+
+	// Exit if no response is set
+	if ( ! isset( $transient->response ) ) {
+		return $transient;
+	}
 
 	$installed_plugins = get_plugins();
 
@@ -79,17 +84,17 @@ function us_addons_transient_update( $trans ) {
 		}
 
 		if ( version_compare( $installed_plugins[$plugin_basename]['Version'], $addon['version'], '<' ) ) {
-			$trans->response[$plugin_basename] = new StdClass();
-			$trans->response[$plugin_basename]->plugin = $plugin_basename;
-			$trans->response[$plugin_basename]->url = $addon['changelog_url'];
-			$trans->response[$plugin_basename]->slug = $addon['slug'];
-			$trans->response[$plugin_basename]->package = $addon['source'];
-			$trans->response[$plugin_basename]->new_version = $addon['version'];
-			$trans->response[$plugin_basename]->id = '0';
+			$transient->response[$plugin_basename] = new StdClass();
+			$transient->response[$plugin_basename]->plugin = $plugin_basename;
+			$transient->response[$plugin_basename]->url = $addon['changelog_url'];
+			$transient->response[$plugin_basename]->slug = $addon['slug'];
+			$transient->response[$plugin_basename]->package = $addon['source'];
+			$transient->response[$plugin_basename]->new_version = $addon['version'];
+			$transient->response[$plugin_basename]->id = '0';
 		}
 	}
 
-	return $trans;
+	return $transient;
 }
 
 // Seen when user clicks "view details" on the plugin listing page

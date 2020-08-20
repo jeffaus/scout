@@ -169,6 +169,13 @@
 			</attributes>
 		</shortcode>
 		<shortcode>
+			<tag>us_text</tag>
+			<attributes>
+				<attribute>text</attribute>
+				<attribute type="link" encoding="vc_link">link</attribute>
+			</attributes>
+		</shortcode>
+		<shortcode>
 			<tag>us_itext</tag>
 			<attributes>
 				<attribute type="area">texts</attribute>

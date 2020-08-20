@@ -3,7 +3,6 @@
 	padding: 0;
 	position: relative;
 	transform: translate3d(0, 0, 0);
-	word-wrap: break-word;
 	/* remove gradient from Headings color, as it doesn't work in Chrome */
 	background-image: none;
 	-webkit-background-clip: border-box;
@@ -13,9 +12,12 @@
 	.w-itext-part {
 		display: inline-block;
 		position: relative;
-		white-space: nowrap;
 		text-align: left;
 		transition-property: width;
+		white-space: nowrap;
+		}
+	.w-itext.disable_part_animation * {
+		white-space: normal !important;
 		}
 	.w-itext-part.notransition {
 		transition-property: none !important;
@@ -28,12 +30,13 @@
 			}
 		.w-itext-part > span:first-child > span {
 			display: inline-block;
+			max-width: 100%;
 			visibility: hidden;
 			}
 		.w-itext-part > span > span[class^="animated_"] {
 			visibility: visible;
 			}
-		.w-itext-part > span > span:last-child {
+		.w-itext:not(.disable_part_animation) .w-itext-part > span > span:last-child {
 			margin-right: -200px;
 			}
 		.w-itext-part-nospan {

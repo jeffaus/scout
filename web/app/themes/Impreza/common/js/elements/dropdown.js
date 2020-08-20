@@ -38,7 +38,7 @@
 				}
 
 				justOpened = true;
-				window.setTimeout( function() {
+				$us.timeout( function() {
 					justOpened = false;
 				}, 500 );
 			};
@@ -58,7 +58,7 @@
 			$this.on( 'keydown', function( e ) {
 				var keyCode = e.keyCode || e.which;
 				if ( keyCode == 9 ) {
-					var $target = $( e.target ) ? $( e.target ) : {},
+					var $target = $( e.target ) || {},
 						index = $anchors.index( $target );
 
 					if ( e.shiftKey ) {

@@ -102,7 +102,7 @@
 						format.indian = true;
 					}
 				} else/*if (marks.length == 1)*/ {
-					format[ ( ( str.length - str.indexOf( marks ) - 1 ) == 3 ) ? 'groupMark' : 'decMark' ] = marks;
+					format[ ( ( ( str.length - 1 ) - str.indexOf( marks ) ) == 3 && marks !== '.' ) ? 'groupMark' : 'decMark' ] = marks;
 				}
 				if ( format.decMark ) {
 					format.decDigits = str.length - str.indexOf( format.decMark ) - 1;
@@ -111,6 +111,7 @@
 			if ( format.zerofill ) {
 				format.intDigits = str.replace( /[^\d]+/g, '' ).length - ( format.decDigits || 0 );
 			}
+
 			return format;
 		}
 	};
@@ -216,7 +217,7 @@
 		}.bind( this ) );
 		if ( window.$us !== undefined && window.$us.scroll !== undefined ) {
 			// Animate element when it becomes visible
-			$us.scroll.addWaypoint( this.$container, '15%', this.animate.bind( this ) );
+			$us.waypoints.add( this.$container, '15%', this.animate.bind( this ) );
 		} else {
 			// No waypoints available: animate right from the start
 			this.animate();

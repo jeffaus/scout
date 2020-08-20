@@ -6,22 +6,26 @@
 	"use strict";
 
 	function USHeader( settings ) {
+		// Variables
 		this.settings = settings || {};
 		this.state = 'default'; // 'tablets' / 'mobiles'
 		this.autoHide = false;
+		this._scrolledOccupiedHeights = {};
 		this.$container = $us.$canvas.find( '.l-header' );
 		if ( this.$container.length == 0 ) {
 			return;
 		}
+		// Elements
 		this.$topCell = this.$container.find( '.l-subheader.at_top .l-subheader-cell:first' );
 		this.$middleCell = this.$container.find( '.l-subheader.at_middle .l-subheader-cell:first' );
 		this.$bottomCell = this.$container.find( '.l-subheader.at_bottom .l-subheader-cell:first' );
 		this.$showBtn = $( '.w-header-show:first' );
+
 		this.orientation = $us.$body.usMod( 'header' );
 		this.pos = this.$container.usMod( 'pos' ); // 'fixed' / 'static'
 		this.bg = this.$container.usMod( 'bg' ); // 'solid' / 'transparent'
 		this.shadow = this.$container.usMod( 'shadow' ); // 'none' / 'thin' / 'wide'
-		this.sticky_auto_hide = parseInt( this.settings[ this.state ].options.sticky_auto_hide );
+		this.sticky_auto_hide = parseInt( this.settings[ this.state ].options.sticky_auto_hide || 0 );
 
 		// Will be used to count fullscreen sections heights and proper scroll positions
 		this.scrolledOccupiedHeight = 0;
@@ -47,7 +51,7 @@
 				}
 				$us.$body
 					.off( $.isMobile ? 'touchstart' : 'click', this._events.hideMobileVerticalHeader );
-				setTimeout( function() {
+				$us.timeout( function() {
 					$us.$body.removeClass( 'header-show' );
 				}, 10 );
 			}.bind( this )
@@ -74,8 +78,8 @@
 			}
 		}.bind( this ) );
 		// TODO Objects with the header elements
-		$us.$window.on( 'scroll', this._events.scroll );
-		$us.$window.on( 'resize load', this._events.resize );
+		$us.$window.on( 'scroll', $us.debounce( this._events.scroll, 10 ) );
+		$us.$window.on( 'resize load', $us.debounce( this._events.resize, 10 ) );
 		this.resize();
 
 		$us.$canvas.on( 'contentChange', function() {
@@ -154,13 +158,13 @@
 
 						// Checking the scroll position with the delay, since working with the DOM can take time
 						if ( !! this.pid ) {
-							clearTimeout( this.pid );
+							$us.clearTimeout( this.pid );
 						}
-						this.pid = setTimeout( function() {
+						this.pid = $us.timeout( function() {
 							if ( parseInt( $us.$window.scrollTop() ) === 0 && this.hasSticky() ) {
 								this.$container.removeClass( 'sticky' );
 							}
-							clearTimeout( this.pid );
+							$us.clearTimeout( this.pid );
 						}.bind( this ), 1 );
 
 						prevScrollTop = scrollTop;
@@ -196,6 +200,24 @@
 				}
 			}
 		},
+		/**
+		 * Initializes the variable this.headerTop.
+		 * @return void
+		 */
+		_initHeaderTop: function() {
+			var adminBar = $( '#wpadminbar' );
+			this.adminBarHeight = ( adminBar.length ) ? adminBar.height() : 0;
+
+			this.headerTop = $us.canvas.$firstSection.outerHeight() + this.adminBarHeight;
+			if ( $us.canvas.headerInitialPos == 'bottom' ) {
+				if ( ! this.hasOwnProperty( 'headerHeigth' ) ) {
+					// Real height not sticky
+					this.headerHeigth = this.$container.outerHeight();
+				}
+				this.headerTop = this.headerTop - this.headerHeigth;
+			}
+			this.applyHeaderTop = true;
+		},
 		resize: function() {
 			var newState = 'default';
 			if ( window.innerWidth < this.tabletsBreakpoint ) {
@@ -205,47 +227,38 @@
 
 			if ( this.pos == 'fixed' && this.orientation == 'hor' ) {
 				this.$container.addClass( 'notransition' );
+
+				if ( ! this._scrolledOccupiedHeights.hasOwnProperty( this.state ) ) {
+					this._scrolledOccupiedHeights[ this.state ] = parseInt(
+						( getComputedStyle(this.$container.get(0), ':before' ).content).replace( /[^+\d]/g, '' )
+					);
+				}
 				// Get height value for .l-header through pseudo-element css ( content: 'value' );
-				this.scrolledOccupiedHeight = parseInt( (getComputedStyle(this.$container.get(0), ':before').content).replace( /[^+\d]/g, '' ) );
+				this.scrolledOccupiedHeight = this._scrolledOccupiedHeights[ this.state ];
+
 				// Removing with a small delay to prevent css glitch
-				setTimeout( function() {
+				$us.timeout( function() {
 					this.$container.removeClass( 'notransition' );
 				}.bind( this ), 50 );
 			} else /*if (this.orientation == 'ver' || this.pos == 'static')*/ {
 				this.scrolledOccupiedHeight = 0;
 			}
 
-			/**
-			 * Initializes the variable this.headerTop.
-			 */
-			var initHeaderTop = function() {
-				var adminBar = $( '#wpadminbar' );
-				this.adminBarHeight = ( adminBar.length ) ? adminBar.height() : 0;
-
-				this.headerTop = $us.canvas.$firstSection.outerHeight() + this.adminBarHeight;
-				if ( $us.canvas.headerInitialPos == 'bottom' ) {
-					if ( ! this.hasOwnProperty( 'headerHeigth' ) ) {
-						// Real height not sticky
-						this.headerHeigth = this.$container.outerHeight();
-					}
-					this.headerTop = this.headerTop - this.headerHeigth;
-				}
-				this.applyHeaderTop = true;
-			};
-
 			if ( this.orientation == 'hor' ) {
 				if ( this.pos == 'fixed' && ( $us.canvas.headerInitialPos == 'bottom' || $us.canvas.headerInitialPos == 'below' ) && ( $us.$body.usMod( 'state' ) == 'default' ) ) {
-					initHeaderTop.call( this );
+					this._initHeaderTop.call( this );
 					if ( ! $us.canvas.$firstSection.hasClass( 'height_full' ) ) {
 						this.$container.css( 'bottom', 'auto' );
 						this.$container.css( 'top', this.headerTop );
 					}
 				} else if( this.pos == 'fixed' && $us.canvas.headerInitialPos === 'top' ) {
-					initHeaderTop.call( this );
+					this._initHeaderTop.call( this );
 				} else {
 					this.applyHeaderTop = false;
 					this.$container.css( 'top', '' );
 				}
+
+				this._initHeaderTop.call( this );
 			} else {
 				this.applyHeaderTop = false;
 				this.$container.css( 'top', '' );

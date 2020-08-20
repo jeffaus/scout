@@ -143,7 +143,7 @@
 	.w-tabs.accordion .w-tabs-section:last-child {
 		border-bottom-width: 1px;
 		}
-	.w-tabs.accordion .w-tabs-section.color_custom {
+	.w-tabs.accordion .w-tabs-section[style*="background:"] {
 		border-color: transparent;
 		}
 		.w-tabs.accordion .w-tabs-section-header {

@@ -70,6 +70,17 @@ if ( ! defined( 'US_CORE_VERSION' ) ) {
 	require $us_template_directory . '/common/functions/helpers.php';
 }
 
+// Include plugins that relate to translations and can be used in helpers.php
+if ( defined( 'US_CORE_DIR' ) ) {
+	global $us_theme_supports;
+	foreach ( us_arr_path( $us_theme_supports, 'translate_plugins', array() ) as $translate_plugin_path ) {
+		if ( $translate_plugin_path === NULL OR ! file_exists( US_CORE_DIR . $translate_plugin_path ) ) {
+			continue;
+		}
+		include US_CORE_DIR . $translate_plugin_path;
+	}
+}
+
 /**
  * Theme Setup
  */
@@ -102,13 +113,14 @@ function us_theme_setup() {
 	}
 
 	// Custom image sizes
-	$custom_tnail_sizes = us_get_option( 'img_size' );
-	if ( is_array( $custom_tnail_sizes ) ) {
-		foreach ( $custom_tnail_sizes as $size_index => $size ) {
+	$custom_image_sizes = us_get_option( 'img_size' );
+	if ( is_array( $custom_image_sizes ) ) {
+		foreach ( $custom_image_sizes as $size_index => $size ) {
 			$crop = ( ! empty( $size['crop'][0] ) );
 			$crop_str = ( $crop ) ? '_crop' : '';
 			$width = ( ! empty( $size['width'] ) AND intval( $size['width'] ) > 0 ) ? intval( $size['width'] ) : 0;
 			$height = ( ! empty( $size['height'] ) AND intval( $size['height'] ) > 0 ) ? intval( $size['height'] ) : 0;
+
 			add_image_size( 'us_' . $width . '_' . $height . $crop_str, $width, $height, $crop );
 		}
 	}
@@ -149,11 +161,17 @@ function us_theme_setup() {
 	}
 }
 
-// Remove unchangeable WP thumb size
+// Remove built-in WordPress image sizes, which cannot be edit by UI.
+// This improves control of image sizes, which can be easy managed on Theme Options > Image Sizes
 add_filter( 'intermediate_image_sizes', 'delete_intermediate_image_sizes' );
 function delete_intermediate_image_sizes( $sizes ) {
-	return array_diff( $sizes, array( 'medium_large' ) );
+	return array_diff( $sizes, array( 'medium_large', '1536x1536', '2048x2048' ) );
 }
+
+// Change Big Image Size Threshold
+add_filter( 'big_image_size_threshold', function() {
+	return intval( us_get_option( 'big_image_size_threshold', 2560 ) );
+} );
 
 // Disable CSS file of WPML plugin
 if ( ! defined( 'ICL_DONT_LOAD_LANGUAGE_SELECTOR_CSS' ) ) {
@@ -223,8 +241,8 @@ function us_fix_svg_size_attributes( $out, $id, $size ) {
 		return FALSE;
 	}
 	// Get width and height values for provided size name
-	if ( function_exists( 'us_get_intermediate_image_size' ) AND is_string( $size ) ) {
-		$size_array = us_get_intermediate_image_size( $size );
+	if ( function_exists( 'us_get_image_size_params' ) AND is_string( $size ) ) {
+		$size_array = us_get_image_size_params( $size );
 	} else {
 		$size_array = array(
 			'width' => NULL,

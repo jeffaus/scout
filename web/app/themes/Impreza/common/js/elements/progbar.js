@@ -1,52 +1,160 @@
 /**
  * UpSolution Element: Progbar
  */
-( function( $ ) {
-	$.fn.wProgbar = function() {
-		return this.each( function() {
-			var $container = $( this ),
-				count = $container.data( 'count' ) + '',
-				$titleCount = $container.find( '.w-progbar-title-count' ),
-				$barCount = $container.find( '.w-progbar-bar-count' );
+;( function( $, undefined ) {
+	"use strict";
 
-			// Prevent double init
-			if ( $container.data( 'progBarInit' ) == 1 ) {
+	 $us.WProgbar = function( container, options ) {
+		// Elements
+		this.$container = $( container );
+		this.$bar = $( '.w-progbar-bar-h', this.$container );
+		this.$count = $( '.w-progbar-title-count, .w-progbar-bar-count', this.$container );
+		this.$title = $( '.w-progbar-title', this.$container );
+
+		// Default options
+		this.options = {
+			delay: 100,
+			duration: 800,
+			finalValue: 100,
+			offset: '10%',
+			startValue: 0,
+			value: 50
+		};
+
+		// Get options
+		if ( this.$container.is( '[onclick]' ) ) {
+			$.extend( this.options, this.$container[0].onclick() || {} );
+			this.$container.removeAttr( 'onclick' );
+		}
+
+		// Priority in transferred options through JS will be higher
+		$.extend( this.options, options || {} );
+
+		if ( /bot|googlebot|crawler|spider|robot|crawling/i.test( navigator.userAgent ) ) {
+			this.$container.removeClass( 'initial' );
+		}
+
+		// Set start value
+		this.$count.text( '' );
+
+		// When an item falls into scope, a run callback function
+		$us.waypoints.add( this.$container, this.options.offset, this.init.bind( this ) );
+	};
+
+	// Export API
+	$.extend( $us.WProgbar.prototype, {
+		/**
+		 * Init the object.
+		 * @return void
+		 */
+		init: function() {
+			if ( this.running ) {
 				return;
 			}
-			$container.data( 'progBarInit', 1 );
+			this.running = true;
 
-			if ( count === null ) {
-				count = 50;
+			if ( this.$container.hasClass( 'initial' ) ) {
+				this.$container.removeClass( 'initial' )
 			}
 
-			if ( /bot|googlebot|crawler|spider|robot|crawling/i.test( navigator.userAgent ) ) {
-				$container.removeClass( 'initial' );
-				$titleCount.html( count + '%' );
-				$barCount.html( count + '%' );
-				return;
+			// Get all the necessary parameters for the meter and run it
+			var
+				loops = Math.ceil( this.options.duration / this.options.delay ),
+				increment = parseFloat( this.options.value ) / loops,
+				loopCount = 0,
+				handle = null,
+				startValue = 0;
+
+			/**
+			 * Anonymous function for creating an interval
+			 * @return void
+			 */
+			var funLoop = function() {
+				startValue += increment;
+				loopCount++;
+				if ( handle ) {
+					$us.clearTimeout( handle );
+				}
+				if ( loopCount >= loops ) {
+					var result = this.options.template;
+					if ( this.options.hasOwnProperty( 'showFinalValue' ) ) {
+						result += ' ' + this.options.showFinalValue;
+					}
+					this.$count.text( result );
+					return;
+				}
+				this.render.call( this, startValue );
+				handle = $us.timeout( funLoop.bind( this ), this.options.delay );
+			};
+
+			// Run loop
+			funLoop.call( this );
+
+			var finalValue = parseFloat( this.options.finalValue ),
+				width =  ( ( parseFloat( parseFloat( this.options.value ) ) / parseFloat( finalValue ) ) * 100 )
+				.toFixed( 0 );
+
+			// Run the CSS animations to render a progress bar
+			this.$bar
+				.on( 'transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd', this._events.transitionEnd.bind( this ) )
+				.css( {
+					width: width + '%',
+					transitionDuration: parseInt( this.options.duration ) + 'ms'
+				} );
+		},
+		// Event handlers
+		_events: {
+			/**
+			 * Called after css animation finishes
+			 * @return void
+			 */
+			transitionEnd: function() {
+				var result = this.options.template;
+				if ( this.options.hasOwnProperty( 'showFinalValue' ) ) {
+					result += ' ' + this.options.showFinalValue;
+				}
+				this.$count.text( result );
+				this.running = false;
 			}
-
-			$titleCount.html( '0%' );
-			$barCount.html( '0%' );
-
-			$us.scroll.addWaypoint( this, '15%', function() {
-				var current = 0,
-					step = 40,
-					stepValue = count / 40,
-					interval = setInterval( function() {
-						current += stepValue;
-						step --;
-						$titleCount.html( current.toFixed( 0 ) + '%' );
-						$barCount.html( current.toFixed( 0 ) + '%' );
-						if ( step <= 0 ) {
-							$titleCount.html( count + '%' );
-							$barCount.html( count + '%' );
-							window.clearInterval( interval );
+		},
+		/**
+		 * Render of the counter
+		 * @param value numeric
+		 * @return void
+		 */
+		render: function( value ) {
+			var index = 0,
+				// Result formatting
+				result = ( '' + this.options.template )
+					.replace( /([\-\d\.])/g, function( match ) {
+						value += '';
+						if ( index === 0 && match === '0' ) {
+							// Skip point if float value
+							if ( value.charAt( index + 1 ) === '.' || match === '.' ) {
+								index++;
+							}
+							return match;
 						}
-					}, 20 );
+						return value.charAt( index++ ) || '';
+					}.bind( this ) );
 
-				$container.removeClass( 'initial' );
-			} );
+			if ( result.charAt( index -1 ) === '.' ) {
+				result = result.substr( 0, index -1 ) + result.substr( index );
+			}
+
+			if ( this.options.hasOwnProperty( 'showFinalValue' ) ) {
+				result += ' ' + this.options.showFinalValue;
+			}
+
+			// Show result
+			this.$count.text( result );
+		}
+	} );
+
+	// The jQuery version
+	$.fn.wProgbar = function( options ) {
+		this.each( function() {
+			$( this ).data( 'wProgbar', new $us.WProgbar( this, options ) );
 		} );
 	};
 

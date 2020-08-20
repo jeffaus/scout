@@ -17,12 +17,17 @@ $us_theme_supports = array(
 		'contact-form-7' => NULL,
 		'gravityforms' => 'plugins-support/gravityforms.php',
 		'woocommerce' => 'plugins-support/woocommerce.php',
-		'wpml' => 'plugins-support/wpml.php',
 		'bbpress' => 'plugins-support/bbpress.php',
 		'tablepress' => 'plugins-support/tablepress.php',
 		'the-events-calendar' => 'plugins-support/the_events_calendar.php',
 		'tiny_mce' => 'plugins-support/tiny_mce.php',
+		'yoast' => 'plugins-support/yoast.php',
 		'post_views_counter' => 'plugins-support/post_views_counter.php',
+	),
+	// Include plugins that relate to translations and can be used in helpers.php
+	'translate_plugins' => array(
+		'wpml' => 'plugins-support/wpml.php',
+		'polylang' => 'plugins-support/polylang.php',
 	),
 );
 

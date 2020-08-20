@@ -77,14 +77,32 @@ class US_Walker_Nav_Menu extends Walker_Nav_Menu {
 
 			// Output Menu Items
 		} else {
-			$attributes = ! empty( $item->attr_title ) ? ' title="' . esc_attr( $item->attr_title ) . '"' : '';
-			$attributes .= ! empty( $item->target ) ? ' target="' . esc_attr( $item->target ) . '"' : '';
-			$attributes .= ! empty( $item->xfn ) ? ' rel="' . esc_attr( $item->xfn ) . '"' : '';
-			$attributes .= ! empty( $item->url ) ? ' href="' . esc_url( $item->url ) . '"' : '';
+			$anchor_atts = array( 'class' => 'w-nav-anchor level_' . $level );
+
+			// Add Button Styles
+			if ( $depth === 0 AND $btn_style = get_post_meta( $item->ID, '_menu_item_btn_style', TRUE ) ) {
+				$anchor_atts['class'] .= ' w-btn us-btn-style_' . $btn_style;
+			}
+
+			if ( ! empty( $item->url ) ) {
+				$anchor_atts['href'] = $item->url;
+			}
+			if ( ! empty( $item->attr_title ) ) {
+				$anchor_atts['title'] = $item->attr_title;
+			}
+			if ( ! empty( $item->target ) ) {
+				$anchor_atts['target'] = $item->target;
+			}
+			if ( ! empty( $item->xfn ) ) {
+				$anchor_atts['rel'] = $item->xfn;
+			}
 
 			$item_output = $args->before;
-			$item_output .= '<a class="w-nav-anchor level_' . $level . '" ' . $attributes . '>';
-			$item_output .= $args->link_before . '<span class="w-nav-title">' . apply_filters( 'the_title', $item->title, $item->ID ) . '</span><span class="w-nav-arrow"></span>' . $args->link_after;
+			$item_output .= '<a ' . us_implode_atts( $anchor_atts ) . '>';
+			$item_output .= $args->link_before;
+			$item_output .= '<span class="w-nav-title">' . apply_filters( 'the_title', $item->title, $item->ID ) . '</span>';
+			$item_output .= '<span class="w-nav-arrow"></span>';
+			$item_output .= $args->link_after;
 			$item_output .= '</a>';
 			$item_output .= $args->after;
 

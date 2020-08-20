@@ -9,6 +9,11 @@
 	 * @return void
 	 */
 	$us.WItext = function( container ) {
+		// Variables
+		var defaultOptions = {
+			html_nbsp_char: true
+		};
+
 		// Elements
 		this.$container = $( container );
 		var $parts = this.$container.find( '.w-itext-part' );
@@ -18,7 +23,7 @@
 		}
 
 		// Get options
-		var options = this.$container[ 0 ].onclick() || {};
+		var options = $.extend( defaultOptions, this.$container[ 0 ].onclick() || {} );
 		this.$container.removeAttr( 'onclick' );
 
 		// Set options
@@ -27,8 +32,10 @@
 		this.duration = parseInt( options.duration ) || 1000;
 		this.delay = parseInt( options.delay ) || 5000;
 		this.dynamicColor = ( options.dynamicColor || '' );
+		this.disablePartAnimation = options.disablePartAnimation || false;
 		this.animateDurations = []; // Time of all animations
 		this.type = this.animateChars ? type.substring( 0, type.length - 'chars'.length ) : type;
+		this.nbsp_char = options.html_nbsp_char ? '&nbsp;' : ' ';
 
 		// Creating objects for all parts
 		this.parts = [];
@@ -54,7 +61,6 @@
 			}.bind( this ) );
 			$us.clearTimeout( timer );
 		}.bind( this ), this.delay );
-
 	};
 	// Export api
 	$us.WItext.prototype = {
@@ -82,10 +88,11 @@
 			 * @return void
 			 */
 			clearAnimation: function( part ) {
+				var text = part.states[ part.currentState ].replace( ' ', this.nbsp_char );
 				part.$node
-					.html( part.states[ part.currentState ].replace( ' ', '&nbsp;' ) )
+					.html( text )
 					.css( 'width', '' );
-				if ( this.type === 'typing' ) {
+				if ( this.type === 'typing' && $.trim( text ) && text !== this.nbsp_char ) {
 					part.$node.append( '<i class="w-itext-cursor"></i>' );
 				}
 				if ( part.curDuration === Math.max.apply( null, this.animateDurations ) ) {
@@ -104,7 +111,7 @@
 		render: function( part ) {
 			var nextValue = part.states[ part.currentState ],
 				$curSpan = part.$node.wrapInner( '<span></span>' ).children( 'span' ),
-				$nextSpan = $( '<span class="measure"></span>' ).html( nextValue.replace( ' ', '&nbsp;' ) ).appendTo( part.$node ),
+				$nextSpan = $( '<span class="measure"></span>' ).html( nextValue.replace( ' ', this.nbsp_char ) ).appendTo( part.$node ),
 				nextWidth = $nextSpan.width(),
 				outType = 'fadeOut',
 				startDelay = 0;
@@ -124,9 +131,15 @@
 			}
 			// Start animation
 			$us.timeout( function() {
-				part.$node.addClass( 'notransition' ).css( 'width', part.$node.width() );
+				part.$node.addClass( 'notransition' );
+				if ( ! this.disablePartAnimation ) {
+					part.$node.css( 'width', part.$node.width() );
+				}
 				$us.timeout( function() {
-					part.$node.removeClass( 'notransition' ).css( 'width', nextWidth );
+					part.$node.removeClass( 'notransition' );
+					if ( ! this.disablePartAnimation ) {
+						part.$node.css( 'width', nextWidth );
+					}
 				}.bind( this ), 25 );
 				if ( this.type !== 'typing' ) {
 					$curSpan
@@ -134,19 +147,22 @@
 							position: 'absolute',
 							top: 0,
 							left: 0,
-							width: nextWidth,
+							width: ! this.disablePartAnimation ? nextWidth : '',
 							transitionDuration: ( this.duration / 5 ) + 'ms'
 						})
 						.addClass( 'animated_' + outType );
 				}
-				$nextSpan.removeClass( 'measure' ).css( 'width', nextWidth ).prependTo( part.$node )
+				if ( ! this.disablePartAnimation ) {
+					$nextSpan.css( 'width', nextWidth );
+				}
+				$nextSpan.removeClass( 'measure' ).prependTo( part.$node );
 				if ( this.animateChars ) {
 					$nextSpan.empty();
 					if ( this.type === 'typing' ) {
 						$nextSpan.append( '<span class="w-itext-part-nospan"></span>' );
 					}
 					for ( var i = 0; i < nextValue.length; i ++ ) {
-						var $char = ( ( nextValue[ i ] !== ' ' ) ? nextValue[ i ] : '&nbsp;' );
+						var $char = ( ( nextValue[ i ] !== ' ' ) ? nextValue[ i ] : this.nbsp_char );
 						if ( this.type !== 'typing' ) {
 							$char = $( '<span>' + $char + '</span>' );
 							$char
@@ -164,13 +180,13 @@
 						}.bind( this, $char ), part.curDuration * i );
 					}
 
-					if ( this.type === 'typing' ) {
+					if ( this.type === 'typing' && $.trim( nextValue ) && nextValue !== this.nbsp_char ) {
 						$nextSpan.append( '<i class="w-itext-cursor"></i>' );
 					}
 					part.curDuration *= ( nextValue.length + 1 );
 				} else {
 					$nextSpan.wrapInner( '<span></span>' ).children( 'span' ).css( {
-						'transition-duration': this.duration + 'ms'
+						'animation-duration': this.duration + 'ms'
 					} ).addClass( 'animated_' + this.type );
 				}
 				this.animateDurations.push( part.curDuration );

@@ -282,7 +282,7 @@
 		/**
 		 * @var {Function} Returning-to-basepoint easing
 		 */
-		easing: 'swing'// 'easeOutElastic'
+		easing: $us.getAnimationName( 'swing' /*'easeOutElastic'*/ )
 	};
 
 	$.fn.horparallax.Constructor = Horparallax;

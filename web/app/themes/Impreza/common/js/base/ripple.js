@@ -34,7 +34,7 @@ jQuery(function($){
 
 	$.fn.mdRipple = function(){
 		return this.each(function(){
-			var $element = $(this),
+			var $element = $( this ),
 				$container, containerOffset;
 
 			if (!$element.find('.ripple-container').length) {
@@ -57,7 +57,7 @@ jQuery(function($){
 			$element.on($.isMobile ? 'touchstart' : 'mousedown', function(e){
 				if (e.button === 2) return false;
 				var offsetLeft, offsetTop, offsetRight,
-					$ripple = $('<span class="ripple"></span>'),
+					$ripple = $( '<span class="ripple"></span>' ),
 					rippleSize = Math.max($element.outerWidth(), $element.outerHeight()) / Math.max(20, $ripple.outerWidth()) * 2.5;
 				containerOffset = $container.offset();
 				$container.append($ripple);
@@ -74,7 +74,7 @@ jQuery(function($){
 					return;
 				}
 
-				if ($('body').hasClass('rtl')) {
+				if ( $('body').hasClass('rtl') ) {
 					offsetRight = $container.width() - offsetLeft;
 					$ripple.css({right: offsetRight, top: offsetTop});
 				} else {

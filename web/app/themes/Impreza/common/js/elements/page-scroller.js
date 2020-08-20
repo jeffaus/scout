@@ -1,7 +1,7 @@
 /**
  * UpSolution Element: Page Scroller
  */
-( function( $ ) {
+;( function( $, undefined ) {
 	"use strict";
 
 	$us.PageScroller = function( container, options ) {
@@ -13,7 +13,7 @@
 			var defaults = {
 				coolDown: 100,
 				animationDuration: 1000,
-				animationEasing: 'easeInOutExpo'
+				animationEasing: $us.getAnimationName( 'easeInOutExpo' )
 			};
 
 			this.options = $.extend( {}, defaults, options );
@@ -78,6 +78,7 @@
 						$section: $section,
 						hiddenBoundaries: [],
 						area: 'content',
+						isSticky: $section.hasClass( 'type_sticky' )
 					},
 					addedWidths = [];
 
@@ -121,6 +122,7 @@
 					section = {
 						$section: $section,
 						area: 'footer',
+						isSticky: $section.hasClass( 'type_sticky' )
 					};
 				this._countPosition( section );
 				this.sections.push( section );
@@ -133,7 +135,7 @@
 				this.usingDots = true;
 
 				this.$firstDot = this.$dotsContainer.find( '.w-scroller-dot' ).first();
-				this.redrawDots();
+				this.redrawDots( true );
 			}
 
 			this._attachEvents();
@@ -143,10 +145,10 @@
 				resize: this.resize.bind( this )
 			};
 
-			$us.$canvas.on( 'contentChange', this._events.resize );
-			$us.$window.on( 'resize load', this._events.resize );
-			$us.$window.on( 'resize load scroll', this._events.scroll );
-			setTimeout( this._events.resize, 100 );
+			$us.$canvas.on( 'contentChange', $us.debounce( this._events.resize, 5 ) );
+			$us.$window.on( 'resize load', $us.debounce( this._events.resize, 5 ) );
+			$us.$window.on( 'resize load scroll', $us.debounce( this._events.scroll, 5) );
+			$us.timeout( this._events.resize, 100 );
 		},
 		isSectionHidden: function( section ) {
 			if ( !this.initialSections[ section ].hiddenBoundaries || !this.initialSections[ section ].hiddenBoundaries.length ) {
@@ -167,7 +169,7 @@
 
 			return isHidden;
 		},
-		redrawDots: function() {
+		redrawDots: function( inited ) {
 			if ( !this.$dotsContainer.length || !this.usingDots ) {
 				return false;
 			}
@@ -186,15 +188,18 @@
 			this.$dots.each( function( key, elm ) {
 				var $dot = $( elm );
 				this.dots[ key ] = $dot;
-				$dot.click( function() {
-					this.scrollTo( key );
-					this.$dots.removeClass( 'active' );
-					$dot.addClass( 'active' );
-				}.bind( this ) );
+				$dot
+					.click( function() {
+						this.scrollTo( key );
+						this.$dots.removeClass( 'active' );
+						$dot.addClass( 'active' );
+					}.bind( this ) )
+					// Control of the number of points
+					.toggleClass( 'hidden', this.sections[ key ].isSticky && $us.$window.width() > $us.canvas.options.columnsStackingWidth );
 			}.bind( this ) );
-
-			this.dots[ this.activeSection ].addClass( 'active' );
-
+			if ( !! inited ) {
+				this.dots[ this.activeSection ].addClass( 'active' );
+			}
 			this.$dotsContainer.addClass( 'show' );
 		},
 		recountSections: function() {
@@ -326,7 +331,7 @@
 				( ( $us.header.headerTop === undefined && $us.header.settings.is_hidden === undefined ) || $us.header.headerTop > 0 )
 				&& ! $us.header.autoHide
 			) {
-				section.top -= parseInt( $us.header.scrolledOccupiedHeight );
+				section.top -= parseInt( $us.header.scrolledOccupiedHeight || 0 );
 			}
 
 			section.bottom = section.top + section.$section.outerHeight( false );
@@ -345,6 +350,15 @@
 			}
 			this.previousScrollTime = currentTime;
 
+			// The for dots points from sticky block
+			if ( this.sections[ target ].isSticky && $us.$window.width() > $us.canvas.options.columnsStackingWidth ) {
+				if ( target > this.activeSection ) {
+					target += 1;
+				} else {
+					target -= 1;
+				}
+			}
+
 			if ( this.usingDots ) {
 				this.$dots.removeClass( 'active' );
 				if ( this.dots[ target ] !== undefined ) {
@@ -354,9 +368,9 @@
 
 			// For a header that has sticky and auto-hide enabled, add the height of the header when scrolling to the bottom,
 			// this will allow not to recalculate the position of the page section when hide header
-			var scrollTop = parseInt( this.sections[ target ][ 'top' ] );
+			var scrollTop = parseInt( this.sections[ target ][ 'top' ] || 0 );
 			if (
-				parseInt( this.sections[ target ][ 'top' ] ) > parseInt( $us.$window.scrollTop() )
+				scrollTop > parseInt( $us.$window.scrollTop() || 0 )
 				&& $us.header.isEnableSticky()
 				&& $us.header.sticky_auto_hide
 			) {
@@ -377,24 +391,24 @@
 			this._attachEvents();
 			this.recountSections();
 			// Delaying the resize event to prevent glitches
-			setTimeout( this._countAllPositions.bind( this ), 150 );
+			$us.timeout( this._countAllPositions.bind( this ), 150 );
 			this._countAllPositions();
 		},
-		scroll: function() {
+		scroll: function( ) {
 			var currentTime = new Date().getTime();
 			if ( ( currentTime - this.lastScroll ) < ( this.options.coolDown + this.options.animationDuration ) ) {
 				return;
 			}
-			if ( this.scrollTimeout ) {
-				clearTimeout( this.scrollTimeout );
-			}
-			this.scrollTimeout = setTimeout( function() {
-				var scrollTop = parseInt( $us.$window.scrollTop() );
+			$us.debounce( function() {
+				var scrollTop = parseInt( $us.$window.scrollTop() || 0 );
 
 				for ( var section in this.sections ) {
-					if ( scrollTop >= ( this.sections[ section ].top - 1 ) && scrollTop < ( this.sections[ section ].bottom - 1 ) ) {
+					if (
+						scrollTop >= ( this.sections[ section ].top - 1 )
+						&& scrollTop < ( this.sections[ section ].bottom - 1 )
+					) {
 						this.activeSection = section;
-						break;
+						// NOTE: Do not add break because everything should be checked!
 					}
 				}
 				if ( this.usingDots ) {
@@ -403,7 +417,7 @@
 						this.dots[ this.activeSection ].addClass( 'active' );
 					}
 				}
-			}.bind( this ), 500 );
+			}.bind( this ), 500 )();
 		}
 	};
 
@@ -415,9 +429,8 @@
 
 	$( function() {
 		// Delay to destination ult-vc-hide-row
-		var pid = setTimeout( function() {
+		$us.timeout( function() {
 			$( '.w-scroller' ).usPageScroller();
-			clearTimeout( pid );
 		}, 0 );
 	} );
 } )( jQuery );

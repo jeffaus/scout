@@ -45,8 +45,9 @@
 			this.tabHeights = [];
 			this.tabTops = [];
 			this.tabLefts = [];
+			this.isScrolling = this.$container.hasClass( 'has_scrolling' ) || false;
 			this.isTogglable = ( this.$container.usMod( 'type' ) === 'togglable' );
-			this.isStretched = this.$tabsList.hasClass( 'stretch');
+			this.isStretched = this.$tabsList.hasClass( 'stretch' );
 			this.minWidth = 0; // Container width at which we should switch to accordion layout
 			this.count = this.$tabs.length;
 
@@ -56,7 +57,9 @@
 			}
 
 			// Basic layout
-			this.basicLayout = this.$container.hasClass( 'accordion' ) ? 'accordion' : ( this.$container.usMod( 'layout' ) || 'hor' );
+			this.basicLayout = this.$container.hasClass( 'accordion' )
+				? 'accordion'
+				: ( this.$container.usMod( 'layout' ) || 'hor' );
 
 			// Current active layout (may be switched to 'accordion')
 			this.curLayout = this.basicLayout;
@@ -100,10 +103,22 @@
 						if ( ! $link.is( 'a' ) ) {
 							$link = $link.find( 'a' );
 						}
-						if ( ! $link.length || ( $link.is( '[href]' ) && $link.attr( 'href' ).indexOf( 'http' ) === - 1 ) ) {
+						if (
+							! $link.length
+							|| (
+								$link.is( '[href]' )
+								&& $link.attr( 'href' ).indexOf( 'http' ) === - 1
+							)
+						) {
 							e.preventDefault();
 						}
-						if ( e.type == 'mouseover' && ( this.$container.hasClass( 'accordion' ) || ! this.$container.hasClass( 'switch_hover' ) ) ) {
+						if (
+							e.type == 'mouseover'
+							&& (
+								this.$container.hasClass( 'accordion' )
+								|| ! this.$container.hasClass( 'switch_hover' )
+							)
+						) {
 							return;
 						}
 						// Toggling accordion sections
@@ -150,14 +165,15 @@
 			// Starting everything
 			this.switchLayout( this.curLayout );
 
-			$us.$window.on( 'resize', this._events.resize );
+			$us.$window.on( 'resize', $us.debounce( this._events.resize, 5 ) );
 			$us.$window.on( 'hashchange', this._events.hashchange );
 
-			$us.$document.on( 'ready', this._events.resize );
-			$us.$document.on( 'ready', function() {
-				setTimeout( this._events.resize, 50 );
 
-				setTimeout( function() {
+			$( 'document' ).ready( function() {
+				this.resize();
+				$us.timeout( this._events.resize, 50 );
+
+				$us.timeout( function() {
 					// TODO: move to a class function for code reading improvement
 					// Open tab on page load by hash
 					if ( window.location.hash ) {
@@ -336,10 +352,8 @@
 					for ( var index = 0; index < this.tabs.length; index ++ ) {
 						this.tabWidths.push( this.tabs[ index ].outerWidth( true ) );
 						this.tabLefts.push( index ? ( this.tabLefts[ index - 1 ] + this.tabWidths[ index - 1 ] ) : 0 );
-
 					}
 				}
-
 			}
 		},
 
@@ -394,16 +408,36 @@
 				this.contents[ index ]
 					.css( 'display', 'none' )
 					.attr( 'aria-expanded', 'false' )
-					.slideDown( this.options.duration, this._events.contentChanged );
-				// Scrolling to the opened section at small window dimensions
-				if ( $us.canvas.winWidth < 768 && this.headerClicked == true ) {
-					var newTop = this.headers[ 0 ].offset().top;
-					for ( var i = 0; i < index; i ++ ) {
-						newTop += this.headers[ i ].outerHeight();
-					}
-					$us.scroll.scrollTo( newTop, true );
-					this.headerClicked = false;
-				}
+					.slideDown( this.options.duration, function() {
+						this._events.contentChanged.call( this );
+						// If the basic layout for current element is not accordion, but the current layout is accordion,
+						// then we will allow scrolling by opening tabs for mobile devices
+						if ( this.basicLayout != 'accordion' && this.curLayout == 'accordion' ) {
+							this.isScrolling = true;
+						}
+						// Scrolling to the opened section
+						if ( this.isScrolling && this.curLayout === 'accordion' && this.headerClicked == true ) {
+							var scrollTop = this.headers[ index ].offset().top;
+							if ( ! jQuery.isMobile ) {
+								scrollTop -= $us.$canvas.offset().top || 0;
+							}
+							if ( ! $us.header.autoHide && $us.header.isEnableSticky() ) {
+								scrollTop -= parseInt( $us.header.scrolledOccupiedHeight );
+							}
+							// If there is a sticky section in front of the current section,
+							// then take into account the position this section
+							var $prevStickySection = this.$container
+								.closest('.l-section')
+								.prevAll( '.l-section.type_sticky' );
+							if ( $prevStickySection.length ) {
+								scrollTop -= parseInt( $prevStickySection.outerHeight() );
+							}
+							$us.$htmlBody.stop( true, false ).animate( {
+								scrollTop: scrollTop
+							}, $us.canvasOptions.scrollDuration, jQuery.easing._default );
+							this.headerClicked = false;
+						}
+					}.bind( this ) );
 				this.$sections
 					.removeClass( 'active' );
 				this.sections[ index ]
@@ -428,6 +462,10 @@
 			this._events.contentChanged();
 			this.$tabs.removeClass( 'active' );
 			this.tabs[ index ].addClass( 'active' );
+
+			if ( !! $us.lazyLoad ) {
+				$us.$body.trigger( 'uslazyloadevent' )
+			}
 
 			this.active[ 0 ] = index;
 
@@ -474,16 +512,26 @@
 			this.width = this.$container.innerWidth();
 			this.$tabsList.removeClass( 'hidden' );
 
-			// Basic layout may be overriden
+			// Tabs in navigation appear as tabs
+			if (
+				this.curLayout !== 'accordion'
+				&& ! this.width
+				&& this.$container.closest( '.w-nav' ).length
+				&& ! jQuery.isMobile
+			) {
+				return;
+			}
+
+			// Basic layout maybe overriden
 			if ( this.responsive ) {
-				if ( this.curLayout !== 'accordion' ) {
-					this.measure();
-				}
 				var nextLayout = ( this.width < this.minWidth )
 					? 'accordion'
 					: this.basicLayout;
 				if ( nextLayout !== this.curLayout ) {
 					this.switchLayout( nextLayout );
+				}
+				if ( this.curLayout !== 'accordion' ) {
+					this.measure();
 				}
 			}
 

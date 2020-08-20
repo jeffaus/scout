@@ -1,13 +1,9 @@
+
 .w-flipbox {
 	display: inline-block;
 	vertical-align: top;
 	position: relative;
 	width: 100%;
-	}
-/* Reset styles from Design Options */
-.w-flipbox[class*="us_custom_"] {
-	border: 0 !important;
-	padding: 0 !important;
 	}
 	.w-flipbox:not(.animation_cubeflip) .w-flipbox-front,
 	.w-flipbox:not(.animation_cubeflip) .w-flipbox-back,

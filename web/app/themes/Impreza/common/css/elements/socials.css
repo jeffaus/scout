@@ -97,6 +97,10 @@
 			}
 
 /* Shape */
+.w-socials.shape_none .w-socials-item-link {
+	line-height: 1;
+	width: auto;
+	}
 .w-socials.shape_rounded .w-socials-item-link {
 	border-radius: 0.25em;
 	}

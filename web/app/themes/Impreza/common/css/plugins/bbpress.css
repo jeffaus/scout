@@ -352,7 +352,7 @@ div.bbp-reply-header {
 	clear: both;
 	overflow: hidden;
 	font-size: 0.8rem;
-	line-height: 1.3rem;
+	line-height: 1.3;
 	padding: 1.5rem 0 1.5rem 7rem;
 	border-top: 1px solid;
 	}
@@ -362,7 +362,7 @@ div.bbp-reply-header {
 	float: left;
 	text-align: center;
 	font-size: 0.8rem;
-	line-height: 1.3rem;
+	line-height: 1.3;
 	width: 80px; /* fixed value */
 	margin: -2.8rem 0 1.5rem;
 	}
@@ -370,7 +370,7 @@ div.bbp-reply-header {
 #bbpress-forums div.bbp-topic-author img.avatar,
 #bbpress-forums div.bbp-reply-author img.avatar {
 	max-width: 80px; /* fixed value */
-	margin: 0 auto -1rem;
+	margin: 0 auto 0.3rem;
 	}
 #bbpress-forums div.bbp-forum-author > img.avatar,
 #bbpress-forums div.bbp-topic-author > img.avatar,
@@ -673,12 +673,6 @@ div.bbp-reply-form {
 	#bbpress-forums fieldset select#bbp_forum_id {
 		max-width: 13rem;
 		}
-	#bbpress-forums input[type="checkbox"],
-	#bbpress-forums input[type="radio"] {
-		display: inline-block;
-		vertical-align: top;
-		margin: 6px 4px 0 0;
-		}
 	textarea#bbp_forum_content {
 		height: 14rem;
 		}
@@ -725,7 +719,7 @@ div.bbp-reply-form {
 			}
 		#bbpress-forums #bbp-your-profile fieldset span.description {
 			font-size: 0.8rem;
-			line-height: 1.3rem;
+			line-height: 1.3;
 			float: left;
 			margin: 2px 0 0 30%;
 			width: 70%;
@@ -1190,25 +1184,21 @@ div.bbp-template-notice a {
 
 	#bbpress-forums div.bbp-topic-author,
 	#bbpress-forums div.bbp-reply-author {
-		margin: -1.3rem 0 1rem;
-		min-height: 4rem;
-		padding-left: 50px;
-		position: relative;
+		float: none;
+		margin: 0 0 1rem;
 		text-align: left;
 		width: 100%;
 		}
 	#bbpress-forums div.bbp-topic-author a.bbp-author-name,
 	#bbpress-forums div.bbp-reply-author a.bbp-author-name {
 		display: inline-block;
-		vertical-align: top;
 		word-wrap: break-word;
 		}
 	#bbpress-forums div.bbp-topic-author img.avatar,
 	#bbpress-forums div.bbp-reply-author img.avatar {
-		position: absolute;
-		top: 1.3rem;
-		left: 0;
-		margin: 0;
+		display: inline-block;
+		vertical-align: middle;
+		margin: 0 0.5rem 0 0;
 		max-width: 40px;
 		}
 	#bbpress-forums div.bbp-topic-author .bbp-author-role,
@@ -1216,9 +1206,7 @@ div.bbp-template-notice a {
 	#bbpress-forums div.bbp-topic-author .bbp-reply-ip,
 	#bbpress-forums div.bbp-reply-author .bbp-reply-ip {
 		display: inline-block;
-		vertical-align: top;
-		padding: 0 0.3rem 0 0;
-		margin-top: -3px;
+		margin-left: 0.5rem;
 		}
 	#bbpress-forums div.bbp-topic-content,
 	#bbpress-forums div.bbp-reply-content {

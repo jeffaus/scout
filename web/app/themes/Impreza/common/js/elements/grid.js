@@ -1,7 +1,7 @@
 /**
  * UpSolution Element: Grid
  */
-(function( $ ) {
+;(function( $, undefined ) {
 	"use strict";
 
 	$us.WGrid = function( container, options ) {
@@ -9,20 +9,29 @@
 	};
 
 	$us.WGrid.prototype = {
-
 		init: function( container, options ) {
-			// Commonly used dom elements
+			// Elements
 			this.$container = $( container );
-			this.$filters = this.$container.find( '.g-filters-item' );
-			this.$list = this.$container.find( '.w-grid-list' );
-			this.$items = this.$container.find( '.w-grid-item' );
-			this.$pagination = this.$container.find( '.pagination' );
-			this.$loadmore = this.$container.find( '.g-loadmore' );
-			this.$preloader = this.$container.find( '.w-grid-preloader' );
-			this.curFilterTaxonomy = '';
-			this.paginationType = this.$pagination.length ? 'regular' : ( this.$loadmore.length ? 'ajax' : 'none' );
-			this.filterTaxonomyName = this.$list.data( 'filter_taxonomy_name' ) ? this.$list.data( 'filter_taxonomy_name' ) : 'category';
+			// Built-in filters
+			this.$filters = $( '.g-filters-item', this.$container );
+			this.$items = $( '.w-grid-item', this.$container );
+			this.$list = $( '.w-grid-list', this.$container );
+			this.$loadmore = $( '.g-loadmore', this.$container );
+			this.$pagination = $( '> .pagination', this.$container );
+			this.$preloader = $( '.w-grid-preloader', this.$container );
+
+			// Variables
 			this.loading = false;
+			this.changeUpdateState = false;
+			this.gridFilter = null;
+
+			this.curFilterTaxonomy = '';
+			this.paginationType = this.$pagination.length
+				? 'regular'
+				: ( this.$loadmore.length ? 'ajax' : 'none' );
+			this.filterTaxonomyName = this.$list.data( 'filter_taxonomy_name' )
+				? this.$list.data( 'filter_taxonomy_name' )
+				: 'category';
 
 			// Prevent double init
 			if ( this.$container.data( 'gridInit' ) == 1 ) {
@@ -30,12 +39,13 @@
 			}
 			this.$container.data( 'gridInit', 1 );
 
-			var $jsonContainer = this.$container.find( '.w-grid-json' );
-			if ( $jsonContainer.length ) {
+			var $jsonContainer = $( '.w-grid-json', this.$container );
+			if ( $jsonContainer.is( '[onclick]' ) ) {
 				this.ajaxData = $jsonContainer[ 0 ].onclick() || {};
 				this.ajaxUrl = this.ajaxData.ajax_url || '';
 				$jsonContainer.remove();
 			}
+
 			this.carouselSettings = this.ajaxData.carousel_settings;
 			this.breakpoints = this.ajaxData.carousel_breakpoints || {};
 
@@ -43,47 +53,52 @@
 				// Add object-fit support library for IE11
 				$us.getScript( $us.templateDirectoryUri + '/common/js/vendor/objectFitPolyfill.js', function() {
 					objectFitPolyfill();
-				} );
-				// Bind objectFitPolyfill() event for IE11 on lazy load event
-				$us.$document.on( 'lazyload', function() {
-					objectFitPolyfill();
+
+					// Bind objectFitPolyfill() event for IE11 on lazy load event
+					$us.$document.on( 'lazyload', function() {
+						objectFitPolyfill();
+					} );
 				} );
 			}
 
 			if ( this.$list.hasClass( 'owl-carousel' ) ) {
 				$us.getScript( $us.templateDirectoryUri + '/common/js/vendor/owl.carousel.js', function() {
-
 					this.carouselOptions = {
-						mouseDrag: ! jQuery.isMobile,
+						autoHeight: this.carouselSettings.autoHeight,
+						autoplay: this.carouselSettings.autoplay,
+						autoplayHoverPause: true,
+						autoplayTimeout: this.carouselSettings.timeout,
+						center: this.carouselSettings.center,
+						dots: this.carouselSettings.dots,
 						items: parseInt( this.carouselSettings.items ),
-						rtl: $( '.l-body' ).hasClass( 'rtl' ),
+						lazyLoad: $us.lazyLoad || false,
+						lazyLoadEager: 1,
+						loop: this.carouselSettings.loop,
+						mouseDrag: ! jQuery.isMobile,
 						nav: this.carouselSettings.nav,
 						navElement: 'div',
-						navText: [ this.carouselSettings.navPrev, this.carouselSettings.navNext ],
-						dots: this.carouselSettings.dots,
-						loop: this.carouselSettings.center,
-						rewind: true,
-						center: this.carouselSettings.center,
-						autoplay: this.carouselSettings.autoplay,
-						autoplayTimeout: this.carouselSettings.timeout,
-						autoHeight: this.carouselSettings.autoHeight,
-						slideBy: this.carouselSettings.slideby,
-						smartSpeed: this.carouselSettings.speed,
-						slideTransition: this.carouselSettings.transition,
-						autoplayHoverPause: true,
+						navText: [ '', '' ],
 						responsive: {},
-						lazyLoadEager: 1,
-						lazyLoad: $us.lazyLoad || false
+						rewind: ! this.carouselSettings.loop,
+						stagePadding: 0, // TODO: add padding offset option
+						rtl: $( '.l-body' ).hasClass( 'rtl' ),
+						slideBy: this.carouselSettings.slideby,
+						slideTransition: this.carouselSettings.transition,
+						smartSpeed: this.carouselSettings.speed
 					};
 
-					if ( this.carouselSettings.autoplay == 1 ) {
-						this.carouselOptions.loop = 1;
-					}
 					if ( this.carouselSettings.smooth_play == 1 ) {
 						this.carouselOptions.slideTransition = 'linear';
 						this.carouselOptions.autoplaySpeed = this.carouselSettings.timeout;
 						this.carouselOptions.slideBy = 1;
-						this.carouselOptions.loop = 1;
+					}
+
+					if ( this.carouselSettings.carousel_fade ) {
+						// https://owlcarousel2.github.io/OwlCarousel2/demos/animate.html
+						$.extend( this.carouselOptions, {
+							animateOut: 'fadeOut',
+							animateIn: 'fadeIn',
+						});
 					}
 
 					// Writing responsive params in a loop to prevent json conversion bugs
@@ -95,13 +110,38 @@
 						}
 					}.bind( this ) );
 
+					// Re-init containers with show more links or init tabs after carousel init
+					this.$list
+						.on( 'initialized.owl.carousel', function( e ) {
+							var $list = $( this );
+							// Refresh for Toggle Links
+							$( '[data-toggle-height]', e.currentTarget ).each( function( _, item ) {
+								var usToggle = $( item ).data( 'usToggleMoreContent' );
+								if ( usToggle instanceof $us.ToggleMoreContent ) {
+									usToggle.initHeightCheck();
+									$us.timeout( function() {
+										$list.trigger( 'refresh.owl.carousel' );
+									}, 1 );
+								}
+							} );
+							// Refresh for active tabs
+							if ( $.isMobile && $list.closest( '.w-tabs-section.active' ).length ) {
+								$us.timeout( function() {
+									$list.trigger( 'refresh.owl.carousel' );
+								}, 50 );
+							}
+						} )
+						// Disabling mouse Drag if there is a toggle link
+						.on( 'mousedown.owl.core', function() {
+							var $target = $( this );
+							if ( $( '[data-toggle-height]', $target ).length && ! jQuery.isMobile ) {
+								var owlCarousel = $target.data( 'owl.carousel' );
+								owlCarousel.$stage.off( 'mousedown.owl.core' );
+							}
+						} );
+
 					// https://owlcarousel2.github.io/OwlCarousel2/docs/started-welcome.html
 					this.$list.owlCarousel( this.carouselOptions );
-
-					// Re-init containers with show more links after carousel init
-					this.$container.find( '.with_show_more_toggle' ).each( function() {
-						$( this ).data( 'usToggleMoreContent' ).initHeightCheck();
-					} );
 
 				}.bind( this ) );
 			}
@@ -159,9 +199,12 @@
 
 				this.templateVars = this.ajaxData.template_vars || {};
 				if ( this.filterTaxonomyName ) {
-					this.initialFilterTaxonomy = this.$list.data( 'filter_default_taxonomies' ) ? this.$list.data( 'filter_default_taxonomies' ).split( ',' ) : '';
+					this.initialFilterTaxonomy = this.$list.data( 'filter_default_taxonomies' )
+						? this.$list.data( 'filter_default_taxonomies' ).split( ',' )
+						: '';
 					this.curFilterTaxonomy = this.initialFilterTaxonomy;
 				}
+
 				this.curPage = this.ajaxData.current_page || 1;
 				this.perpage = this.ajaxData.perpage || this.$items.length;
 				this.infiniteScroll = this.ajaxData.infinite_scroll || 0;
@@ -236,6 +279,80 @@
 					}
 				}.bind( this ) )
 			}.bind( this ) );
+
+			// This is necessary for interaction from the grid filter.
+			if ( this.$container.closest('.l-main').length ) {
+				$us.$body.on( 'us_grid.updateState', this._events.updateState.bind( this ) );
+			}
+
+			// Add events
+			this.$list
+				.on( 'click', '[ref=magnificPopup]', this._events.initMagnificPopup.bind( this ) );
+		},
+		/**
+		 * Event handlers
+		 * @private
+		 */
+		_events: {
+			/**
+			 * Update Grid State
+			 *
+			 * @param EventObject e
+			 * @param {string} params String of parameters from filters for the grid
+			 * @param {number} page
+			 * @param {object} gridFilter
+			 * @return void
+			 */
+			updateState: function( e, params, page, gridFilter ) {
+				if (
+					! this.$container.is( '[data-grid-filter="true"]' )
+					|| ! this.$container.hasClass( 'used_by_grid_filter' )
+				) {
+					return;
+				}
+
+				page = page || 1;
+				this.changeUpdateState = true;
+				this.gridFilter = gridFilter;
+
+				if ( ! this.hasOwnProperty( 'templateVars' ) ) {
+					this.templateVars = this.ajaxData.template_vars || {
+						query_args: {}
+					};
+				}
+				this.templateVars.us_grid_filter_params = params;
+				if ( this.templateVars.query_args !== false ) {
+					this.templateVars.query_args.paged = page;
+				}
+
+				// Related parameters for getting data, number of records for taxonomy, price range for WooCommerce, etc.
+				this.templateVars.filters_args = gridFilter.filtersArgs || {};
+				this.setState( page );
+
+				// Reset pagination
+				if ( this.paginationType === 'regular' && /page(=|\/)/.test( location.href ) ) {
+					var url = location.href.replace( /(page(=|\/))(\d+)(\/?)/, '$1' + page + '$2' );
+					history.replaceState( document.title, document.title, url );
+				}
+			},
+			/**
+			 * Initializing MagnificPopup for AJAX loaded items
+			 *
+			 * @param EventObject e
+			 * @return void
+			 */
+			initMagnificPopup: function( e ) {
+				e.stopPropagation();
+				e.preventDefault();
+				var $target = $( e.currentTarget );
+				if ( $target.data( 'magnificPopup' ) === undefined ) {
+					$target.magnificPopup({
+						type: 'image',
+						mainClass: 'mfp-fade'
+					});
+					$target.trigger( 'click' );
+				}
+			}
 		},
 		initLightboxAnchors: function() {
 			this.$anchors = this.$list.find( '.w-grid-item-anchor' );
@@ -248,7 +365,6 @@
 					if ( $us.$window.width() >= $us.canvasOptions.disableEffectsWidth ) {
 						e.stopPropagation();
 						e.preventDefault();
-
 						this.openLightboxItem( itemUrl, $item );
 					}
 				}
@@ -263,20 +379,37 @@
 			}.bind( this ) );
 
 			if ( this.infiniteScroll ) {
-				$us.scroll.addWaypoint( this.$loadmore, '-70%', function() {
-					this.$loadmore.click();
+				$us.waypoints.add( this.$loadmore, '-70%', function() {
+					if ( ! this.loading ) {
+						this.$loadmore.click();
+					}
 				}.bind( this ) );
 			}
 		},
 		setState: function( page, taxonomy ) {
-
-			if ( this.loading ) {
+			if ( this.loading && ! this.changeUpdateState ) {
 				return;
 			}
 
+			if (
+				page !== 1
+				&& this.paginationType == 'ajax'
+				&& this.none !== undefined
+				&& this.none == true
+			) {
+				return;
+			}
+
+			this.none = false;
 			this.loading = true;
 
-			if ( this.$filters.length ) {
+			var $none = this.$container.find( '> .w-grid-none' );
+			if ( $none.length ) {
+				$none.hide();
+			}
+
+			// Create params for built-in filter
+			if ( this.$filters.length && ! this.changeUpdateState ) {
 				taxonomy = taxonomy || this.curFilterTaxonomy;
 				if ( taxonomy == '*' ) {
 					taxonomy = this.initialFilterTaxonomy;
@@ -311,11 +444,9 @@
 						}
 					}.bind( this ) );
 				}
-
 			}
 
 			this.templateVars.query_args.paged = page;
-
 
 			if ( this.paginationType == 'ajax' ) {
 				if ( page == 1 ) {
@@ -337,13 +468,19 @@
 
 			this.ajaxData.template_vars = JSON.stringify( this.templateVars );
 
-			$.ajax( {
+			// Abort prev request
+			if ( this.xhr !== undefined ) {
+				this.xhr.abort();
+			}
+
+			this.xhr = $.ajax( {
 				type: 'post',
 				url: this.ajaxData.ajax_url,
 				data: this.ajaxData,
 				success: function( html ) {
 					var $result = $( html ),
-						$container = $result.find( '.w-grid-list' ),
+						$container = $( '.w-grid-list', $result ),
+						$pagination = $( '.pagination > *', $result ),
 						$items = $container.children(),
 						isotope = this.$list.data( 'isotope' ),
 						smallestItemSelector;
@@ -392,7 +529,7 @@
 							//Check any tabs in loaded content
 							if ( $items.find( '.w-tabs' ).length > 0 ) {
 								//if post has tabs - init them
-								$( $items.find( '.w-tabs' ) ).each( function() {
+								$( '.w-tabs', $items ).each( function() {
 									$( this ).wTabs();
 								} );
 							}
@@ -407,7 +544,7 @@
 								}
 							}
 
-							if ( this.templateVars.query_args.paged >= this.ajaxData.max_num_pages ) {
+							if ( this.templateVars.query_args.paged >= this.ajaxData.max_num_pages || ! $items.length ) {
 								this.$loadmore.addClass( 'done' );
 							} else {
 								this.$loadmore.removeClass( 'done' );
@@ -415,10 +552,26 @@
 							}
 
 							if ( this.infiniteScroll ) {
-								$us.scroll.addWaypoint( this.$loadmore, '-70%', function() {
-									this.$loadmore.click();
+								$us.waypoints.add( this.$loadmore, '-70%', function() {
+									if ( ! this.loading ) {
+										// check none
+										this.$loadmore.click();
+									}
 								}.bind( this ) );
 							}
+
+							if ( $us.detectIE() == 11 ) {
+								objectFitPolyfill();
+							}
+
+						} else if ( this.paginationType === 'regular' && this.changeUpdateState ) {
+							// Pagination Link Correction
+							$( 'a[href]', $pagination ).each( function( _, item ) {
+								var $item = $( item ),
+									pathname = location.pathname.replace( /((\/page.*)?)\/$/, '');
+								$item.attr( 'href', pathname + $item.attr('href') );
+							} );
+							this.$pagination.html( $pagination );
 						}
 
 						if ( this.$container.hasClass( 'popup_page' ) ) {
@@ -437,8 +590,28 @@
 									}.bind( this ) );
 								}
 							}.bind( this ) );
-
 						}
+
+						// The display a message in the absence of data
+						if ( this.changeUpdateState && $result.find( '.w-grid-none' ).length ) {
+							if ( ! $none.length ) {
+								this.$container.prepend( $result.find( '.w-grid-none' ) );
+							} else {
+								$none.show();
+							}
+							this.none = true;
+						}
+
+						// Send the result to the filter grid
+						if ( this.changeUpdateState && this.gridFilter ) {
+							var $jsonData = $result.filter( '.w-grid-filter-json-data:first' );
+							if ( $jsonData.length ) {
+								this.gridFilter
+									.trigger( 'us_grid_filter.update-items-amount', $jsonData[0].onclick() || {} );
+							}
+							$jsonData.remove();
+						}
+
 						// Resize canvas to avoid Parallax calculation issues
 						$us.$canvas.resize();
 						this.$preloader.removeClass( 'active' );
@@ -452,10 +625,8 @@
 				}.bind( this )
 			} );
 
-
 			this.curPage = page;
 			this.curFilterTaxonomy = taxonomy;
-
 		},
 		// Lightbox Functions
 		_hasScrollbar: function() {
@@ -526,14 +697,15 @@
 		},
 		lightboxContentLoaded: function() {
 			this.$lightboxContentPreloader.css( 'display', 'none' );
-
-			this.$lightboxContentFrame.contents().find( 'body' ).off( 'keyup.usCloseLightbox' ).on( 'keyup.usCloseLightbox', function( e ) {
-				if ( e.key === "Escape" ) {
-					this.hideLightbox();
-				}
-			}.bind( this ) );
-
-
+			this.$lightboxContentFrame
+				.contents()
+				.find( 'body' )
+				.off( 'keyup.usCloseLightbox' )
+				.on( 'keyup.usCloseLightbox', function( e ) {
+					if ( e.key === "Escape" ) {
+						this.hideLightbox();
+					}
+				}.bind( this ) );
 		},
 		showLightbox: function() {
 			clearTimeout( this.lightboxTimer );
@@ -604,6 +776,13 @@
 		 * @param $items
 		 */
 		beforeAppendItems: function( $items ) {
+			// Init `Show More` for grid items loaded by AJAX
+			if ( $( '[data-toggle-height]', $items ).length ) {
+				var handle = $us.timeout( function() {
+					$( '[data-toggle-height]', $items ).usToggleMoreContent();
+					$us.clearTimeout( handle );
+				}, 1 );
+			}
 		},
 
 		afterAppendItems: function( $items ) {

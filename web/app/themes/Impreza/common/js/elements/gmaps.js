@@ -101,7 +101,7 @@
 							$us.WMapsCurrentGeocode ++;
 							$us.WMapsRunGeoCode();
 						} else if ( status == "OVER_QUERY_LIMIT" ) {
-							setTimeout( function() {
+							$us.timeout( function() {
 								$us.WMapsRunGeoCode()
 							}, 2000 );
 						}
@@ -160,7 +160,7 @@
 									$us.WMapsCurrentGeocode ++;
 									$us.WMapsRunGeoCode();
 								} else if ( status == "OVER_QUERY_LIMIT" ) {
-									setTimeout( function() {
+									$us.timeout( function() {
 										$us.WMapsRunGeoCode()
 									}, 2000 );
 								}
@@ -181,7 +181,7 @@
 		$us.$canvas.on( 'contentChange', this._events.redraw );
 
 		// In case some toggler was opened before the actual page load
-		$us.$window.load( this._events.redraw );
+		$us.$window.on( 'load', this._events.redraw );
 	};
 
 	$us.WMaps.prototype = {

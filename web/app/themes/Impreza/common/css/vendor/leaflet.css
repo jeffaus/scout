@@ -245,8 +245,9 @@
 .leaflet-control-attribution {
 	background: rgba(255, 255, 255, 0.7);
 	margin: 0 !important;
-	font-size: 0.8rem;
-	padding: 0 0.5rem;
+	font-size: 10px; /* fixed value */
+	line-height: 18px; /* fixed value */
+	padding: 0 5px; /* fixed value */
 	color: #333;
 }
 

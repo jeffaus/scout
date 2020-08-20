@@ -47,12 +47,12 @@
 			/**
 			 * @param {String} Easing for scroll animation
 			 */
-			animationEasing: 'easeInOutExpo',
+			animationEasing: $us.getAnimationName( 'easeInOutExpo' ),
 
 			/**
 			 * @param {String} End easing for scroll animation
 			 */
-			endAnimationEasing: 'easeOutExpo'
+			endAnimationEasing: $us.getAnimationName( 'easeOutExpo' )
 		};
 		this.options = $.extend( {}, defaults, options || {} );
 
@@ -62,20 +62,17 @@
 		// Is scrolling to some specific block at the moment?
 		this.isScrolling = false;
 
-		// Waypoints that will be called at certain scroll position
-		this.waypoints = [];
-
 		// Boundable events
 		this._events = {
 			cancel: this.cancel.bind( this ), scroll: this.scroll.bind( this ), resize: this.resize.bind( this )
 		};
 
 		this._canvasTopOffset = 0;
-		$us.$window.on( 'resize load', this._events.resize );
-		setTimeout( this._events.resize, 75 );
+		$us.$window.on( 'resize load', $us.debounce( this._events.resize, 10 ) );
+		$us.timeout( this._events.resize, 75 );
 
 		$us.$window.on( 'scroll', this._events.scroll );
-		setTimeout( this._events.scroll, 75 );
+		$us.timeout( this._events.scroll, 75 );
 
 		if ( this.options.attachOnInit ) {
 			this.attach( this.options.attachOnInit );
@@ -110,10 +107,14 @@
 				}.bind( this ), 100 );
 				var clearHashEvents = function() {
 					// Content size still may change via other script right after page load
-					setTimeout( function() {
+					$us.timeout( function() {
 						clearInterval( keepScrollPositionTimer );
 						$us.canvas.resize();
 						this._countAllPositions();
+						// The size of the content can be changed using another script, so we recount the waypoints
+						if ( $us.hasOwnProperty( 'waypoints' ) ) {
+							$us.waypoints._countAll();
+						}
 						this.scrollTo( scrollPlace );
 					}.bind( this ), 100 );
 					$us.$window.off( 'load touchstart mousewheel DOMMouseScroll touchstart', clearHashEvents );
@@ -180,11 +181,6 @@
 					continue;
 				}
 				this._countPosition( hash );
-			}
-
-			// Counting waypoints
-			for ( var i = 0; i < this.waypoints.length; i ++ ) {
-				this._countWaypoint( this.waypoints[ i ] );
 			}
 		},
 
@@ -433,45 +429,6 @@
 		},
 
 		/**
-		 * Add new waypoint
-		 *
-		 * @param {jQuery} $elm object with the element
-		 * @param {mixed} offset Offset from bottom of screen in pixels ('100') or percents ('20%')
-		 * @param {Function} fn The function that will be called
-		 */
-		addWaypoint: function( $elm, offset, fn ) {
-			$elm = ( $elm instanceof $ ) ? $elm : $( $elm );
-			if ( $elm.length == 0 ) {
-				return;
-			}
-			if ( typeof offset != 'string' || offset.indexOf( '%' ) == - 1 ) {
-				// Not percent: using pixels
-				offset = parseInt( offset );
-			}
-			var waypoint = {
-				$elm: $elm, offset: offset, fn: fn
-			};
-			this._countWaypoint( waypoint );
-			this.waypoints.push( waypoint );
-		},
-
-		/**
-		 *
-		 * @param {Object} waypoint
-		 * @private
-		 */
-		_countWaypoint: function( waypoint ) {
-			var elmTop = waypoint.$elm.offset().top, winHeight = $us.$window.height();
-			if ( typeof waypoint.offset == 'number' ) {
-				// Offset is defined in pixels
-				waypoint.scrollPos = elmTop - winHeight + waypoint.offset;
-			} else {
-				// Offset is defined in percents
-				waypoint.scrollPos = elmTop - winHeight + winHeight * parseInt( waypoint.offset ) / 100;
-			}
-		},
-
-		/**
 		 * Scroll handler
 		 */
 		scroll: function() {
@@ -492,15 +449,6 @@
 				}
 				this._indicatePosition( activeHash );
 			}
-
-			// Handling waypoints
-			for ( var i = 0; i < this.waypoints.length; i ++ ) {
-				if ( this.waypoints[ i ].scrollPos < scrollTop ) {
-					this.waypoints[ i ].fn( this.waypoints[ i ].$elm );
-					this.waypoints.splice( i, 1 );
-					i --;
-				}
-			}
 		},
 
 		/**
@@ -508,7 +456,7 @@
 		 */
 		resize: function() {
 			// Delaying the resize event to prevent glitches
-			setTimeout( function() {
+			$us.timeout( function() {
 				this._countAllPositions();
 				this.scroll();
 			}.bind( this ), 150 );

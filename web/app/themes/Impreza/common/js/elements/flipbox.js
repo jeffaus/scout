@@ -57,7 +57,7 @@
 		this.makeHoverable( '.w-btn' );
 
 		// Fixing css3 animations rendering glitch on page load
-		setTimeout( function() {
+		$us.timeout( function() {
 			this.$back.css( 'display', '' );
 			this.$yFlank.css( 'display', '' );
 			this.$xFlank.css( 'display', '' );

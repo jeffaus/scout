@@ -17,6 +17,19 @@
 			flex-shrink: 0; /* fix for vertical alignment in IE11 */
 			}
 
+/* Background Overlay */
+.vc_column_container.with_overlay .vc_column-inner,
+.vc_column_container.with_overlay .wpb_wrapper {
+	position: relative;
+	}
+	.vc_column-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		}
+
 /* Type: Default */
 .g-cols.type_default {
 	margin: 0 -1.5rem;

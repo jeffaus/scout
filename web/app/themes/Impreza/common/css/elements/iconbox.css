@@ -14,6 +14,9 @@
 		-webkit-tap-highlight-color: rgba(0,0,0,0);
 		}
 		.w-iconbox-icon {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
 			-webkit-flex-shrink: 0; /* fix for older Safari */
 			flex-shrink: 0;
 			font-size: 2rem; /* default value */
@@ -60,16 +63,13 @@
 	margin: 0 auto;
 	max-width: 25rem;
 	}
-	.w-iconbox.iconpos_top .w-iconbox-icon {
-		display: inline-block;
-		vertical-align: top;
-		}
 
 /* ICONPOS left & right */
 .w-iconbox.iconpos_left,
 .w-iconbox.iconpos_right {
 	display: -webkit-flex; /* fix for older Safari */
 	display: flex;
+	align-items: flex-start;
 	}
 .w-iconbox.iconpos_left.no_text,
 .w-iconbox.iconpos_left.no_title,
@@ -155,16 +155,7 @@
 	.no-touch .w-iconbox.style_outlined .w-iconbox-link:hover .w-iconbox-icon:before {
 		height: 100%;
 		}
-	.w-iconbox.style_circle .w-iconbox-icon i,
-	.w-iconbox.style_outlined .w-iconbox-icon i {
+	.w-iconbox.style_circle .w-iconbox-icon > *,
+	.w-iconbox.style_outlined .w-iconbox-icon > * {
 		position: relative;
 		}
-	.w-iconbox.style_circle .w-iconbox-icon svg,
-	.w-iconbox.style_circle .w-iconbox-icon img,
-	.w-iconbox.style_outlined .w-iconbox-icon svg,
-	.w-iconbox.style_outlined .w-iconbox-icon img {
-		position: relative;
-		top: 50%;
-		transform: translateY(-50%);
-		}
-		

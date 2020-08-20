@@ -348,8 +348,8 @@
 				$us.$canvas.trigger( 'contentChange' );
 			}.bind( this ) );
 
-			$us.$window.on( 'resize', this._events.resize );
-			setTimeout( function() {
+			$us.$window.on( 'resize', $us.debounce( this._events.resize, 5 ) );
+			$us.timeout( function() {
 				this.resize();
 				$us.header.$container.trigger( 'contentChange' );
 			}.bind( this ), 50 );

@@ -33,7 +33,7 @@
 		this.triggerType = this.$trigger.usMod( 'type' );
 		if ( this.triggerType == 'load' ) {
 			var delay = this.$trigger.data( 'delay' ) || 2;
-			setTimeout( this.show.bind( this ), delay * 1000 );
+			$us.timeout( this.show.bind( this ), delay * 1000 );
 		} else if ( this.triggerType == 'selector' ) {
 			var selector = this.$trigger.data( 'selector' );
 			if ( selector ) {
@@ -51,6 +51,8 @@
 			.on( 'click', this._events.hide );
 		this.$container.find( '.w-popup-closer' ).on( 'click', this._events.hide );
 		this.$box.on( 'click', this._events.preventHide );
+
+		this.$media = $( 'video,audio', this.$box );
 
 		this.timer = null;
 	};
@@ -96,7 +98,9 @@
 			if ( window.$us !== undefined && $us.$canvas !== undefined ) {
 				$us.$canvas.trigger( 'contentChange' );
 			}
-			$us.$window.trigger( 'resize' );
+			$us.$window
+				.trigger( 'resize' )
+				.trigger( 'us.wpopup.afterShow', this );
 		},
 		hide: function() {
 			clearTimeout( this.timer );
@@ -118,7 +122,13 @@
 				if ( this.windowHasScrollbar ) {
 					$us.$html.css( 'margin-right', '' );
 				}
-				$us.$window.trigger( 'resize' );
+				$us.$window
+					.trigger( 'resize' )
+					.trigger( 'us.wpopup.afterHide', this );
+			}
+			// If the content contains media elements, then we will pase after closing the window
+			if ( this.$media.length ) {
+				this.$media.trigger( 'pause' );
 			}
 		},
 	};

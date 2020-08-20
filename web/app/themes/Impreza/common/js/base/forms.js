@@ -67,6 +67,7 @@ jQuery( function( $ ) {
 						$form.find( '.w-form-row.not-empty' ).removeClass( 'not-empty' );
 						$form.find( 'input[type="text"], input[type="email"], textarea' ).val( '' );
 						$form[ 0 ].reset();
+						$container.trigger('usCformSuccess');
 					} else {
 						$form.find( '.w-form-row.check_wrong' ).removeClass( 'check_wrong' );
 						if ( result.data && typeof result.data == 'object' ) {

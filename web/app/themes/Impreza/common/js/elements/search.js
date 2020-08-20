@@ -16,7 +16,6 @@
 				$overlay = $container.find( '.w-search-background' ),
 				$window = $( window ),
 				searchOverlayInitRadius = 25,
-				showHideTimer = null,
 				isFullScreen = $container.hasClass( 'layout_fullscreen' ),
 				isWithRipple = $container.hasClass( 'with_ripple' ),
 				searchHide = function( e ) {
@@ -28,7 +27,7 @@
 						$form.css( {
 							transition: 'opacity 0.4s'
 						} );
-						window.setTimeout( function() {
+						$us.timeout( function() {
 							$overlay
 								.removeClass( 'overlay-on' )
 								.addClass( 'overlay-out' )
@@ -36,11 +35,10 @@
 									'transform': 'scale(0.1)'
 								} );
 							$form.css( 'opacity', 0 );
-							clearTimeout( showHideTimer );
-							showHideTimer = window.setTimeout( function() {
+							$us.debounce( function() {
 								$form.css( 'display', 'none' );
 								$overlay.css( 'display', 'none' );
-							}, 600 );
+							}, 600 )();
 						}, 25 );
 					}
 
@@ -80,7 +78,7 @@
 							display: 'block',
 							transition: 'opacity 0.4s 0.3s'
 						} );
-						window.setTimeout( function() {
+						$us.timeout( function() {
 							$overlay
 								.addClass( 'overlay-on' )
 								.css( {

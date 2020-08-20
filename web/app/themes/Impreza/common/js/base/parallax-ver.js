@@ -158,7 +158,7 @@
 			}
 
 			function resize() {
-				setTimeout( function() {
+				$us.timeout( function() {
 					windowHeight = $window.height();
 					containerHeight = getHeight( $this );
 					containerWidth = $this.width();

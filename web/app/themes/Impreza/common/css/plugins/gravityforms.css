@@ -65,18 +65,10 @@ AND ANY CHANGES MADE HERE WILL BE OVERWRITTEN.
 	.gform_wrapper .gfield_radio li,
 	.gform_wrapper .gfield_checkbox li {
 		display: block;
-		line-height: 1.3rem;
-		padding: 0.25rem 0;
+		line-height: 1.4;
+		padding: 0.2rem 0;
 		margin: 0;
 		}
-		.gform_wrapper .gfield_radio input[type="radio"] {
-			vertical-align: top;
-			margin: 4px 7px 0 0; /* fixed value */
-			}
-		.gform_wrapper .gfield_checkbox input[type="checkbox"] {
-			vertical-align: top;
-			margin: 4px 4px 0 0; /* fixed value */
-			}
 		.gform_wrapper ul.gfield_radio li input[type="radio"]:checked+label,
 		.gform_wrapper ul.gfield_checkbox li input[type="checkbox"]:checked+label {
 			font-weight: bold;
