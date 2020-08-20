@@ -49,6 +49,7 @@ web/app/object-cache.php
 
 # Include Salient plugins
 !web/app/plugins/js_composer_salient
+!web/app/plugins/js_composer
 !web/app/plugins/salient-*
 
 # Ignore dynamic salient stylesheet
