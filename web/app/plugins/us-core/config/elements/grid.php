@@ -25,10 +25,12 @@ foreach ( $known_post_type_taxonomies as $post_type => $taxonomy_slugs ) {
 						'post_type' => array( $post_type ),
 					);
 				}
+
 				$filter_value_label = $taxonomy_class->labels->name;
 				$filter_values[ $taxonomy_slug ] = $filter_value_label;
 			}
 		}
+
 		if ( count( $filter_values ) > 0 ) {
 			$filter_taxonomies_params[ 'filter_' . $post_type ] = array(
 				'title' => __( 'Filter by', 'us' ),
@@ -41,13 +43,28 @@ foreach ( $known_post_type_taxonomies as $post_type => $taxonomy_slugs ) {
 				'group' => us_translate( 'Filter' ),
 			);
 		}
-
 	}
 }
 
-foreach ( $available_taxonomies as $taxonomy_slug => $taxonomy ) {
+global $pagenow;
 
-	$taxonomy_items = us_get_terms_by_slug( $taxonomy_slug, 0, 16 );
+foreach ( $available_taxonomies as $taxonomy_slug => $taxonomy ) {
+	$taxonomy_items = array();
+	// Receive data for taxonomies only on the edit page or create a record
+	if ( wp_doing_ajax() OR in_array( $pagenow, array( 'post.php', 'post-new.php' ) ) ) {
+		$terms_params = array(
+			'taxonomy' => $taxonomy_slug,
+			'hide_empty' => FALSE,
+			'number' => 16,
+		);
+
+		$taxonomy_items_raw = get_terms( $terms_params );
+		if ( count( $taxonomy_items_raw ) ) {
+			foreach ( $taxonomy_items_raw  as $taxonomy_item_raw ) {
+				$taxonomy_items[ $taxonomy_item_raw->slug ] = $taxonomy_item_raw->name;
+			}
+		}
+	}
 
 	if ( count( $taxonomy_items ) > 0 ) {
 
@@ -62,6 +79,7 @@ foreach ( $available_taxonomies as $taxonomy_slug => $taxonomy ) {
 
 				// Show checkboxes, if terms are 15 or less, if not - show autocomplete
 				'type' => ( count( $taxonomy_items ) > 15 ) ? 'us_autocomplete' : 'us_checkboxes',
+				'options_prepared_for_wpb' => TRUE,
 				'settings' => array(
 					'_nonce' => wp_create_nonce( 'us_ajax_get_taxonomies_autocomplete' ),
 					'action' => 'us_get_taxonomies_autocomplete',
@@ -69,7 +87,6 @@ foreach ( $available_taxonomies as $taxonomy_slug => $taxonomy ) {
 					'slug' => $taxonomy_slug,
 				),
 				'options' => $taxonomy_items,
-				'options_prepared_for_wpb' => TRUE,
 				'show_if' => array( 'post_type', '=', $taxonomy['post_type'] ),
 			);
 		}
@@ -175,24 +192,32 @@ $general_params = array_merge(
 			'show_if' => array( 'post_type', '=', array( 'related', 'taxonomy_terms' ) ),
 		),
 		'ids' => array(
-			'type' => 'autocomplete',
+			'type' => 'us_autocomplete',
+			'options_prepared_for_wpb' => TRUE,
 			'settings' => array(
+				'_nonce' => wp_create_nonce( 'us_ajax_get_post_ids_for_autocomplete' ),
+				'action' => 'us_get_post_ids_for_autocomplete',
 				'multiple' => TRUE,
 				'sortable' => TRUE,
-				'unique_values' => TRUE,
 			),
-			'save_always' => TRUE,
+			'options' => function_exists( 'us_get_post_ids_for_autocomplete' )
+				? us_get_post_ids_for_autocomplete()
+				: array(),
 			'classes' => 'for_above',
 			'show_if' => array( 'post_type', '=', 'ids' ),
 		),
 		'ids_terms' => array(
-			'type' => 'autocomplete',
+			'type' => 'us_autocomplete',
+			'options_prepared_for_wpb' => TRUE,
 			'settings' => array(
+				'_nonce' => wp_create_nonce( 'us_ajax_get_term_ids_for_autocomplete' ),
+				'action' => 'us_get_term_ids_for_autocomplete',
 				'multiple' => TRUE,
 				'sortable' => TRUE,
-				'unique_values' => TRUE,
 			),
-			'save_always' => TRUE,
+			'options' => function_exists( 'us_get_term_ids_for_autocomplete' )
+				? us_get_term_ids_for_autocomplete()
+				: array(),
 			'classes' => 'for_above',
 			'show_if' => array( 'post_type', '=', 'ids_terms' ),
 		),
@@ -230,7 +255,6 @@ $general_params = array_merge(
 			'classes' => 'for_above',
 			'show_if' => array( 'post_type', '=', array( 'taxonomy_terms', 'current_child_terms' ) ),
 		),
-	), $taxonomies_params, array(
 		'events_calendar_show_past' => array(
 			'type' => 'switch',
 			'switch_text' => __( 'Show past events', 'us' ),
@@ -238,6 +262,7 @@ $general_params = array_merge(
 			'classes' => 'for_above',
 			'show_if' => array( 'post_type', '=', array( 'tribe_events' ) ),
 		),
+	), $taxonomies_params, array(
 		'orderby' => array(
 			'title' => us_translate( 'Order by' ),
 			'type' => 'select',
@@ -337,6 +362,18 @@ $general_params = array_merge(
 				'!=',
 				array( 'taxonomy_terms', 'current_child_terms', 'product_upsells', 'product_crosssell', 'ids_terms' ),
 			),
+		),
+		'pagination_style' => array(
+			'title' => __( 'Pagination Style', 'us' ),
+			'description' => $misc['desc_btn_styles'],
+			'type' => 'select',
+			'options' => us_array_merge(
+				array(
+					'' => '– ' . us_translate( 'Default' ) . ' –',
+				), us_get_btn_styles()
+			),
+			'std' => '',
+			'show_if' => array( 'pagination', '=', 'regular' ),
 		),
 		'pagination_btn_text' => array(
 			'title' => __( 'Button Label', 'us' ),
@@ -446,7 +483,7 @@ $appearance_params = array(
 		'description' => $misc['desc_img_sizes'],
 		'type' => 'select',
 		'options' => array_merge(
-			array( 'default' => __( 'As in Grid Layout', 'us' ) ), us_image_sizes_select_values()
+			array( 'default' => __( 'As in Grid Layout', 'us' ) ), us_get_image_sizes_list()
 		),
 		'std' => 'default',
 		'cols' => 2,
@@ -525,7 +562,7 @@ $appearance_params = array(
 	),
 );
 
-// Filter
+// Built-in filters
 $filter_params = array_merge(
 	$filter_taxonomies_params, array(
 		'filter_style' => array(

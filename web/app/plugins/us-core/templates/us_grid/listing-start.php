@@ -67,6 +67,7 @@ if ( ! $items_have_ratio AND us_arr_path( $grid_layout_settings, 'default.option
 if ( $overriding_link == 'popup_post' ) {
 	$classes .= ' popup_page';
 }
+
 if ( $filter_html != '' ) {
 	$classes .= ' with_filters';
 }
@@ -114,7 +115,7 @@ if ( $type == 'carousel' ) {
 
 	// Customize Carousel Arrows for current listing only
 	if ( $carousel_arrows ) {
-		if ( ! empty( $carousel_arrows_size ) AND $carousel_arrows_size != '1.8rem' ) {
+		if ( ! empty( $carousel_arrows_size ) ) {
 			$current_grid_css .= '#' . $grid_elm_id . ' .owl-nav div { font-size: ' . strip_tags( $carousel_arrows_size ) . '}';
 		}
 		if ( ! empty( $carousel_arrows_offset ) ) {
@@ -127,6 +128,7 @@ if ( $type == 'carousel' ) {
 if ( ! empty( $items_gap ) ) {
 	if ( $columns != 1 ) {
 		$current_grid_css .= '#' . $grid_elm_id . ' .w-grid-item { padding: ' . $items_gap . '}';
+
 		if ( ! empty( $filter_html ) AND $pagination == 'none' ) {
 			$current_grid_css .= '#' . $grid_elm_id . ' .w-grid-list { margin: ' . $items_gap . ' -' . $items_gap . ' -' . $items_gap . '}';
 		}
@@ -227,7 +229,9 @@ if ( $items_have_ratio ) {
 // Generate Grid Layout CSS, if it doesn't previously added
 if ( ! in_array( $items_layout, $us_grid_layouts ) ) {
 	$item_bg_color = us_arr_path( $grid_layout_settings, 'default.options.color_bg' );
+	$item_bg_color = us_get_color( $item_bg_color, /* Gradient */ TRUE );
 	$item_text_color = us_arr_path( $grid_layout_settings, 'default.options.color_text' );
+	$item_text_color = us_get_color( $item_text_color );
 	$item_bg_img_source = us_arr_path( $grid_layout_settings, 'default.options.bg_img_source' );
 	$item_border_radius = floatval( us_arr_path( $grid_layout_settings, 'default.options.border_radius' ) );
 	$item_box_shadow = floatval( us_arr_path( $grid_layout_settings, 'default.options.box_shadow' ) );
@@ -302,9 +306,17 @@ if ( ! in_array( $items_layout, $us_grid_layouts ) ) {
 				$grid_layout_css .= 'transform: scale(' . $elm['scale_hover'] . ') translate(' . $elm['translateX_hover'] . ',' . $elm['translateY_hover'] . ');';
 			}
 			$grid_layout_css .= isset( $elm['opacity_hover'] ) ? 'opacity:' . $elm['opacity_hover'] . ';' : '';
-			$grid_layout_css .= ( ! empty( $elm['color_bg_hover'] ) ) ? 'background:' . $elm['color_bg_hover'] . '!important;' : '';
-			$grid_layout_css .= ( ! empty( $elm['color_border_hover'] ) ) ? 'border-color:' . $elm['color_border_hover'] . '!important;' : '';
-			$grid_layout_css .= ( ! empty( $elm['color_text_hover'] ) ) ? 'color:' . $elm['color_text_hover'] . '!important;' : '';
+
+			if ( $color_bg_hover = us_arr_path( $elm, 'color_bg_hover', FALSE ) ) {
+				$grid_layout_css .= sprintf( 'background: %s !important;', us_get_color( $color_bg_hover, /* Gradient */ TRUE ) );
+			}
+			if ( $color_border_hover = us_arr_path( $elm, 'color_border_hover', FALSE ) ) {
+				$grid_layout_css .= sprintf( 'border-color: %s !important;', us_get_color( $color_border_hover ) );
+			}
+			if ( $color_text_hover = us_arr_path( $elm, 'color_text_hover', FALSE ) ) {
+				$grid_layout_css .= sprintf( 'color: %s !important;', us_get_color( $color_text_hover ) );
+			}
+
 			$grid_layout_css .= '}';
 		}
 
@@ -331,6 +343,7 @@ if ( ! in_array( $items_layout, $us_grid_layouts ) ) {
 		if ( ! empty( $elm['css'] ) AND is_array( $elm['css'] ) ) {
 			foreach ( array( 'default', 'tablets', 'mobiles' ) as $device_type ) {
 				if ( $css_options = us_arr_path( $elm, 'css.' . $device_type, FALSE ) ) {
+					$css_options = apply_filters( 'us_output_design_css_options', $css_options, $device_type );
 					$grid_jsoncss_collection[ $device_type ][ 'layout_' . $items_layout . ' .' . $elm_class ] = $css_options;
 				}
 			}
@@ -340,8 +353,31 @@ if ( ! in_array( $items_layout, $us_grid_layouts ) ) {
 	$grid_layout_css .= us_jsoncss_compile( $grid_jsoncss_collection );
 }
 
+// Permission to apply grid filters to the current grid
+global $us_context_layout;
+$is_filtered = FALSE;
+if ( ! $filter_html AND ( $us_context_layout === 'main' OR ( is_null( $us_context_layout ) AND $us_grid_index === 1 ) ) ) {
+	if ( is_tax() OR is_tag() OR is_archive() ) {
+		$is_filtered = TRUE;
+	} else {
+		$is_filtered = us_is_available_post_type( $post_type, array_keys( us_grid_available_taxonomies() ) );
+	}
+}
+if ( $type === 'carousel' ) {
+	$is_filtered = FALSE;
+}
+
+// Grid html attributes
+$grid_atts = array(
+	'class' => 'w-grid' . $classes,
+	'id' => $grid_elm_id,
+
+	// Define if Grid supports filters
+	'data-grid-filter' => json_encode( $is_filtered ),
+);
+
 // Output the Grid semantics
-echo '<div class="w-grid' . $classes . '" id="' . esc_attr( $grid_elm_id ) . '">';
+echo '<div ' . us_implode_atts( $grid_atts ) .'>';
 
 // Add CSS customizations for the current Grid only
 if ( ! empty( $current_grid_css ) ) {
@@ -355,4 +391,4 @@ if ( ! in_array( $items_layout, $us_grid_layouts ) ) {
 }
 
 echo $filter_html;
-echo '<div class="w-grid-list' . $list_classes . '"' . $data_atts . '>';
+echo '<div class="w-grid-list' . $list_classes . '" '. $data_atts .'>';

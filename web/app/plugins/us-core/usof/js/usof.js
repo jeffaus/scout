@@ -29,7 +29,7 @@ jQuery.fn.usMod = function( mod, value ) {
 			} else {
 				this.className += ' ' + mod + '_' + value;
 			}
-		} );
+		} ).trigger( 'usof.' + mod, value );
 	}
 };
 
@@ -39,7 +39,7 @@ jQuery.fn.usMod = function( mod, value ) {
 function usof_base64_decode( data ) {
 	var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 	var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, dec = "", tmp_arr = [];
-	if ( !data ) {
+	if ( ! data ) {
 		return data;
 	}
 	data += '';
@@ -68,7 +68,7 @@ function usof_base64_decode( data ) {
 function usof_base64_encode( data ) {
 	var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 	var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, enc = "", tmp_arr = [];
-	if ( !data ) {
+	if ( ! data ) {
 		return data;
 	}
 	data = usof_utf8_encode( data + '' );
@@ -95,6 +95,10 @@ function usof_rawurldecode( str ) {
 function usof_rawurlencode( str ) {
 	str = ( str + '' ).toString();
 	return encodeURIComponent( str ).replace( /!/g, '%21' ).replace( /'/g, '%27' ).replace( /\(/g, '%28' ).replace( /\)/g, '%29' ).replace( /\*/g, '%2A' );
+}
+
+function usof_strip_tags( str ) {
+	return str.replace( /(<([^>]+)>)/ig, '' ).replace( '"', '&quot;' );
 }
 
 function usof_utf8_decode( str_data ) {
@@ -154,7 +158,7 @@ function usof_utf8_encode( argString ) {
 /**
  * USOF Fields
  */
-!function( $ ) {
+! function( $, undefined ) {
 
 	if ( window.$usof === undefined ) {
 		window.$usof = {};
@@ -162,6 +166,15 @@ function usof_utf8_encode( argString ) {
 	if ( $usof.mixins === undefined ) {
 		$usof.mixins = {};
 	}
+
+	/**
+	 * The generate unique identifier.
+	 *
+	 * @return {string}
+	 */
+	$usof.genUniqueId = function() {
+		return Math.random().toString( 36 ).substr( 2, 9 );
+	};
 
 	// Prototype mixin for all classes working with events
 	$usof.mixins.Events = {
@@ -201,6 +214,13 @@ function usof_utf8_encode( argString ) {
 			return this;
 		},
 		/**
+		 * @param {String} eventType
+		 * @return {Boolean}
+		 */
+		has: function( eventType ) {
+			return this.$$events[ eventType ] !== undefined && this.$$events[ eventType ].length;
+		},
+		/**
 		 * Execute all handlers and behaviours attached to the class instance for the given event type
 		 * @param {String} eventType A string containing event type, such as 'beforeShow' or 'change'
 		 * @param {Array} extraParameters Additional parameters to pass along to the event handler
@@ -210,7 +230,7 @@ function usof_utf8_encode( argString ) {
 			if ( this.$$events === undefined || this.$$events[ eventType ] === undefined || this.$$events[ eventType ].length == 0 ) {
 				return this;
 			}
-			var params = ( arguments.length > 2 || !$.isArray( extraParameters ) ) ? Array.prototype.slice.call( arguments, 1 ) : extraParameters;
+			var params = ( arguments.length > 2 || ! $.isArray( extraParameters ) ) ? Array.prototype.slice.call( arguments, 1 ) : extraParameters;
 			// First argument is the current class instance
 			params.unshift( this );
 			for ( var index = 0; index < this.$$events[ eventType ].length; index ++ ) {
@@ -220,13 +240,79 @@ function usof_utf8_encode( argString ) {
 		}
 	};
 
+	// Queues of requests, this allows you to receive data
+	// with one request and send it to all subscribers
+	if ( $usof.ajaxQueues === undefined ) {
+		$usof.ajaxQueues = $.noop;
+		$.extend( $usof.ajaxQueues.prototype, $usof.mixins.Events, {
+			$$events: {},
+		});
+		$usof.ajaxQueues = new $usof.ajaxQueues;
+	}
+
+	// Temporary global and isolated storage
+	if ( $usof.cache === undefined ) {
+		$usof.cache = $.noop;
+		$.extend( $usof.cache.prototype, $usof.mixins.Events, {
+			data: {},
+			/**
+			 * Set data
+			 * @param {String} key
+			 * @param {Mixed} data
+			 * @return void
+			 */
+			set: function( key, data ) {
+				this.trigger( 'set', [ key, data ] );
+				this.data[ key ] = data;
+			},
+			/**
+			 * Get data
+			 * @param {String} key
+			 * @return {Mixed}
+			 */
+			get: function( key ) {
+				return this.has( key ) ? this.data[ key ] : null;
+			},
+			/**
+			 * Has key and data
+			 * @param {String} key
+			 * @return {Boolean}
+			 */
+			has: function( key ) {
+				return this.data[ key ] !== undefined && ! $.isEmptyObject( this.data[ key ] );
+			},
+			/**
+			 * Removes the specified key.
+			 * @param {String} key
+			 * @return void
+			 */
+			remove: function( key ) {
+				this.trigger( 'remove', key );
+				delete this.data[ key ];
+			},
+			/**
+			 * Flushes the object.
+			 * return void
+			 */
+			flush: function() {
+				this.trigger( 'flush' );
+				this.data = {};
+			},
+		} );
+		$usof.cache = new $usof.cache;
+	}
+
 	$usof.field = function( row, options ) {
 		this.$row = $( row );
 		this.type = this.$row.usMod( 'type' );
 		this.name = this.$row.data( 'name' );
 		this.id = this.$row.data( 'id' );
 		this.$input = this.$row.find( '[name="' + this.name + '"]' );
-		this.inited = false;
+		this.inited = this.$row.data( 'inited' ) || false;
+
+		if ( this.inited ) {
+			return;
+		}
 
 		/**
 		 * Boundable field events
@@ -242,7 +328,7 @@ function usof_utf8_encode( argString ) {
 		// Overloading selected functions, moving parent functions to "parent" namespace: init => parentInit
 		if ( $usof.field[ this.type ] !== undefined ) {
 			for ( var fn in $usof.field[ this.type ] ) {
-				if ( !$usof.field[ this.type ].hasOwnProperty( fn ) ) {
+				if ( ! $usof.field[ this.type ].hasOwnProperty( fn ) ) {
 					continue;
 				}
 				if ( this[ fn ] !== undefined ) {
@@ -259,6 +345,7 @@ function usof_utf8_encode( argString ) {
 		var initEvent = function() {
 			this.init( options );
 			this.inited = true;
+			this.$row.data( 'inited', this.inited );
 			this.off( 'beforeShow', initEvent );
 		}.bind( this );
 		this.on( 'beforeShow', initEvent );
@@ -278,7 +365,7 @@ function usof_utf8_encode( argString ) {
 		},
 		setValue: function( value, quiet ) {
 			this.$input.val( value );
-			if ( !quiet ) {
+			if ( ! quiet ) {
 				this.trigger( 'change', [value] );
 			}
 		}
@@ -322,7 +409,7 @@ function usof_utf8_encode( argString ) {
 		},
 
 		restore: function() {
-			if ( !confirm( this.i18n.restore_confirm ) ) {
+			if ( ! confirm( this.i18n.restore_confirm ) ) {
 				return;
 			}
 			this.$btnRestore.addClass( 'loading' );
@@ -344,6 +431,10 @@ function usof_utf8_encode( argString ) {
 		}
 
 	};
+
+	function onlyUnique( value, index, self ) {
+		return self.indexOf( value ) === index;
+	}
 
 	/**
 	 * USOF Field: Checkbox
@@ -371,18 +462,16 @@ function usof_utf8_encode( argString ) {
 	$usof.field[ 'check_table' ] = {
 
 		getValue: function() {
-			var value = [];
+			var value = {};
 			$.each( this.$input, function() {
-				if ( this.checked ) {
-					value.push( this.value );
-				}
+				value[ this.value ] = ( this.checked ) ? 1 : 0;
 			} );
 			return value;
 		},
 
 		setValue: function( value, quiet ) {
 			$.each( this.$input, function() {
-				$( this ).attr( 'checked', ( $.inArray( this.value, value ) != - 1 ) ? 'checked' : false );
+				$( this ).attr( 'checked', ( value[ this.value ] === undefined || value[ this.value ] == 1 ) ? 'checked' : false );
 			} );
 		}
 
@@ -394,48 +483,279 @@ function usof_utf8_encode( argString ) {
 	$usof.field[ 'color' ] = {
 
 		init: function( options ) {
+			// Elements
 			this.$color = this.$row.find( '.usof-color' );
-			this.$preview = this.$row.find( '.usof-color-preview' );
-			this.$clear = this.$row.find( '.usof-color-clear' );
-			this.withGradient = !!this.$color.is( '.with-gradient' );
+			this.$clear = $( '.usof-color-clear', this.$color );
+			this.$list = $( '.usof-color-list', this.$color );
+			this.$preview = $( '.usof-color-preview', this.$color );
+
+			// Variables
+			this.withGradient = !! this.$color.is( '.with-gradient' );
+			this.isDynamicСolors = !! this.$color.is( '.dynamic_colors' );
 
 			// Set white text color for dark backgrounds
-			if ( this.$input.val() !== 'inherit' && this.$input.val() !== 'transparent' && this.$input.val().indexOf( 'linear-gradient' ) === - 1 ) {
-				if ( $.usof_colpick.colorNameToHex( this.$input.val() ) ) {
-					this.invertInputColors( $.usof_colpick.hexToRgba( $.usof_colpick.colorNameToHex( this.$input.val() ) ) );
-				} else {
-					this.invertInputColors( $.usof_colpick.hexToRgba( this.$input.val() ) );
-				}
-			} else if ( this.$input.val().indexOf( 'linear-gradient' ) !== - 1 ) {
-				var gradient = $.usof_colpick.gradientParser( this.$input.val() );
-				// Make sure the gradient was parsed
-				if ( gradient != false ) {
-					this.invertInputColors( $.usof_colpick.hexToRgba( gradient.hex ) );
-				}
-			}
+			this._toggleInputColor( this.getColor() );
 
 			// Init colpick on focus
-			this.$input.off( 'focus' ).on( 'focus', function( ev ) {
-				this.$input.usof_colpick( {
-					input: this.$input,
-					value: this.$input.val(),
-					onChange: function( colors ) {
-						this.invertInputColors( colors.color.first.rgba );
-					}.bind( this ),
-				} );
-			}.bind( this ) );
+			this.$input
+				.off( 'focus' )
+				.on( 'focus', this._events.initColpick.bind( this ) )
+				.on( 'input', this._events.inputValue.bind( this ) )
+				.on( 'change', this._events.changeValue.bind( this ) );
 
-			this.$input.on( 'change', function() {
-				this.setValue( this.$input.val() );
-			}.bind( this ) );
+			this.$clear
+				.on( 'click', this._events.inputClear.bind( this ) );
 
-			this.$clear.on( 'click', function() {
-				this.setValue( '' );
-			}.bind( this ) );
+			// Init of a sheet of dynamic colors on click
+			if ( this.isDynamicСolors ) {
+				this.$color
+					.on( 'click' , '.usof-color-arrow', this._events.toggleList.bind( this ) )
+					.on( 'click', '.usof-color-list-item', this._events.selectedListItem.bind( this ) );
+			}
+
+			// If the sheet is open and there was a click outside the sheet, then close the sheet
+			$( document )
+				.mouseup( this._events.hideList.bind( this ) );
 		},
+		_events: {
+			/**
+			 * Init colpick
+			 * @return void
+			 */
+			initColpick: function () {
+				this.$input
+					.usof_colpick( {
+						input: this.$input,
+						value: this.getColor(),
+						onChange: function( colors ) {
+							this._invertInputColors( colors.color.first.rgba );
+						}.bind( this ),
+					} );
+			},
+			/**
+			 * Init of a sheet of dynamic variables
+			 * @param void
+			 */
+			toggleList: function( e ) {
+				if ( ! this.$color.is( '[data-loaded]' ) ) {
+					this._ajax.call( this, e.currentTarget, function() {
+						this.$color.toggleClass( 'show' );
+					} );
+				} else {
+					this.$color.toggleClass( 'show' );
+				}
+			},
+			/**
+			 * Selected list item
+			 * @param {EventObject} e
+			 * @return void
+			 */
+			selectedListItem: function ( e ) {
+				var $target = $( e.currentTarget ),
+					value = $target.data( 'value' ) || '';
+
+				this.$list
+					.find( '[data-name]' )
+					.removeClass( 'selected' );
+				$target
+					.addClass( 'selected' );
+				this.$preview
+					.css( 'background', value );
+				this.$input
+					.val( $target.data( 'name' ) || '' );
+
+				this.trigger( 'change', this.$input.val() );
+
+				// Set white text color for dark backgrounds
+				this._toggleInputColor( value );
+
+				this.$color
+					.removeClass( 'show' );
+			},
+			/**
+			 * Hides the list.
+			 * @param {EventObject} e
+			 * @return void
+			 */
+			hideList: function( e ) {
+				if ( ! this.$color.is( '.show' ) ) {
+					return;
+				}
+				if ( ! this.$color.is( e.target ) && this.$color.has( e.target ).length === 0 ) {
+					this.$color.removeClass( 'show' );
+				}
+			},
+			/**
+			 * Input value
+			 * @return value
+			 */
+			inputValue: function() {
+				var value = this.getValue();
+				// Preloading the list of variables if the value contains brackets
+				if ( value.indexOf( '_' ) !== -1 ) {
+					this._ajax( $( '.usof-color-arrow:first', this.$color ) );
+				}
+			},
+			/**
+			 * Changed value
+			 * @return void
+			 */
+			changeValue: function() {
+				var value = this.getValue();
+				// Check the value for dynamic variables
+				if ( value.indexOf( '_' ) !== -1 ) {
+					$( '[data-name^="'+ value +'"]:first', this.$list )
+						.trigger( 'click' );
+				} else {
+					this.setValue( value );
+					this.trigger( 'change', value );
+				}
+			},
+			/**
+			 * Clear value
+			 * @return void
+			 */
+			inputClear: function () {
+				if ( this.$color.hasClass( 'show' ) ) {
+					this.$color.removeClass( 'show' );
+				}
+				this.setValue( '' );
+			}
+		},
+		/**
+		 * AJAX Load data
+		 * @param {jQueryElement} $loadedEl
+		 * @param {Function} callback
+		 * @return void
+		 */
+		_ajax: function( $loadedEl, callback ) {
+			if ( ! this.$color.is( '[data-loaded]' ) ) {
+				var $loadedEl = $( $loadedEl ),
+					data = {
+						action: this.$color.data( 'action' ),
+						_nonce: this.$color.data( 'nonce' )
+					},
+					/**
+					 * Add item to list
+					 *
+					 * @param jQueryElement $el
+					 * @param object item
+					 * @return void
+					 */
+					insertItem = function( $el, item ) {
+						// Exclude yourself
+						if ( this.name === item.name ) {
+							return;
+						}
+						var $item = $( '<div></div>' ),
+							$palette = $( '<div class="usof-colpick-palette-value"><span></span></div>' ),
+							value = this.getValue();
+						$palette
+							.find( 'span' )
+							.css( 'background', item.value )
+							.attr( 'title', item.value )
+						$item
+							.addClass( 'usof-color-list-item' )
+							.attr( 'data-name', item.name )
+							.data( 'value', item.value )
+							.append( $palette)
+							.append( '<span class="usof-color-list-item-name">'+ item.title +'</span>' );
+						if ( value.indexOf( '_' ) !== -1 && item.name === value) {
+							$item.addClass( 'selected' );
+						}
+						$el.append( $item );
+					},
+					/**
+					 * $param {Object} _
+					 * @param {Object} res
+					 * @return void
+					 */
+					_ajaxSuccess = function( _, res ) {
+						$loadedEl
+							.removeClass( 'loaded' );
+						this.$color
+							.attr( 'data-loaded','true' );
+						if ( ! res.success ) {
+							// TODO: Show error message
+							console.error( res.data.message );
+							return;
+						}
+						$.each( res.data.list || [], function( key, item ) {
+							// Group options
+							if ( $.isArray( item ) && item.length ) {
+								$group = $( '> [data-group="'+ key +'"]:first', this.$list );
+								if ( ! $group.length ) {
+									$group = $( '<div class="usof-color-list-group" data-group="'+ key +'"></div>' );
+									this.$list.append( $group );
+								}
+								$.each( item, function( _, _item ) {
+									insertItem.call( this, $group, _item );
+								}.bind( this ) );
+								// Options
+							} else {
+								insertItem.call( this, this.$list, item );
+							}
+						}.bind( this ) );
+
+						if ( $.isFunction( callback ) ) {
+							callback.call( this, res.data );
+						}
+					}.bind( this );
+
+				$loadedEl
+					.addClass( 'loaded' );
+				// Clear list
+				this.$list
+					.html();
+
+				// If the cache is not empty then we will get data from there
+				if ( $usof.cache.has( 'field.colors' ) ) {
+					_ajaxSuccess.call( this, null, $usof.cache.get( 'field.colors' ) );
+					return;
+				}
+
+				var hasQueues = $usof.ajaxQueues.has( 'field.colors' );
+				$usof.ajaxQueues
+					.on( 'field.colors', _ajaxSuccess.bind( this ) );
+				if ( hasQueues ) {
+					return;
+				}
+
+				// AJAX loading dynamic colors
+				$.post( ajaxurl, data, function( res )  {
+					$usof.cache.set( 'field.colors', res );
+					$usof.ajaxQueues
+						.trigger( 'field.colors', res )
+						.off( 'field.colors' );
+				}, 'json' );
+			}
+		},
+		/**
+		 * Set the value.
+		 * @param {string} value
+		 * @param {boolean} quiet
+		 * @return void
+		 */
 		setValue: function( value, quiet ) {
-			var r, g, b, a, hexR, hexG, hexB, gradient, rgba = {};
 			value = value.trim();
+
+			// Check the value for dynamic variables
+			if ( value.indexOf( '_' ) !== -1 ) {
+				var selectedItem = function( value ) {
+					$( '[data-name^="'+ value +'"]:first', this.$list )
+						.trigger( 'click' );
+				}.bind( this );
+				if ( ! this.$color.is( '[data-loaded]' ) ) {
+					this._ajax( $( '.usof-color-arrow:first', this.$color ), function() {
+						selectedItem( value );
+					} );
+				} else {
+					selectedItem( value );
+				}
+				return;
+			}
+
+			var r, g, b, a, hexR, hexG, hexB, gradient, rgba = {};
 
 			this.convertRgbToHex = function( color ) {
 				if ( m = /^([^0-9]{1,3})*(\d{1,3})[^,]*,([^0-9]{1,3})*(\d{1,3})[^,]*,([^0-9]{1,3})*(\d{1,3})[\s\S]*$/.exec( color ) ) {
@@ -490,7 +810,6 @@ function usof_utf8_encode( argString ) {
 				}
 			}
 
-
 			if ( value == '' ) {
 				this.$preview.removeAttr( 'style' );
 				this.$input.removeClass( 'with_alpha' );
@@ -517,13 +836,64 @@ function usof_utf8_encode( argString ) {
 			if ( value == '' || value == 'inherit' || value == 'transparent' ) {
 				this.$input.removeClass( 'white' );
 			} else {
-				this.invertInputColors( rgba );
+				this._invertInputColors( rgba );
 			}
 
 			this.parentSetValue( value, quiet );
 		},
-		invertInputColors: function( rgba ) {
-			if ( !rgba && ( typeof rgba != 'object' ) ) {
+		/**
+		 * Get the value.
+		 * @return string
+		 */
+		getValue: function() {
+			return $.trim( this.$input.val() ) || '';
+		},
+		/**
+		 * Get color, variables will be replaced with value
+		 * @return {string}
+		 */
+		getColor: function() {
+			var value = this.getValue();
+			if ( value.indexOf( '_' ) !== -1 ) {
+				var itemValue = $( '[data-name="'+ value +'"]:first', this.$list ).data( 'value' ) || '';
+				value = itemValue || this.$color.data( 'value' ) || value;
+			}
+			return $.trim( value );
+		},
+		/**
+		 * Set white text color for dark backgrounds
+		 *
+		 * @param {string} value
+		 */
+		_toggleInputColor: function( value ) {
+			if ( ! value ) {
+				this.$input.removeClass( 'white' );
+				return;
+			}
+			// If the HEX value is 3-digit, then convert it to 6-digit
+			if ( value.slice( 0, 1 ) === '#' && value.length === 4 ) {
+				value = value.replace( /^#([\dA-f])([\dA-f])([\dA-f])$/, "#$1$1$2$2$3$3" )
+			}
+			if (
+				value !== 'inherit'
+				&& value !== 'transparent'
+				&& value.indexOf( 'linear-gradient' ) === - 1
+			) {
+				if ( $.usof_colpick.colorNameToHex( value ) ) {
+					this._invertInputColors( $.usof_colpick.hexToRgba( $.usof_colpick.colorNameToHex( value ) ) );
+				} else {
+					this._invertInputColors( $.usof_colpick.hexToRgba( value ) );
+				}
+			} else if ( value.indexOf( 'linear-gradient' ) !== - 1 ) {
+				var gradient = $.usof_colpick.gradientParser( value );
+				// Make sure the gradient was parsed
+				if ( gradient != false ) {
+					this._invertInputColors( $.usof_colpick.hexToRgba( gradient.hex ) );
+				}
+			}
+		},
+		_invertInputColors: function( rgba ) {
+			if ( ! rgba && ( typeof rgba != 'object' ) ) {
 				return;
 			}
 			var r = rgba.r ? rgba.r : 0,
@@ -580,12 +950,12 @@ function usof_utf8_encode( argString ) {
 			}
 		},
 		setValue: function( value ) {
-			if ( !!this._params && this._params.hasOwnProperty( 'encoded' ) && this._params.encoded ) {
+			if ( !! this._params && this._params.hasOwnProperty( 'encoded' ) && this._params.encoded ) {
 				value = usof_rawurldecode( usof_base64_decode( value ) );
 			}
 			if ( this.editor !== undefined && wp.hasOwnProperty( 'codeEditor' ) ) {
 				this.editorDoc.off( 'change', this._events.editorChange.bind( this ) );
-				if ( !!this.pid ) {
+				if ( !! this.pid ) {
 					clearTimeout( this.pid );
 				}
 				this.pid = setTimeout( function() {
@@ -626,7 +996,7 @@ function usof_utf8_encode( argString ) {
 			this.$select.on( 'change', function() {
 				this.$row.attr( 'selected-value', this.$select.val() );
 
-				if ( !this.hintsJson.no_posts ) {
+				if ( ! this.hintsJson.no_posts ) {
 					if ( this.$select.val().length && this.$select.val().match( /\d+/ ) ) {
 						var hint = '';
 						if ( this.hintsJson.hasOwnProperty( 'edit_url' ) ) {
@@ -656,13 +1026,13 @@ function usof_utf8_encode( argString ) {
 			this.$weights = this.$weightsContainer.find( 'input' );
 			// Variables
 			this.fontStyleFields = this.$row.find( '.usof-font-style-fields-json' )[ 0 ].onclick() || {};
-			this.notLoadedFonts = {};
+			this.notLoadedFonts = [];
 			this.fontInited = false;
 			this.$fieldFontName = {};
 
 			// Init font autocomplete
 			var $autocomplete = $( '.type_autocomplete', this.$row );
-			this.fontsGroupKeys = $autocomplete[0].onclick() || {};
+			this.fontsGroupKeys = $autocomplete[ 0 ].onclick() || {};
 			$autocomplete.removeAttr( 'onclick' );
 
 			if ( $autocomplete.length ) {
@@ -672,14 +1042,8 @@ function usof_utf8_encode( argString ) {
 
 			this.curFont = this.$fieldFontName.getValue();
 			this.isCurFontUploaded = this.fontHasGroup.call( this, this.curFont, 'uploaded' );
-			if ( this.curFont && this.curFont !== 'get_h1' && this.curFont != 'none' && this.notLoadedFonts[ this.curFont ] == undefined ) {
-				$( 'head' ).append( '<link href="//fonts.googleapis.com/css?family=' + this.curFont.replace( /\s+/g, '+' ) + '" rel="stylesheet" class="usof_font_' + this.id + '" />' );
-				this.$preview.css( 'font-family', this.curFont + '' );
-			} else if ( this.curFont != 'none' && this.notLoadedFonts[ this.curFont ] != undefined ) {
-				this.$preview.css( 'font-family', this.curFont + '' );
-			}
 
-			if ( !$usof.loadingFonts ) {
+			if ( ! $usof.loadingFonts ) {
 				$usof.loadingFonts = true;
 				$.ajax( {
 					type: 'POST',
@@ -717,19 +1081,30 @@ function usof_utf8_encode( argString ) {
 			 * Initializes not loaded fonts.
 			 */
 			var initNotLoadedFonts = function() {
-				[ 'websafe', 'uploaded' ].map( function( groupName ) {
+				['websafe', 'uploaded'].map( function( groupName ) {
 					if ( this.fontsGroupKeys.hasOwnProperty( groupName ) ) {
-						$( '[data-group="'+ this.fontsGroupKeys[ groupName ] +'"] > *', this.fontsGroupKeys.$list )
+						$( '[data-group="' + this.fontsGroupKeys[ groupName ] + '"] > *', this.fontsGroupKeys.$list )
 							.each( function( _, item ) {
 								var value = $( item ).data( 'value' ) || '';
-								if ( value && !this.notLoadedFonts.hasOwnProperty( value ) ) {
-									this.notLoadedFonts[ value ] = value;
+								if ( value && $.inArray( value, this.notLoadedFonts || [] ) === -1 ) {
+									this.notLoadedFonts.push( value );
 								}
 							}.bind( this ) );
 					}
 				}.bind( this ) );
 			};
 			initNotLoadedFonts.call( this );
+
+			if (
+				this.curFont
+				&& $.inArray( this.curFont, [ 'get_h1', 'none' ] ) === -1
+				&& $.inArray( this.curFont, this.notLoadedFonts || [] ) === -1
+			) {
+				$( 'head' ).append( '<link href="//fonts.googleapis.com/css?family=' + this.curFont.replace( /\s+/g, '+' ) + '" rel="stylesheet" class="usof_font_' + this.id + '" />' );
+				this.$preview.css( 'font-family', this.curFont + '' );
+			} else if ( this.curFont != 'none' && $.inArray( this.curFont, this.notLoadedFonts || [] ) !== -1 ) {
+				this.$preview.css( 'font-family', this.curFont + '' );
+			}
 
 			this.$fieldFontName
 				.on( 'change', function() {
@@ -795,10 +1170,10 @@ function usof_utf8_encode( argString ) {
 		 * @return boolean
 		 */
 		fontHasGroup: function( fontName, groupKey ) {
-			var $item = this.$fieldFontName.$list.find( '[data-value="'+ fontName +'"]' ),
+			var $item = this.$fieldFontName.$list.find( '[data-value="' + fontName + '"]' ),
 				$group = $item.closest( '.usof-autocomplete-list-group' );
 			if ( $group.length && this.fontsGroupKeys.hasOwnProperty( groupKey ) ) {
-				return $group.is( '[data-group="'+ this.fontsGroupKeys[ groupKey ] +'"]' );
+				return $group.is( '[data-group="' + this.fontsGroupKeys[ groupKey ] + '"]' );
 			}
 			return false;
 		},
@@ -820,14 +1195,14 @@ function usof_utf8_encode( argString ) {
 				if ( fontName == 'none' ) {
 					// Selected no-font
 					this.$preview.css( 'font-family', '' );
-				} else if ( this.notLoadedFonts[ fontName ] != undefined ) {
+				} else if ( $.inArray( fontName, this.notLoadedFonts || [] ) !== -1 ) {
 					// Web-safe font combination and uploaded fonts
 					this.$preview.css( 'font-family', fontName );
 				} else {
 					// Selected some google font: show preview
 					if ( this.curFont !== 'get_h1' ) {
 						$( 'head' )
-							.append( '<link href="//fonts.googleapis.com/css?family='+ fontName.replace( /\s+/g, '+' ) +'" rel="stylesheet" class="usof_font_' + this.id +'" />' );
+							.append( '<link href="//fonts.googleapis.com/css?family=' + fontName.replace( /\s+/g, '+' ) + '" rel="stylesheet" class="usof_font_' + this.id + '" />' );
 					}
 					this.$preview.css( 'font-family', fontName + ', sans-serif' );
 				}
@@ -898,6 +1273,7 @@ function usof_utf8_encode( argString ) {
 		 */
 		init: function() {
 			// Variables
+			this.disableScrollLoad = false;
 			// Prefix for get params
 			this._prefix = 'params:';
 			// Delay for search requests
@@ -915,6 +1291,7 @@ function usof_utf8_encode( argString ) {
 					_nonce: ''
 				},
 				multiple: false,
+				sortable: false,
 				params_separator: ','
 			};
 
@@ -923,7 +1300,6 @@ function usof_utf8_encode( argString ) {
 			this.$toggle = $( '.usof-autocomplete-toggle', this.$container );
 			this.$options = $( '.usof-autocomplete-options', this.$container );
 			this.$search = $( 'input[type="text"]', this.$options );
-			this.$removeAll = $( '.usof-autocomplete-remove-all', this.$options );
 			this.$list = $( '.usof-autocomplete-list', this.$container );
 			this.$message = $( '.usof-autocomplete-message', this.$container );
 			this.$value = $( '> .usof-autocomplete-value', this.$container );
@@ -940,9 +1316,6 @@ function usof_utf8_encode( argString ) {
 			}.bind( this ) );
 
 			// Events
-			this.$options
-				.on( 'click', '.usof-autocomplete-selected-remove', this._events.remove.bind( this ) )
-				.on( 'click', '.usof-autocomplete-remove-all', this._events.removeAll.bind( this ) );
 			if ( !this._settings.multiple ) {
 				this.$options
 					.on( 'click', '.usof-autocomplete-selected', function() {
@@ -960,6 +1333,10 @@ function usof_utf8_encode( argString ) {
 							}.bind( this ), 0 );
 						}
 					}.bind( this ) );
+			} else {
+				// For multiple
+				this.$options
+					.on( 'click', '.usof-autocomplete-selected-remove', this._events.remove.bind( this ) );
 			}
 			this.$list.off()
 				.on( 'mousedown', '[data-value]', this._events.selected.bind( this ) )
@@ -972,6 +1349,16 @@ function usof_utf8_encode( argString ) {
 			this._initValues.call( this );
 			this.$container
 				.toggleClass( 'multiple', this._settings.multiple );
+
+			if ( this._settings.multiple && this._settings.sortable ) {
+				// Init Drag and Drop plugin
+				this.dragdrop = new $usof.dragDrop( this.$options, {
+					itemSelector: '> .usof-autocomplete-selected'
+				} )
+				// Watch events
+				this.dragdrop
+					.on( 'dragend', this._events.dragdrop.dragend.bind( this ) );
+			}
 		},
 		/**
 		 * State loaded
@@ -981,6 +1368,31 @@ function usof_utf8_encode( argString ) {
 		 * Handlers
 		 */
 		_events: {
+			// Drag and Drop Handlers
+			dragdrop: {
+				/**
+				 * Set the value in the desired order.
+				 * @param object target $usof.dragDrop
+				 * @param object e jQueryEvent
+				 * @return void
+				 */
+				dragend: function( target, e ) {
+					var value = [],
+						items = $( '> .usof-autocomplete-selected', target.$container ).toArray() || [],
+						field = $( target.$container ).closest( '.type_autocomplete' ).data( 'usofField' );
+					for ( var k in items ) {
+						if ( items[ k ].hasAttribute( 'data-key' ) ) {
+							value.push( items[ k ].getAttribute( 'data-key' ) );
+						}
+					}
+					value = value.length
+						? value.join( field._settings.params_separator )
+						: '';
+					if ( field instanceof $usof.field ) {
+						field.setValue( value );
+					}
+				}
+			},
 			/**
 			 * Remove selected
 			 * @param object e jQueryEvent
@@ -994,19 +1406,6 @@ function usof_utf8_encode( argString ) {
 				this._removeValue.call( this, key );
 				$( '[data-value="' + key + '"]', this.$list ).removeClass( 'selected' );
 				$selected.remove();
-				this.$removeAll
-					.toggleClass( 'show', !!this.$value.val() );
-			},
-			/**
-			 * Delete all selected options
-			 * @param object e jQueryEvent
-			 * @return void
-			 */
-			removeAll: function( e ) {
-				e.preventDefault();
-				$( '.usof-autocomplete-selected-remove', this.$options )
-					.removeClass( 'show' )
-					.trigger( 'click' );
 			},
 			/**
 			 * Delayed search to avoid premature queries
@@ -1060,6 +1459,9 @@ function usof_utf8_encode( argString ) {
 				// Filter by search text
 				filter.call( this, $items );
 
+				// Enable scrolling data loading
+				this.disableScrollLoad = false;
+
 				// Search preload
 				this._ajax.call( this, function( items ) {
 					// Filter by search text
@@ -1098,8 +1500,6 @@ function usof_utf8_encode( argString ) {
 						.val( '' )
 						.before( this._getSelectedTemplate.call( this, selectedValue ) );
 				}
-				this.$removeAll
-					.toggleClass( 'show', !!this.$value.val() );
 			},
 			/**
 			 * When scrolling a sheet, load the parameters
@@ -1108,8 +1508,16 @@ function usof_utf8_encode( argString ) {
 			 */
 			scroll: function( e ) {
 				var $target = $( e.currentTarget );
-				if ( !this.loaded && ( $target.scrollTop() + $target.height()  ) >= e.currentTarget.scrollHeight -1 ) {
-					this._ajax.call( this );
+				if (
+					!this.disableScrollLoad
+					&& !this.loaded
+					&& ( $target.scrollTop() + $target.height()  ) >= e.currentTarget.scrollHeight -1
+				) {
+					this._ajax.call( this, function( items ) {
+						if ( $.isEmptyObject( items ) ) {
+							this.disableScrollLoad = true;
+						}
+					}.bind( this ) );
 				}
 			},
 			/**
@@ -1171,15 +1579,27 @@ function usof_utf8_encode( argString ) {
 				return callback.call( this, {} );
 			}
 
-			this.loaded = true;
-			this.$container.addClass( 'loaded' );
-			this._clearMessage.call( this );
-
 			// Request data
 			var data = $.extend( query_args || {}, {
 				offset: $( '[data-value]:visible', this.$list ).length,
 				search: $.trim( this.$search.val() ),
 			});
+
+			// Checking the last offset, it cannot be repeated repeating say that all data is loaded
+			if ( this._offset && this._offset === data.offset ) {
+				return;
+			}
+
+			this.loaded = true;
+			this.$container.addClass( 'loaded' );
+			this._clearMessage.call( this );
+
+			this._offset = data.offset;
+
+			// If the value is then add 1 to take into account the zero element of the array
+			if ( data.offset ) {
+				data.offset += 1;
+			}
 
 			/**
 			 * Add option to sheet
@@ -1192,13 +1612,9 @@ function usof_utf8_encode( argString ) {
 			var insertItem = function( $el, name, value ) {
 				if ( !this.items.hasOwnProperty( value )  ) {
 					var text = ( name || '' ).replace( /\s/, '' ).toLowerCase(),
-						$item = $( '<div data-value="'+ value +'" data-text="'+ text +'" tabindex="3">'+ name +'</div>' );
+						$item = $( '<div data-value="'+ usof_strip_tags( value ) +'" data-text="'+ usof_strip_tags( text ) +'" tabindex="3">'+ name +'</div>' );
 					$el.append( $item );
 					this.items[ value ] = $item;
-					var $sortedItems = $el.find( '> [data-text]' ).sort( function( a, b ) {
-						return ( a.getAttribute( 'data-text' ).toUpperCase() < b.getAttribute( 'data-text' ).toUpperCase() ) ? -1 : 1;
-					} );
-					$el.html( $sortedItems );
 				}
 			};
 
@@ -1247,9 +1663,6 @@ function usof_utf8_encode( argString ) {
 			var loadParams = [],
 				initValues = ( this.$value.val() || '' ).split( this._settings.params_separator ) || [];
 
-			if ( initValues.length ) {
-				this.$removeAll.addClass( 'show' );
-			}
 			// Remove selecteds
 			$( '.usof-autocomplete-selected', this.$options ).remove();
 
@@ -1271,26 +1684,21 @@ function usof_utf8_encode( argString ) {
 			// Loading and selection of parameters which are not in the list but must be displayed
 			if ( loadParams.length ) {
 				this.$search.val( this._prefix + loadParams.join( this._settings.params_separator ) );
-				/**
-				 * Select loaded options
-				 *
-				 * @param string key The key
-				 * @return void
-				 */
-				var selectedLoadParams = function( key ) {
-					$( '[data-value="' + key + '"]:first', this.$list ).addClass( 'selected' );
-					this.$search.before( this._getSelectedTemplate.call( this, key ) );
-				};
 				this._ajax.call( this, function( items ) {
-					$.each( items, function( key, name ) {
-						if ( $.isPlainObject( name ) ) {
-							$.each( name, function( _key ) {
-								selectedLoadParams.call( this, _key );
-							}.bind( this ) );
-						} else {
-							selectedLoadParams.call( this, key );
+					// Reset previously selected parameters to guarantee the desired order.
+					$( '[data-key]', this.$options ).remove();
+					$( '.selected', this.$list ).removeClass( 'selected' );
+
+					// Selecting parameters by an array of identifiers, this guarantees the desired order
+					$( initValues ).each( function( _, key ) {
+						if ( this.items.hasOwnProperty( key ) && this.items[ key ] instanceof $ ) {
+							this.items[ key ]
+								.addClass( 'selected' );
+							this.$search
+								.before( this._getSelectedTemplate.call( this, key ) );
 						}
-					}.bind( this ) )
+					}.bind( this ) );
+
 				}.bind( this ) );
 				this.$search.val( '' );
 			}
@@ -1352,7 +1760,7 @@ function usof_utf8_encode( argString ) {
 		 */
 		_removeValue: function( key ) {
 			var values = ( this.$value.val() || '' ).toLowerCase().split( this._settings.params_separator ),
-				index = values.indexOf( key );
+				index = values.indexOf( '' + key );
 			if ( index !== - 1 ) {
 				delete values[ index ];
 				// Reset indexes
@@ -1374,7 +1782,7 @@ function usof_utf8_encode( argString ) {
 				return '';
 			}
 			return '<span class="usof-autocomplete-selected" data-key="' + key + '">\
-				' + $selected.text() + ' <a href="javascript:void(0)" title="Remove" class="usof-autocomplete-selected-remove"></a>\
+				' + $selected.html() + ' <a href="javascript:void(0)" title="Remove" class="usof-autocomplete-selected-remove fas fa-trash-alt"></a>\
 			</span>';
 		},
 		/**
@@ -1450,7 +1858,7 @@ function usof_utf8_encode( argString ) {
 		},
 
 		getValue: function() {
-			if ( !this.inited ) {
+			if ( ! this.inited ) {
 				return {};
 			}
 			return {
@@ -1460,7 +1868,7 @@ function usof_utf8_encode( argString ) {
 		},
 
 		setValue: function( value, quiet ) {
-			if ( !this.inited ) {
+			if ( ! this.inited ) {
 				return;
 			}
 			if ( typeof value != 'object' || value.url === undefined ) {
@@ -1486,7 +1894,7 @@ function usof_utf8_encode( argString ) {
 		},
 
 		reset: function() {
-			if ( !confirm( this.i18n.reset_confirm ) ) {
+			if ( ! confirm( this.i18n.reset_confirm ) ) {
 				return;
 			}
 			clearTimeout( this.resetStateTimer );
@@ -1654,7 +2062,7 @@ function usof_utf8_encode( argString ) {
 					data,
 					value = this.$textfield.val();
 				// Do nothing if unit wasn't selected
-				if ( !$target.length ) {
+				if ( ! $target.length ) {
 					return;
 				}
 
@@ -1667,6 +2075,14 @@ function usof_utf8_encode( argString ) {
 				this.$textfield.val( value + data.unit );
 			}.bind( this ) );
 
+			/**
+			 * Mouse and trackpad scroll events
+			 */
+			this._mouseScrollEvents = [ 'wheel', 'mousewheel', 'DOMMouseScroll' ];
+
+			/**
+			 * Event handlers
+			 */
 			this._events = {
 				dragstart: function( e ) {
 					e.stopPropagation();
@@ -1704,18 +2120,17 @@ function usof_utf8_encode( argString ) {
 					this.setValue( draggedValue );
 				}.bind( this ),
 				mousewheel: function( e ) {
-					e.preventDefault();
+					e.preventDefault
+						? e.preventDefault()
+						: ( e.returnValue = false );
 					e.stopPropagation();
-					if ( !this.isFocused ) {
+					if ( ! this.isFocused ) {
 						return false;
 					}
-					var direction;
-					if ( e.type == 'mousewheel' ) {
-						direction = e.originalEvent.wheelDelta;
-					} else if ( e.type == 'DOMMouseScroll' ) {
-						direction = - e.originalEvent.detail;
-					}
-					if ( direction > 0 ) {
+					// wheelDelta doesn't let you know the number of pixels
+					var direction = e.deltaY || e.detail || e.wheelDelta;
+
+					if ( direction < 0 ) {
 						var value = Math.min( this.max, parseFloat( this.getValue() ) + this.step );
 					} else {
 						var value = Math.max( this.min, parseFloat( this.getValue() ) - this.step );
@@ -1724,13 +2139,20 @@ function usof_utf8_encode( argString ) {
 					if ( $.isNumeric( value ) ) {
 						value = this.getDecimal( value );
 					}
+
 					this.setValue( value );
 				}.bind( this ),
 				mouseenter: function( e ) {
-					this.$window.on( 'mousewheel DOMMouseScroll', this._events.mousewheel );
+					// https://developers.google.com/web/updates/2017/01/scrolling-intervention
+					$.each( this._mouseScrollEvents, function( _, eventName ) {
+						this.$window[0].addEventListener( eventName, this._events.mousewheel, { passive: false } );
+					}.bind( this ) );
 				}.bind( this ),
 				mouseleave: function( e ) {
-					this.$window.off( 'mousewheel DOMMouseScroll', this._events.mousewheel );
+					// https://developers.google.com/web/updates/2017/01/scrolling-intervention
+					$.each( this._mouseScrollEvents, function( _, eventName ) {
+						this.$window[0].removeEventListener( eventName, this._events.mousewheel );
+					}.bind( this ) );
 				}.bind( this )
 			};
 
@@ -1745,12 +2167,12 @@ function usof_utf8_encode( argString ) {
 					value = parseFloat( rawValue.replace( '[^0-9.]+', '' ) );
 				this.isFocused = false;
 
-				if ( !$.isNumeric( rawValue ) ) {
+				if ( ! $.isNumeric( rawValue ) ) {
 					var pattern = new RegExp( '^(-?\\d+)(\\.)?(\\d+)?(' + this.unitsExpression + ')?$' ),
 						matches = this.$textfield.val().match( pattern );
 					if ( matches && matches[ 4 ] ) {
-						for ( var i = 0 in this.unitsOptions ) {
-							if ( !this.unitsOptions.hasOwnProperty( i ) ) {
+						for ( var i in this.unitsOptions ) {
+							if ( ! this.unitsOptions.hasOwnProperty( i ) ) {
 								continue;
 							}
 
@@ -1768,7 +2190,7 @@ function usof_utf8_encode( argString ) {
 					this.min = this.defaultUnit.min;
 					this.step = this.defaultUnit.step;
 				}
-				if ( !this.unit ) {
+				if ( ! this.unit ) {
 					this.unit = this.defaultUnit.unit;
 				}
 				if ( ( value || parseFloat( value ) === 0 ) && value != this.oldTextFieldValue ) {
@@ -1795,7 +2217,7 @@ function usof_utf8_encode( argString ) {
 			return value;
 		},
 		renderValue: function( value ) {
-			if ( !$.isNumeric( value ) ) {
+			if ( ! $.isNumeric( value ) ) {
 				value = parseFloat( value.replace( '[^0-9.]+', '' ) );
 			}
 			var x = Math.max( 0, Math.min( 1, ( value - this.min ) / ( this.max - this.min ) ) );
@@ -1846,7 +2268,7 @@ function usof_utf8_encode( argString ) {
 			if ( typeof value == 'string' ) {
 				value = ( value == 'true' || value == 'True' || value == 'TRUE' || value == '1' );
 			} else if ( typeof value != 'boolean' ) {
-				value = !!parseInt( value );
+				value = !! parseInt( value );
 			}
 			this.$input.filter( '[type="checkbox"]' ).prop( 'checked', value );
 		}
@@ -1978,7 +2400,7 @@ function usof_utf8_encode( argString ) {
 			this.initSchemes( true );
 		},
 		setSchemeButtonStates: function( action ) {
-			if ( !this.$schemesContainer ) {
+			if ( ! this.$schemesContainer ) {
 				return;
 			}
 			if ( this.$nameInput.val().length ) {
@@ -2047,7 +2469,7 @@ function usof_utf8_encode( argString ) {
 
 				$item.on( 'click', function() {
 					if ( window.$usof !== undefined && $usof.instance !== undefined ) {
-						if ( ( !isCustom && this.schemes[ schemeId ] === undefined ) || ( isCustom && this.customSchemes[ schemeId ] === undefined ) || ( !isCustom && this.schemes[ schemeId ].values === undefined ) || ( isCustom && this.customSchemes[ schemeId ].values === undefined ) ) {
+						if ( ( ! isCustom && this.schemes[ schemeId ] === undefined ) || ( isCustom && this.customSchemes[ schemeId ] === undefined ) || ( ! isCustom && this.schemes[ schemeId ].values === undefined ) || ( isCustom && this.customSchemes[ schemeId ].values === undefined ) ) {
 							return;
 						}
 						this.setSchemeButtonStates();
@@ -2089,7 +2511,7 @@ function usof_utf8_encode( argString ) {
 				$target = $( event.target ),
 				$savingScheme = $target.closest( '.usof-schemes-item' ),
 				$button = $( event.target.closest( 'button' ) );
-			if ( !$button.length ) {
+			if ( ! $button.length ) {
 				if ( $savingScheme.hasClass( 'type_custom' ) ) {
 					scheme.name = $savingScheme.find( '.preview_heading' ).html();
 					scheme.id = $savingScheme.data( 'id' );
@@ -2120,7 +2542,7 @@ function usof_utf8_encode( argString ) {
 		},
 		deleteScheme: function( schemeId, event ) {
 			event.stopPropagation();
-			if ( !confirm( this.i18n.delete_confirm ) ) {
+			if ( ! confirm( this.i18n.delete_confirm ) ) {
 				return false;
 			}
 			var $target = $( event.target );
@@ -2196,7 +2618,7 @@ function usof_utf8_encode( argString ) {
 				}
 			} else {
 				var files;
-				if ( !this.isMultiple ) {
+				if ( ! this.isMultiple ) {
 					files = [value];
 				} else {
 					files = value;
@@ -2345,7 +2767,9 @@ function usof_utf8_encode( argString ) {
 
 			// State grouping
 			this.states.map( function( deviceType ) {
-				this.groupParams[ deviceType ] = new $usof.GroupParams( $( '[data-device-type-content="' + deviceType + '"]', this.$container ) );
+				this.groupParams[ deviceType ] = new $usof.GroupParams(
+					$( '[data-device-type-content="' + deviceType + '"]', this.$container )
+				);
 			}.bind( this ) );
 
 			$.each( this.groupParams, function( deviceType, groupParams ) {
@@ -2357,16 +2781,16 @@ function usof_utf8_encode( argString ) {
 						var groupKey = $group.data( 'accordion-content' );
 
 						// Save groups
-						if ( !this.defaultGroupValues.hasOwnProperty( groupKey ) ) {
+						if ( ! this.defaultGroupValues.hasOwnProperty( groupKey ) ) {
 							this.defaultGroupValues[ groupKey ] = {};
 						}
-						if ( !this.defaultGroupValues[ groupKey ].hasOwnProperty( deviceType ) ) {
+						if ( ! this.defaultGroupValues[ groupKey ].hasOwnProperty( deviceType ) ) {
 							this.defaultGroupValues[ groupKey ][ deviceType ] = {};
 						}
 						this.defaultGroupValues[ groupKey ][ deviceType ][ fieldName ] = value;
 
 						// Save default value
-						if ( !this.defaultValues.hasOwnProperty( deviceType ) ) {
+						if ( ! this.defaultValues.hasOwnProperty( deviceType ) ) {
 							this.defaultValues[ deviceType ] = {};
 						}
 						this.defaultValues[ deviceType ][ fieldName ] = value;
@@ -2396,7 +2820,7 @@ function usof_utf8_encode( argString ) {
 
 			// Initializing parameters for shortcodes
 			var pid = setTimeout( function() {
-				if ( !this.inited ) {
+				if ( ! this.inited ) {
 					this.setValue( this.$input.val() );
 					// Check for changes in the parameter group
 					this.checkChangeValues.call( this );
@@ -2405,7 +2829,7 @@ function usof_utf8_encode( argString ) {
 			}.bind( this ), 1 );
 
 			// Hide/Show states panel
-			this.$container.find( '.us-bld-states' ).toggleClass( 'hidden', !this.extStates.length );
+			this.$container.find( '.us-bld-states' ).toggleClass( 'hidden', ! this.extStates.length );
 
 			// Watch events
 			this.$container
@@ -2428,7 +2852,7 @@ function usof_utf8_encode( argString ) {
 					$.each( groupValues, function( param, value ) {
 						var defaultValue = this.defaultValues[ deviceType ][ param ];
 						if ( value !== defaultValue ) {
-							if ( !resultValue.hasOwnProperty( deviceType ) ) {
+							if ( ! resultValue.hasOwnProperty( deviceType ) ) {
 								resultValue[ deviceType ] = {};
 							}
 							// Image URL support
@@ -2450,7 +2874,7 @@ function usof_utf8_encode( argString ) {
 				this.$input.val( resultValue );
 
 				// Check for changes in the parameter group
-				if ( !!this._debounce ) {
+				if ( !! this._debounce ) {
 					clearTimeout( this._debounce );
 				}
 				this._debounce = setTimeout( function() {
@@ -2481,7 +2905,7 @@ function usof_utf8_encode( argString ) {
 				}
 				$target
 					.toggleClass( 'fa-link', isUnlink )
-					.toggleClass( 'fa-unlink', !isUnlink );
+					.toggleClass( 'fa-unlink', ! isUnlink );
 				if ( relations.length ) {
 					relations.map( function( item ) {
 						item.$input.prop( 'disabled', isUnlink );
@@ -2546,10 +2970,10 @@ function usof_utf8_encode( argString ) {
 					groupKey = $header.data( 'accordion-id' ),
 					isEnaled = $header.hasClass( 'responsive' );
 
-				$header.toggleClass( 'responsive', !isEnaled );
+				$header.toggleClass( 'responsive', ! isEnaled );
 
 				if ( this.defaultGroupValues.hasOwnProperty( groupKey ) ) {
-					if ( !!isEnaled ) {
+					if ( !! isEnaled ) {
 						this.$container
 							.find( '[data-accordion-content="' + groupKey + '"] > .us-bld-states > [data-device-type="default"]' )
 							.trigger( 'click' );
@@ -2557,7 +2981,7 @@ function usof_utf8_encode( argString ) {
 					this.extStates.map( function( deviceType ) {
 						// Reset values for a group whose responsive support is enabled
 						var values = $.extend( {}, this.defaultGroupValues[ groupKey ][ deviceType ] || {} );
-						if ( !isEnaled ) {
+						if ( ! isEnaled ) {
 							// Set default values for current deviceType
 							$.each( values, function( prop ) {
 								if ( this.groupParams[ 'default' ].fields.hasOwnProperty( prop ) ) {
@@ -2569,7 +2993,7 @@ function usof_utf8_encode( argString ) {
 							this.groupParams[ deviceType ].setValues( values );
 						}
 						// Checking and duplicating wiretap related fields
-						if ( !isEnaled && this.groupParams.hasOwnProperty( deviceType ) ) {
+						if ( ! isEnaled && this.groupParams.hasOwnProperty( deviceType ) ) {
 							$.each( this.groupParams[ 'default' ].fields, function( _, field ) {
 								if ( field.hasOwnProperty( 'watchValue' ) ) {
 									$( '.fas', this.groupParams[ deviceType ].fields[ field.name ].$row )
@@ -2650,10 +3074,10 @@ function usof_utf8_encode( argString ) {
 					var groupName = field.$row
 						.closest( '[data-accordion-content]' )
 						.data( 'accordion-content' );
-					if ( !currentGroupValues.hasOwnProperty( groupName ) ) {
+					if ( ! currentGroupValues.hasOwnProperty( groupName ) ) {
 						currentGroupValues[ groupName ] = {};
 					}
-					if ( !currentGroupValues[ groupName ].hasOwnProperty( deviceType ) ) {
+					if ( ! currentGroupValues[ groupName ].hasOwnProperty( deviceType ) ) {
 						currentGroupValues[ groupName ][ deviceType ] = {};
 					}
 					currentGroupValues[ groupName ][ deviceType ][ field.name ] = field.getValue();
@@ -2662,7 +3086,7 @@ function usof_utf8_encode( argString ) {
 			$.each( this.defaultGroupValues, function( groupName, devices ) {
 				var change = false;
 				$.each( devices, function( deviceType, values ) {
-					if ( !currentGroupValues.hasOwnProperty( groupName ) || !currentGroupValues[ groupName ].hasOwnProperty( deviceType ) ) {
+					if ( ! currentGroupValues.hasOwnProperty( groupName ) || ! currentGroupValues[ groupName ].hasOwnProperty( deviceType ) ) {
 						return;
 					}
 					change = ( change || JSON.stringify( values ) !== JSON.stringify( currentGroupValues[ groupName ][ deviceType ] ) );
@@ -2703,7 +3127,7 @@ function usof_utf8_encode( argString ) {
 				// Set values and check link
 				$.each( this.groupParams, function( deviceType, groupParams ) {
 					// Reset values
-					if ( !this.isWPBakery ) {
+					if ( ! this.isWPBakery ) {
 						groupParams.setValues( this.defaultValues[ deviceType ] || {}, true );
 					}
 					var values = savedValues[ deviceType ] || {},
@@ -2750,7 +3174,7 @@ function usof_utf8_encode( argString ) {
 					$.each( this.defaultGroupValues, function( groupKey, devices ) {
 						var isEnable = false;
 						$.each( devices[ deviceType ], function( prop ) {
-							if ( !responsiveGroups[ groupKey ] ) {
+							if ( ! responsiveGroups[ groupKey ] ) {
 								responsiveGroups[ groupKey ] = values.hasOwnProperty( prop );
 							}
 						} );
@@ -2775,7 +3199,7 @@ function usof_utf8_encode( argString ) {
 			this.$input.val( this.isWPBakery ? value : escape( JSON.stringify( value ) ) );
 
 			// Hide all sections of the accordion
-			if ( !this.$input.hasClass( 'wpb_vc_param_value' ) ) {
+			if ( ! this.$input.hasClass( 'wpb_vc_param_value' ) ) {
 				this.$container.find( '> div' ).removeClass( 'active' );
 			}
 
@@ -2804,8 +3228,6 @@ function usof_utf8_encode( argString ) {
 		init: function( elm, options ) {
 			this.$field = $( elm );
 			this.$btnAddGroup = this.$field.find( '.usof-form-group-add' );
-			this.$btnDelGroup = this.$field.find( '.usof-control-delete' );
-			this.$btnDuplicateGroup = this.$field.find( '.usof-control-duplicate' );
 			this.$groupPrototype = this.$field.find( '.usof-form-group-prototype' );
 			this.groupName = this.$field.data( 'name' );
 			this.isBuilder = ( this.$field.parents( '.us-bld-window' ).length ) ? true : false;
@@ -2824,16 +3246,16 @@ function usof_utf8_encode( argString ) {
 				this.$parentSection = this.$field.closest( '.usof-section' );
 				this.$field.find( '.usof-form-group-item' ).each( function( i, groupParams ) {
 					var $groupParams = $( groupParams );
-					if ( !$groupParams.parent().hasClass( 'usof-form-group-prototype' ) ) {
+					if ( ! $groupParams.parent().hasClass( 'usof-form-group-prototype' ) ) {
 						this.groupParams.push( new $usof.GroupParams( $groupParams ) );
 					}
 				}.bind( this ) );
 			}
 
 			this.$btnAddGroup.on( 'click', this.addGroup.bind( this, undefined ) );
-			this.$btnDuplicateGroup.live( 'click', this.duplicateGroup.bind( this ) );
+			this.$field.on( 'click', '.usof-control-duplicate', this.duplicateGroup.bind( this ) );
 
-			this.$btnDelGroup.live( 'click', function( event ) { // TODO: check whether adding event for each button is leaner
+			this.$field.on( 'click', '.usof-control-delete', function( event ) {
 				event.stopPropagation();
 				var $btn = $( event.target ),
 					$group = $btn.closest( '.usof-form-group-item' );
@@ -2843,8 +3265,7 @@ function usof_utf8_encode( argString ) {
 			if ( this.isAccordion ) {
 
 				this.$sections = this.$field.find( '.usof-form-group-item' );
-				this.$sectionTitles = this.$field.find( '.usof-form-group-item-title' );
-				this.$sectionTitles.live( 'click', function( event ) {
+				this.$field.on( 'click', '.usof-form-group-item-title', function( event ) {
 					this.$sections = this.$field.find( '.usof-form-group-item' );
 					var $parentSection = $( event.target ).closest( '.usof-form-group-item' );
 					if ( $parentSection.hasClass( 'active' ) ) {
@@ -2863,11 +3284,9 @@ function usof_utf8_encode( argString ) {
 				this.$body = $( document.body );
 				this.$window = $( window );
 
-				this.$dragControls = this.$field.find( '.usof-control-move' );
-
 				this.$dragshadow = $( '<div class="us-bld-editor-dragshadow"></div>' );
 
-				this.$dragControls.live( 'mousedown', this._dragStart.bind( this ) );
+				this.$field.on( 'mousedown', '.usof-control-move', this._dragStart.bind( this ) );
 
 				this._events = {
 					_maybeDragMove: this._maybeDragMove.bind( this ),
@@ -2880,11 +3299,11 @@ function usof_utf8_encode( argString ) {
 			this.groupParams = [];
 			this.$field.find( '.usof-form-group-item' ).each( function( i, groupParams ) {
 				var $groupParams = $( groupParams );
-				if ( !$groupParams.parent().hasClass( 'usof-form-group-prototype' ) ) {
-					this.groupParams.push( new $usof.GroupParams( $groupParams ) );
+				if ( ! $groupParams.parent().hasClass( 'usof-form-group-prototype' ) ) {
+					this.groupParams.push( $groupParams.data( 'usofGroupParams' ) );
 				}
 			}.bind( this ) );
-			if ( !this.isBuilder ) {
+			if ( ! this.isBuilder ) {
 				if ( $.isEmptyObject( $usof.instance.valuesChanged ) ) {
 					clearTimeout( $usof.instance.saveStateTimer );
 					$usof.instance.$saveControl.usMod( 'status', 'notsaved' );
@@ -2896,7 +3315,7 @@ function usof_utf8_encode( argString ) {
 			this.groupParams = [];
 			this.$field.find( '.usof-form-group-item' ).each( function( i, groupParams ) {
 				var $groupParams = $( groupParams );
-				if ( !$groupParams.parent().hasClass( 'usof-form-group-prototype' ) ) {
+				if ( ! $groupParams.parent().hasClass( 'usof-form-group-prototype' ) ) {
 					$groupParams.remove();
 				}
 			}.bind( this ) );
@@ -2906,7 +3325,7 @@ function usof_utf8_encode( argString ) {
 				var groupParams = new $usof.GroupParams( $groupParams );
 				groupParams.setValues( paramsValues, 1 );
 				for ( var fieldId in groupParams.fields ) {
-					if ( !groupParams.fields.hasOwnProperty( fieldId ) ) {
+					if ( ! groupParams.fields.hasOwnProperty( fieldId ) ) {
 						continue;
 					}
 					groupParams.fields[ fieldId ].trigger( 'change' );
@@ -2944,7 +3363,7 @@ function usof_utf8_encode( argString ) {
 			} else {
 				this.groupParams.push( groupParams )
 			}
-			if ( !this.isBuilder ) {
+			if ( ! this.isBuilder ) {
 				if ( $.isEmptyObject( $usof.instance.valuesChanged ) ) {
 					clearTimeout( $usof.instance.saveStateTimer );
 					$usof.instance.$saveControl.usMod( 'status', 'notsaved' );
@@ -2968,7 +3387,7 @@ function usof_utf8_encode( argString ) {
 							break;
 						}
 					}
-				} while ( !newIndexIsUnique );
+				} while ( ! newIndexIsUnique );
 				groupParams.fields.name.setValue( this.groupTranslations.style + ' ' + newIndex );
 				groupParams.fields.id.setValue( newId );
 			}
@@ -3006,7 +3425,7 @@ function usof_utf8_encode( argString ) {
 			}
 		},
 		groupDel: function( $group ) {
-			if ( !confirm( this.groupTranslations.deleteConfirm ) ) {
+			if ( ! confirm( this.groupTranslations.deleteConfirm ) ) {
 				return false;
 			}
 			$group.addClass( 'deleting' );
@@ -3043,7 +3462,7 @@ function usof_utf8_encode( argString ) {
 			this.elmPointerOffset[ 0 ] -= offset.left;
 			this.elmPointerOffset[ 1 ] -= offset.top;
 			this.$draggedElm.find( '.usof-form-group-item-title' ).hide();
-			if ( !this.isAccordion || this.$draggedElm.hasClass( 'active' ) ) {
+			if ( ! this.isAccordion || this.$draggedElm.hasClass( 'active' ) ) {
 				this.$draggedElm.find( '.usof-form-group-item-content' ).hide();
 			}
 			this.$dragshadow.css( {
@@ -3117,7 +3536,7 @@ function usof_utf8_encode( argString ) {
 					this.$builderWindow.removeClass( 'dragged' );
 				}
 				this.$draggedElm.find( '.usof-form-group-item-title' ).show();
-				if ( !this.isAccordion || this.$draggedElm.hasClass( 'active' ) ) {
+				if ( ! this.isAccordion || this.$draggedElm.hasClass( 'active' ) ) {
 					this.$draggedElm.find( '.usof-form-group-item-content' ).show();
 				}
 				this._reInitParams();
@@ -3137,16 +3556,201 @@ function usof_utf8_encode( argString ) {
 	$.fn.usofGroup = function( options ) {
 		return new $usof.Group( this, options );
 	};
-
 }( jQuery );
 
+/**
+ * USOF Drag and Drop
+ **/
+;( function( $, undefined ) {
+	/**
+	 * Drag and Drop Plugin
+	 * Triggers: init, dragdrop, dragstart, dragend, drop, over, leave
+	 *
+	 * @param string || object container
+	 * @param object options
+	 * @return $usof.dragDrop
+	 */
+	$usof.dragDrop = function( container, options ) {
+		// Variables
+		this._defaults = {
+			// The selector that will move
+			itemSelector: '.usof-draggable-selector',
+			// CSS classes for displaying states
+			css: {
+				moving: 'usof-dragdrop-moving',
+				active: 'usof-dragdrop-active',
+				over: 'usof-dragdrop-over'
+			},
+		};
+		this._name = '$usof.dragDrop'; // The export plugin name
+		this.options = $.extend( {}, this._defaults, options || {} );
+
+		// CSS Classes for the plugin that reflect the actions within the plugin
+		this.css = this.options.css;
+
+		// Elements
+		this.$container = $( container );
+
+		// Plugin initialization
+		this.init.call( this );
+	};
+
+	// Extend prototype with events and new methods
+	$.extend( $usof.dragDrop.prototype, $usof.mixins.Events, {
+		/**
+		 * Initializes the object.
+		 *
+		 * @return self
+		 */
+		init: function() {
+			var itemSelector = this.options.itemSelector;
+			if ( ! itemSelector ) {
+				return;
+			}
+
+			this.$container.data( 'usofDragDrop', this );
+			this.trigger( 'init', this );
+
+			this.$container
+				.addClass( 'usof-dragdrop' )
+
+				/* Begin handler's from item selector
+				------------------------------------------------------------*/
+				.on( 'mouseup', itemSelector, function( e ) {
+					this.$container
+						.removeClass( this.css.moving )
+						.find( '> [draggable]' )
+						.removeAttr( 'draggable' );
+					$( '> .' + this.css.active, this.$container )
+						.removeClass( this.css.active );
+					this.trigger( 'dragdrop', e, this );
+					return true;
+				}.bind( this ) )
+
+				.on( 'dragenter', itemSelector, function( e ) {
+					e.preventDefault();
+					this.trigger( 'dragdrop', e, this );
+					return true;
+				}.bind( this ) )
+
+				.on( 'drop', itemSelector, function( e ) {
+					var targetId = e.originalEvent.dataTransfer.getData( 'Text' ),
+						$el = $( '> [usof-target-id="'+ targetId +'"]', this.$container ),
+						$target = $( e.currentTarget );
+					$el.removeAttr( 'usof-target-id' );
+
+					$target
+						.before( $el );
+					$( '> .' + this.css.active, this.$container )
+						.removeClass( this.css.active );
+					$( '> .' + this.css.over, this.$container )
+						.removeClass( this.css.over );
+					e.stopPropagation();
+					this.trigger( 'drop', e, this )
+						.trigger( 'dragdrop', e, this );
+					return false;
+				}.bind( this ) )
+
+				.on( 'dragover', itemSelector, function( e ) {
+					e.preventDefault();
+					$( e.currentTarget === e.target ? e.target : e.currentTarget )
+						.addClass( this.css.over );
+					this.trigger( 'over', e, this )
+						.trigger( 'dragdrop', e, this );
+					return true;
+				}.bind( this ) )
+
+				.on( 'dragleave', itemSelector, function( e ) {
+					e.preventDefault();
+					$( e.target ).removeClass( this.css.over );
+					this.trigger( 'leave', e, this )
+						.trigger( 'dragdrop', e, this );
+					return true;
+				}.bind( this ) )
+
+				/* Begin handler's from container
+				------------------------------------------------------------*/
+
+				.on( 'mousedown', itemSelector, function( e ) {
+					this.$container
+						.addClass( this.css.moving );
+					var $target = $( this._getTarget( e ) );
+					$target.addClass( this.css.active );
+					if ( ! $target.is( '[draggable="false"]' ) && ! $target.is( 'input' ) ) {
+						$target.attr( 'draggable', true );
+					}
+					this.trigger( 'dragdrop', e, this );
+					return true;
+				}.bind( this ) )
+
+				.on( 'mouseup', itemSelector, function( e ) {
+					$( '> .' + this.css.active, this.$container )
+						.removeClass( this.css.active );
+					this.trigger( 'dragdrop', e, this );
+					return true;
+				}.bind( this ) )
+
+				.on( 'dragstart', itemSelector, function( e ) {
+					var $target = $( this._getTarget( e ) ),
+						// Generate unique id for transfer text
+						targetId = $usof.genUniqueId();
+					$target.attr( 'usof-target-id', targetId );
+					e.originalEvent.dataTransfer.effectAllowed = 'move';
+					e.originalEvent.dataTransfer.setData( 'Text', targetId );
+					e.originalEvent.dataTransfer.setDragImage( $target.get( 0 ), e.offsetX, e.offsetY );
+					this.trigger( 'dragstart', e, this )
+						.trigger( 'dragdrop', e, this );
+					return true;
+				}.bind( this ) )
+
+				.on( 'dragend', function( e ) {
+					this.$container
+						.removeClass( this.css.moving )
+						.find( '> [draggable]' )
+						.removeAttr( 'draggable' );
+					this.trigger( 'dragend', e, this )
+						.trigger( 'dragdrop', e, this );
+					return true;
+				}.bind( this ) );
+
+			return this;
+		},
+		/**
+		 * Get the node to be moved
+		 *
+		 * @param eventObject e
+		 * @return object.
+		 */
+		_getTarget: function( e ) {
+			var $target = $( e.target ),
+				itemSelector = ( this.options.itemSelector || '' ).replace( '>', '' ).trim();
+			if ( itemSelector && !! $target.parent( itemSelector ).length ) {
+				$target = $target.parent( itemSelector );
+			}
+			return $target.get( 0 );
+		}
+	} );
+
+	/**
+	 * @param object options The options
+	 * @return jQuery object
+	 */
+	$.fn.usofDragDrop = function( options ) {
+		return this.each( function() {
+			if ( ! $.data( this, 'usofDragDrop' ) ) {
+				$.data( this, 'usofDragDrop', new $usof.dragDrop( this, options ) );
+			}
+		} );
+	};
+
+} )( jQuery );
 
 /**
  * USOF Core
  */
-!function( $ ) {
+;! function( $ ) {
 
-	$usof.ajaxUrl = $( '.usof-container' ).data( 'ajaxurl' );
+	$usof.ajaxUrl = $( '.usof-container' ).data( 'ajaxurl' ) || /* WP variable */ ajaxurl;
 
 	// Prototype mixin for all classes working with fields
 	if ( $usof.mixins === undefined ) {
@@ -3175,34 +3779,41 @@ function usof_utf8_encode( argString ) {
 			if ( this.showIfDeps === undefined ) {
 				this.showIfDeps = {};
 			}
+
 			var groupElms = [];
-			$.each( $container.find( '.usof-form-row, .usof-form-wrapper, .usof-form-group' ), function( index, elm ) {
-				var $field = $( elm ),
-					name = $field.data( 'name' ),
-					isRow = $field.hasClass( 'usof-form-row' ),
-					isGroup = $field.hasClass( 'usof-form-group' ),
-					isInGroup = $field.parents( '.usof-form-group' ).length,
-					$showIf = $field.find( ( isRow || isGroup ) ? '> .usof-form-row-showif' : '> .usof-form-wrapper-content > .usof-form-wrapper-showif' );
-				this.$fields[ name ] = $field;
-				if ( $showIf.length > 0 ) {
-					this.showIf[ name ] = $showIf[ 0 ].onclick() || [];
-					// Writing dependencies
-					var showIfVars = this.getShowIfVariables( this.showIf[ name ] );
-					for ( var i = 0; i < showIfVars.length; i ++ ) {
-						if ( this.showIfDeps[ showIfVars[ i ] ] === undefined ) {
-							this.showIfDeps[ showIfVars[ i ] ] = [];
+			$( '.usof-form-row, .usof-form-wrapper, .usof-form-group', $container )
+				.each(function( index, elm ) {
+					var $field = $( elm ),
+						name = $field.data( 'name' ),
+						isRow = $field.hasClass( 'usof-form-row' ),
+						isGroup = $field.hasClass( 'usof-form-group' ),
+						isInGroup = $field.parents( '.usof-form-group' ).length,
+						$showIf = $field.find(
+							( isRow || isGroup )
+								? '> .usof-form-row-showif'
+								: '> .usof-form-wrapper-content > .usof-form-wrapper-showif'
+						);
+					this.$fields[ name ] = $field;
+					if ( $showIf.length > 0 ) {
+						this.showIf[ name ] = $showIf[ 0 ].onclick() || [];
+						// Writing dependencies
+						var showIfVars = this.getShowIfVariables( this.showIf[ name ] );
+						for ( var i = 0; i < showIfVars.length; i ++ ) {
+							if ( this.showIfDeps[ showIfVars[ i ] ] === undefined ) {
+								this.showIfDeps[ showIfVars[ i ] ] = [];
+							}
+							this.showIfDeps[ showIfVars[ i ] ].push( name );
 						}
-						this.showIfDeps[ showIfVars[ i ] ].push( name );
 					}
-				}
-				if ( isRow && ( !isInGroup || this.isGroupParams ) ) {
-					this.fields[ name ] = $field.usofField( elm );
-				} else if ( isGroup ) {
-					this.groups[ name ] = $field.usofGroup( elm );
-				}
-			}.bind( this ) );
+
+					if ( isRow && ( ! isInGroup || this.isGroupParams ) ) {
+						this.fields[ name ] = $field.usofField( elm );
+					} else if ( isGroup ) {
+						this.groups[ name ] = $field.usofGroup( elm );
+					}
+				}.bind( this ) );
 			for ( var fieldName in this.showIfDeps ) {
-				if ( !this.showIfDeps.hasOwnProperty( fieldName ) || this.fields[ fieldName ] === undefined ) {
+				if ( ! this.showIfDeps.hasOwnProperty( fieldName ) || this.fields[ fieldName ] === undefined ) {
 					continue;
 				}
 				this.fields[ fieldName ].on( 'change', function( field ) {
@@ -3223,13 +3834,13 @@ function usof_utf8_encode( argString ) {
 				if ( isShown === undefined ) {
 					isShown = ( this.$fields[ depFieldId ].css( 'display' ) != 'none' );
 				}
-				if ( shouldBeShown && !isShown ) {
+				if ( shouldBeShown && ! isShown ) {
 					this.fireFieldEvent( this.$fields[ depFieldId ], 'beforeShow' );
 					this.$fields[ depFieldId ].stop( true, false ).slideDown( anmationDuration, function() {
 						this.fireFieldEvent( this.$fields[ depFieldId ], 'afterShow' );
 					}.bind( this ) );
 					this.$fields[ depFieldId ].data( 'isShown', true );
-				} else if ( !shouldBeShown && isShown ) {
+				} else if ( ! shouldBeShown && isShown ) {
 					this.fireFieldEvent( this.$fields[ depFieldId ], 'beforeHide' );
 					this.$fields[ depFieldId ].stop( true, false ).slideUp( anmationDuration, function() {
 						this.fireFieldEvent( this.$fields[ depFieldId ], 'afterHide' );
@@ -3244,7 +3855,7 @@ function usof_utf8_encode( argString ) {
 		 * @returns {Array}
 		 */
 		getShowIfVariables: function( condition ) {
-			if ( !$.isArray( condition ) || condition.length < 3 ) {
+			if ( ! $.isArray( condition ) || condition.length < 3 ) {
 				return [];
 			} else if ( $.inArray( condition[ 1 ].toLowerCase(), ['and', 'or'] ) != - 1 ) {
 				// Complex or / and statement
@@ -3267,7 +3878,7 @@ function usof_utf8_encode( argString ) {
 		 */
 		executeShowIf: function( condition, getValue ) {
 			var result = true;
-			if ( !$.isArray( condition ) || condition.length < 3 ) {
+			if ( ! $.isArray( condition ) || condition.length < 3 ) {
 				return result;
 			} else if ( $.inArray( condition[ 1 ].toLowerCase(), ['and', 'or'] ) != - 1 ) {
 				// Complex or / and statement
@@ -3300,7 +3911,7 @@ function usof_utf8_encode( argString ) {
 						result = ( value != condition[ 2 ] );
 					}
 				} else if ( condition[ 1 ] == 'has' ) {
-					result = ( !$.isArray( value ) || $.inArray( condition[ 2 ], value ) != - 1 );
+					result = ( ! $.isArray( value ) || $.inArray( condition[ 2 ], value ) != - 1 );
 				} else if ( condition[ 1 ] == '<=' ) {
 					result = ( value <= condition[ 2 ] );
 				} else if ( condition[ 1 ] == '<' ) {
@@ -3322,8 +3933,13 @@ function usof_utf8_encode( argString ) {
 		 */
 		fireFieldEvent: function( $container, trigger ) {
 			var isRow = $container.hasClass( 'usof-form-row' ),
-				hideShowEvent = ( trigger == 'beforeShow' || trigger == 'afterShow' || trigger == 'beforeHide' || trigger == 'afterHide' );
-			if ( !isRow ) {
+				hideShowEvent = (
+					trigger == 'beforeShow'
+					|| trigger == 'afterShow'
+					|| trigger == 'beforeHide'
+					|| trigger == 'afterHide'
+				);
+			if ( ! isRow ) {
 				$container.find( '.usof-form-row' ).each( function( index, block ) {
 					var $block = $( block ),
 						isShown = $block.data( 'isShown' );
@@ -3331,7 +3947,7 @@ function usof_utf8_encode( argString ) {
 						isShown = ( $block.css( 'display' ) != 'none' );
 					}
 					// The block is not actually shown or hidden in this case
-					if ( hideShowEvent && !isShown ) {
+					if ( hideShowEvent && ! isShown ) {
 						return;
 					}
 					if ( $block.data( 'usofField' ) == undefined ) {
@@ -3361,7 +3977,7 @@ function usof_utf8_encode( argString ) {
 			if ( this.fields[ id ] === undefined ) {
 				return;
 			}
-			var shouldFireShow = !this.fields[ id ].inited;
+			var shouldFireShow = ! this.fields[ id ].inited;
 			if ( shouldFireShow ) {
 				this.fields[ id ].trigger( 'beforeShow' );
 				this.fields[ id ].trigger( 'afterShow' );
@@ -3377,7 +3993,7 @@ function usof_utf8_encode( argString ) {
 			var values = {};
 			// Regular values
 			for ( var fieldId in this.fields ) {
-				if ( !this.fields.hasOwnProperty( fieldId ) ) {
+				if ( ! this.fields.hasOwnProperty( fieldId ) ) {
 					continue;
 				}
 				values[ fieldId ] = this.getValue( fieldId );
@@ -3397,11 +4013,11 @@ function usof_utf8_encode( argString ) {
 		setValues: function( values, quiet ) {
 			// Regular values
 			for ( var fieldId in values ) {
-				if ( !values.hasOwnProperty( fieldId ) || this.fields[ fieldId ] == undefined ) {
+				if ( ! values.hasOwnProperty( fieldId ) || this.fields[ fieldId ] == undefined ) {
 					continue;
 				}
 				this.setValue( fieldId, values[ fieldId ], quiet );
-				if ( !quiet ) {
+				if ( ! quiet ) {
 					this.fields[ fieldId ].trigger( 'change', [values[ fieldId ]] );
 				}
 			}
@@ -3412,7 +4028,7 @@ function usof_utf8_encode( argString ) {
 			if ( quiet ) {
 				// Update fields visibility anyway
 				for ( var fieldName in this.showIfDeps ) {
-					if ( !this.showIfDeps.hasOwnProperty( fieldName ) || this.fields[ fieldName ] === undefined ) {
+					if ( ! this.showIfDeps.hasOwnProperty( fieldName ) || this.fields[ fieldName ] === undefined ) {
 						continue;
 					}
 					this.updateVisibility( fieldName, 0 );
@@ -3453,7 +4069,15 @@ function usof_utf8_encode( argString ) {
 	};
 	$usof.ButtonPreview.prototype = {
 		init: function( container ) {
+
+			// Elements
 			this.$container = $( container );
+			this.$btn = this.$container.find( '.usof-btn' );
+			this.$groupParams = this.$container.closest( '.usof-form-group-item' );
+			this.$style = $( 'style:first', this.$groupParams );
+
+			// Variables
+			this.groupParams = this.$groupParams.data( 'usofGroupParams' );
 			this.dependsOn = [
 				'h1_font_family',
 				'h2_font_family',
@@ -3464,37 +4088,57 @@ function usof_utf8_encode( argString ) {
 				'body_font_family',
 			];
 
-			this.$btn = this.$container.find( '.usof-btn' );
-			this.$btnBefore = this.$container.find( '.usof-btn-before' );
-			this.$btnAfter = this.$container.find( '.usof-btn-after' );
-
+			// Apply style to button preview on dependant fields change
 			for ( var fieldId in $usof.instance.fields ) {
-				if ( !$usof.instance.fields.hasOwnProperty( fieldId ) ) {
+				if ( ! $usof.instance.fields.hasOwnProperty( fieldId ) ) {
 					continue;
 				}
 				if ( $.inArray( $usof.instance.fields[ fieldId ].name, this.dependsOn ) === - 1 ) {
 					continue;
 				}
-				$usof.instance.fields[ fieldId ].on( 'change', function( field, value ) {
-					this.applyStyle();
-				}.bind( this ) );
+				$usof.instance.fields[ fieldId ]
+					.on( 'change', this.applyStyle.bind( this ) );
 			}
-
-			this.$groupParams = this.$container.closest( '.usof-form-group-item' );
-			this.groupParams = this.$groupParams.data( 'usofGroupParams' );
+			// Apply style to button preview on button's group params change
 			for ( var fieldId in this.groupParams.fields ) {
-				if ( !this.groupParams.fields.hasOwnProperty( fieldId ) ) {
+				if ( ! this.groupParams.fields.hasOwnProperty( fieldId ) ) {
 					continue;
 				}
-				this.groupParams.fields[ fieldId ].on( 'change', function( field, value ) {
-					this.applyStyle();
-				}.bind( this ) );
+				this.groupParams.fields[ fieldId ]
+					.on( 'change', this.applyStyle.bind( this ) );
 			}
 
-
+			// Apply style to button preview on the init
 			this.applyStyle();
 		},
+		/**
+		 * Get the color value.
+		 * @param {String} key
+		 * @return string.
+		 */
+		_getColorValue: function( key ) {
+			if (
+				this.groupParams instanceof $usof.GroupParams
+				&& this.groupParams.fields[ key ] !== undefined
+				&& this.groupParams.fields[ key ].type === 'color'
+				&& this.groupParams.fields[ key ].hasOwnProperty( 'getColor' )
+			) {
+				return this.groupParams.fields[ key ].getColor();
+			}
+			return '';
+		},
+		/**
+		 * Apply styles for form elements a preview
+		 */
 		applyStyle: function() {
+			// Add unique class
+			var classRandomPart = $usof.genUniqueId(),
+				className = '.usof-btn_' + classRandomPart,
+				style = {
+					default: '',
+					hover: '',
+				};
+			this.$btn.usMod( 'usof-btn', classRandomPart );
 
 			// Font family
 			var buttonFont = this.groupParams.getValue( 'font' ),
@@ -3507,54 +4151,51 @@ function usof_utf8_encode( argString ) {
 			if ( fontFamily == 'none' ) {
 				fontFamily = '';
 			}
-			this.$btn.css( 'font-family', fontFamily );
+			if ( fontFamily ) {
+				style.default += 'font-family: ' + fontFamily + ' !important;';
+			}
 
 			// Text style
 			if ( $.inArray( 'italic', this.groupParams.getValue( 'text_style' ) ) !== - 1 ) {
-				this.$btn.css( 'font-style', 'italic' );
+				style.default += 'font-style: italic !important;';
 			} else {
-				this.$btn.css( 'font-style', 'normal' );
+				style.default += 'font-style: normal !important;';
 			}
+
 			if ( $.inArray( 'uppercase', this.groupParams.getValue( 'text_style' ) ) !== - 1 ) {
-				this.$btn.css( 'text-transform', 'uppercase' );
+				style.default += 'text-transform: uppercase !important;';
 			} else {
-				this.$btn.css( 'text-transform', 'none' );
+				style.default += 'text-transform: none !important;';
 			}
 
 			// Font size
-			this.$btn.css( 'font-size', this.groupParams.getValue( 'font_size' ) );
+			style.default +='font-size:' + this.groupParams.getValue( 'font_size' ) + ' !important;';
 
 			// Line height
-			this.$btn.css( 'line-height', this.groupParams.getValue( 'line_height' ) );
+			style.default += 'line-height:' + this.groupParams.getValue( 'line_height' ) + ' !important;';
 
 			// Font weight
-			this.$btn.css( 'font-weight', this.groupParams.getValue( 'font_weight' ) );
+			style.default += 'font-weight:' + this.groupParams.getValue( 'font_weight' ) + ' !important;';
 
 			// Height & Width
-			this.$btn.css( 'padding', this.groupParams.getValue( 'height' ) + ' ' + this.groupParams.getValue( 'width' ) );
+			style.default += 'padding:' + this.groupParams.getValue( 'height' ) + ' ' + this.groupParams.getValue( 'width' ) + ' !important;';
 
 			// Corners radius
-			this.$btn.css( 'border-radius', this.groupParams.getValue( 'border_radius' ) );
+			style.default += 'border-radius:' + this.groupParams.getValue( 'border_radius' ) + ' !important;';
 
 			// Letter spacing
-			this.$btn.css( 'letter-spacing', this.groupParams.getValue( 'letter_spacing' ) );
-
-			// Border Width
-			this.$btnBefore.css( 'border-width', this.groupParams.getValue( 'border_width' ) );
+			style.default += 'letter-spacing:' + this.groupParams.getValue( 'letter_spacing' ) + ' !important;';
 
 			// Colors
-			var colorBg = this.groupParams.getValue( 'color_bg' ),
-				colorBorder = this.groupParams.getValue( 'color_border' ),
-				colorBgHover = this.groupParams.getValue( 'color_bg_hover' ),
-				colorBorderHover = this.groupParams.getValue( 'color_border_hover' );
-			if ( colorBorder.indexOf( 'linear-gradient' ) !== - 1 ) {
-				colorBorder = $.usof_colpick.gradientParser( colorBorder );
-				colorBorder = colorBorder.hex;
-			}
-			if ( colorBorderHover.indexOf( 'linear-gradient' ) !== - 1 ) {
-				colorBorderHover = $.usof_colpick.gradientParser( colorBorderHover );
-				colorBorderHover = colorBorderHover.hex;
-			}
+			var colorBg = this._getColorValue( 'color_bg' ),
+				colorBorder = this._getColorValue( 'color_border' ),
+				colorBgHover = this._getColorValue( 'color_bg_hover' ),
+				colorBorderHover = this._getColorValue( 'color_border_hover' ),
+				colorShadow = this._getColorValue( 'color_shadow' ),
+				colorShadowHover = this._getColorValue( 'color_shadow_hover' ),
+				color;
+
+			// Set default values if colors are empty
 			if ( colorBg == '' ) {
 				colorBg = 'transparent';
 			}
@@ -3567,59 +4208,84 @@ function usof_utf8_encode( argString ) {
 			if ( colorBorderHover == '' ) {
 				colorBorderHover = 'transparent';
 			}
-			this.$btn.css( 'background', colorBg );
-			this.$btn.css( 'border-color', colorBorder );
-			if ( this.groupParams.getValue( 'color_text' ).indexOf( 'linear-gradient' ) !== - 1 ) {
-				var color = $.usof_colpick.gradientParser( this.groupParams.getValue( 'color_text' ) );
-				color = color.hex;
-				this.$btn.css( 'color', color );
-			} else {
-				this.$btn.css( 'color', this.groupParams.getValue( 'color_text' ) );
+			if ( colorShadow == '' ) {
+				colorShadow = 'rgba(0,0,0,0.2)';
+			}
+			if ( colorShadowHover == '' ) {
+				colorShadowHover = 'rgba(0,0,0,0.2)';
 			}
 
-			// Hovered colors
-			this.$btnAfter.css( 'background', colorBgHover );
+			style.default += 'background:' + colorBg + ' !important;';
+			if ( colorBorder.indexOf( 'gradient' ) !== - 1 ) {
+				style.default += 'border-image:' + colorBorder + ' 1 !important;';
+			} else {
+				style.default += 'border-color:' + colorBorder + ' !important;';
+			}
+
+			if ( this._getColorValue( 'color_text' ).indexOf( 'gradient' ) !== - 1 ) {
+				color = $.usof_colpick.gradientParser( this._getColorValue( 'color_text' ) ).hex;
+				style.default += 'color:' + color + ' !important;';
+			} else {
+				this.$btn.css('color', this._getColorValue('color_text'));
+			}
 
 			// Shadow
-			this.$btn.css( 'box-shadow', '0 ' + parseFloat( this.groupParams.getValue( 'shadow' ) ) / 2 + 'em ' + this.groupParams.getValue( 'shadow' ) + ' ' + this.groupParams.getValue( 'color_shadow' ) );
+			style.default += 'box-shadow: 0 ' + parseFloat( this.groupParams.getValue( 'shadow' ) ) / 2 + 'em '
+				+ this.groupParams.getValue( 'shadow' ) + ' ' + colorShadow + ' !important;';
 
 			// Hover class
 			this.$container.usMod( 'hov', this.groupParams.getValue( 'hover' ) );
 
-			// Hovered state
-			this.$btn.off( 'mouseenter mouseleave' ).on( 'mouseenter', function() {
-				this.$btn.css( 'box-shadow', '0 ' + parseFloat( this.groupParams.getValue( 'shadow_hover' ) ) / 2 + 'em ' + this.groupParams.getValue( 'shadow_hover' ) + ' ' + this.groupParams.getValue( 'color_shadow_hover' ) );
-				if ( this.groupParams.getValue( 'hover' ) == 'fade' ) {
-					this.$btn.css( 'background', colorBgHover );
-				} else if ( colorBgHover == 'transparent' ) {
-					this.$btn.css( 'background', colorBgHover );
-				}
-				this.$btn.css( 'border-color', colorBorderHover );
-				if ( this.groupParams.getValue( 'color_text_hover' ).indexOf( 'linear-gradient' ) !== - 1 ) {
-					var color = $.usof_colpick.gradientParser( this.groupParams.getValue( 'color_text_hover' ) );
-					color = color.hex;
-					this.$btn.css( 'color', color );
-				} else {
-					this.$btn.css( 'color', this.groupParams.getValue( 'color_text_hover' ) );
-				}
-			}.bind( this ) ).on( 'mouseleave', function() {
-				this.$btn.css( 'box-shadow', '0 ' + parseFloat( this.groupParams.getValue( 'shadow' ) ) / 2 + 'em ' + this.groupParams.getValue( 'shadow' ) + ' ' + this.groupParams.getValue( 'color_shadow' ) );
-				this.$btn.css( 'background', colorBg );
-				this.$btn.css( 'border-color', colorBorder );
-				if ( this.groupParams.getValue( 'color_text' ).indexOf( 'linear-gradient' ) !== - 1 ) {
-					var color = $.usof_colpick.gradientParser( this.groupParams.getValue( 'color_text' ) );
-					color = color.hex;
-					this.$btn.css( 'color', color );
-				} else {
-					this.$btn.css( 'color', this.groupParams.getValue( 'color_text' ) );
-				}
+			// Background;
+			if ( this.groupParams.getValue( 'hover' ) == 'fade' ) {
+				style.hover+= 'background:' + colorBgHover + ' !important;';
+			} else if ( colorBgHover == 'transparent' ) {
+				style.hover += 'background:' + colorBgHover + ' !important;';
+			}
 
-			}.bind( this ) );
+			// Shadow
+			style.hover += 'box-shadow: 0 ' + parseFloat( this.groupParams.getValue( 'shadow_hover' ) ) / 2
+				+ 'em ' + this.groupParams.getValue( 'shadow_hover' ) + ' ' + colorShadowHover + ' !important;';
+
+			// Border color
+			if ( colorBorderHover.indexOf( 'gradient' ) !== - 1 ) {
+				style.hover += 'border-image:' + colorBorderHover + ' 1 !important;';
+			} else {
+				style.hover += 'border-color:' + colorBorderHover + ' !important;';
+			}
+
+			// Text color
+			var colorHover;
+			if ( this._getColorValue( 'color_text_hover' ).indexOf( 'gradient' ) !== - 1 ) {
+				colorHover = ( $.usof_colpick.gradientParser( this._getColorValue( 'color_text_hover' ) ) ).hex;
+			} else {
+				colorHover = this._getColorValue( 'color_text_hover' );
+			}
+			style.hover += 'color:' + colorHover + ' !important;';
+
+			var compiledStyle = className + '{%s}'.replace( '%s', style.default );
+
+			// Border Width
+			compiledStyle += className + ':before {border-width:' + this.groupParams.getValue( 'border_width' ) + ' !important;}';
+			compiledStyle += className + ':hover{%s}'.replace( '%s', style.hover );
+
+			// Extra layer for "Slide" hover type OR for gradient backgrounds (cause gradients don't support transition)
+			if (
+				this.groupParams.getValue( 'hover' ) == 'slide'
+				|| (
+					colorBorder.indexOf( 'gradient' ) !== - 1
+					|| colorBgHover.indexOf( 'gradient' ) !== - 1
+				)
+			) {
+				compiledStyle += className + ':after {background:'+ colorBgHover +'!important;}';
+			}
+
+			this.$style.text( compiledStyle );
 		}
 	};
 
 	/**
-	 * USOF Form Elements Preview
+	 * USOF Form Fields Preview
 	 */
 	$usof.FormElmsPreview = function( container ) {
 		this.init( container );
@@ -3648,14 +4314,30 @@ function usof_utf8_encode( argString ) {
 					this.group.fields[ i ].on( 'change', this.applyStyle.bind( this ) );
 				}
 			}
-			// Init style
+			// The apply styles
 			this.applyStyle();
+		},
+		/**
+		 * Get the color value.
+		 * @param {String} key
+		 * @return string.
+		 */
+		_getColorValue: function( key ) {
+			if (
+				this.group instanceof $usof.GroupParams
+				&& this.group.fields[ key ] !== undefined
+				&& this.group.fields[ key ].type === 'color'
+				&& this.group.fields[ key ].hasOwnProperty( 'getColor' )
+			) {
+				return this.group.fields[ key ].getColor();
+			}
+			return '';
 		},
 		/**
 		 * Apply styles for form elements a preview
 		 */
 		applyStyle: function() {
-			var clsName = '.usof-input-preview-elm',
+			var className = '.usof-input-preview-elm',
 				style = {
 					default: '',
 					focus: ''
@@ -3675,56 +4357,56 @@ function usof_utf8_encode( argString ) {
 			style.default += 'font-family: ' + fontFamily + '!important;';
 
 			// Font Size
-			style.default += 'font-size:'+ this.group.getValue( 'font_size' ) +'!important;';
+			style.default += 'font-size:' + this.group.getValue( 'font_size' ) + '!important;';
 
 			// Font Weight
-			style.default += 'font-weight:'+ this.group.getValue( 'font_weight' ) +'!important;';
+			style.default += 'font-weight:' + this.group.getValue( 'font_weight' ) + '!important;';
 
 			// Letter spacing
-			style.default += 'letter-spacing:'+ this.group.getValue( 'letter_spacing' ) +'!important;';
+			style.default += 'letter-spacing:' + this.group.getValue( 'letter_spacing' ) + '!important;';
 
 			// Height
-			style.default += 'line-height:'+ this.group.getValue( 'height' ) +'!important;';
+			style.default += 'line-height:' + this.group.getValue( 'height' ) + '!important;';
 
 			// Padding
-			style.default += 'padding: 0 ' + this.group.getValue( 'padding' ) +'!important;';
+			style.default += 'padding: 0 ' + this.group.getValue( 'padding' ) + '!important;';
 
 			// Border radius
-			style.default += 'border-radius:'+ this.group.getValue( 'border_radius' ) +'!important;';
+			style.default += 'border-radius:' + this.group.getValue( 'border_radius' ) + '!important;';
 
 			// Border Width
-			style.default += 'border-width:'+ this.group.getValue( 'border_width' ) +'!important;';
+			style.default += 'border-width:' + this.group.getValue( 'border_width' ) + '!important;';
 
 			// Colors
-			if ( this.group.getValue( 'color_bg' ) ) {
-				style.default += 'background:'+ this.group.getValue( 'color_bg' ) +'!important;';
+			if ( this._getColorValue( 'color_bg' ) ) {
+				style.default += 'background:' + this._getColorValue( 'color_bg' ) + '!important;';
 			}
-			if ( this.group.getValue( 'color_border' ) ) {
-				style.default += 'border-color:'+ this.group.getValue( 'color_border' ) +'!important;';
+			if ( this._getColorValue( 'color_border' ) ) {
+				style.default += 'border-color:' + this._getColorValue( 'color_border' ) + '!important;';
 			}
-			if ( this.group.getValue( 'color_text' ) ) {
-				style.default += 'color:'+ this.group.getValue( 'color_text' ) +'!important;';
+			if ( this._getColorValue( 'color_text' ) ) {
+				style.default += 'color:' + this._getColorValue( 'color_text' ) + '!important;';
 			}
 
 			// Colors on focus
-			if ( this.group.getValue( 'color_bg_focus' ) ) {
-				style.focus += 'background:'+ this.group.getValue( 'color_bg_focus' ) +'!important;';
+			if ( this._getColorValue( 'color_bg_focus' ) ) {
+				style.focus += 'background:' + this._getColorValue( 'color_bg_focus' ) + '!important;';
 			}
-			if ( this.group.getValue( 'color_border_focus' ) ) {
-				style.focus += 'border-color:'+ this.group.getValue( 'color_border_focus' ) +'!important;';
+			if ( this._getColorValue( 'color_border_focus' ) ) {
+				style.focus += 'border-color:' + this._getColorValue( 'color_border_focus' ) + '!important;';
 			}
-			if ( this.group.getValue( 'color_text_focus' ) ) {
-				style.focus += 'color:'+ this.group.getValue( 'color_text_focus' ) +'!important;';
+			if ( this._getColorValue( 'color_text_focus' ) ) {
+				style.focus += 'color:' + this._getColorValue( 'color_text_focus' ) + '!important;';
 			}
 
 			// Shadow
-			if ( this.group.getValue( 'color_shadow' ) != '' ) {
+			if ( this._getColorValue( 'color_shadow' ) != '' ) {
 				style.default += 'box-shadow:'
-				+ this.group.getValue( 'shadow_offset_h' ) + ' '
-				+ this.group.getValue( 'shadow_offset_v' ) + ' '
-				+ this.group.getValue( 'shadow_blur' ) + ' '
-				+ this.group.getValue( 'shadow_spread' ) + ' '
-				+ this.group.getValue( 'color_shadow' ) + ' ';
+					+ this.group.getValue( 'shadow_offset_h' ) + ' '
+					+ this.group.getValue( 'shadow_offset_v' ) + ' '
+					+ this.group.getValue( 'shadow_blur' ) + ' '
+					+ this.group.getValue( 'shadow_spread' ) + ' '
+					+ this._getColorValue( 'color_shadow' ) + ' ';
 				if ( $.inArray( '1', this.group.getValue( 'shadow_inset' ) ) !== - 1 ) {
 					style.default += 'inset';
 				}
@@ -3732,17 +4414,17 @@ function usof_utf8_encode( argString ) {
 			}
 
 			// Shadow on focus
-			if ( this.group.getValue( 'color_shadow_focus' ) != '' || this.group.getValue( 'color_shadow' ) != '' ) {
+			if ( this._getColorValue( 'color_shadow_focus' ) != '' || this._getColorValue( 'color_shadow' ) != '' ) {
 				style.focus += 'box-shadow:'
-				+ this.group.getValue( 'shadow_focus_offset_h' ) + ' '
-				+ this.group.getValue( 'shadow_focus_offset_v' ) + ' '
-				+ this.group.getValue( 'shadow_focus_blur' ) + ' '
-				+ this.group.getValue( 'shadow_focus_spread' ) + ' ';
+					+ this.group.getValue( 'shadow_focus_offset_h' ) + ' '
+					+ this.group.getValue( 'shadow_focus_offset_v' ) + ' '
+					+ this.group.getValue( 'shadow_focus_blur' ) + ' '
+					+ this.group.getValue( 'shadow_focus_spread' ) + ' ';
 
-				if ( this.group.getValue( 'color_shadow_focus' ) != '' ) {
-					style.focus += this.group.getValue( 'color_shadow_focus' ) + ' ';
+				if ( this._getColorValue( 'color_shadow_focus' ) != '' ) {
+					style.focus += this._getColorValue( 'color_shadow_focus' ) + ' ';
 				} else {
-					style.focus += this.group.getValue( 'color_shadow' ) + ' ';
+					style.focus += this._getColorValue( 'color_shadow' ) + ' ';
 				}
 				if ( $.inArray( '1', this.group.getValue( 'shadow_focus_inset' ) ) !== - 1 ) {
 					style.focus += 'inset';
@@ -3750,15 +4432,15 @@ function usof_utf8_encode( argString ) {
 				style.focus += '!important;';
 			}
 
-			var compiledStyle = clsName + '{%s}'.replace( '%s', style.default );
-				compiledStyle += clsName + ':focus{%s}'.replace( '%s', style.focus );
+			var compiledStyle = className + '{%s}'.replace( '%s', style.default );
+			compiledStyle += className + ':focus{%s}'.replace( '%s', style.focus );
 
-				// Add styles for dropdown icon separately
-				compiledStyle += '.usof-input-preview-select:after {';
-				compiledStyle += 'font-size:' + this.group.getValue( 'font_size' ) + ';';
-				compiledStyle += 'margin: 0 ' + this.group.getValue( 'padding' ) + ';';
-				compiledStyle += 'color:' + this.group.getValue( 'color_text' ) + ';';
-				compiledStyle += '}';
+			// Add styles for dropdown icon separately
+			compiledStyle += '.usof-input-preview-select:after {';
+			compiledStyle += 'font-size:' + this.group.getValue( 'font_size' ) + ';';
+			compiledStyle += 'margin: 0 ' + this.group.getValue( 'padding' ) + ';';
+			compiledStyle += 'color:' + this._getColorValue( 'color_text' ) + ';';
+			compiledStyle += '}';
 
 			this.$style.text( compiledStyle );
 		},
@@ -3769,7 +4451,7 @@ function usof_utf8_encode( argString ) {
 		this.$group = this.$container.closest( '.usof-form-group' );
 		this.group = this.$group.data( 'name' );
 		this.isGroupParams = true;
-		this.isBuilder = !!this.$container.parents( '.us-bld-window' ).length;
+		this.isBuilder = !! this.$container.parents( '.us-bld-window' ).length;
 		this.isForButtons = this.$group.hasClass( 'preview_button' );
 		this.isForFormElms = this.$group.hasClass( 'preview_input_fields' );
 
@@ -3781,7 +4463,10 @@ function usof_utf8_encode( argString ) {
 			this.updateVisibility( fieldName, 0 );
 		}
 
-		this.paramsTitle = ( this.$group.data( 'params_title' ) != undefined ) ? decodeURIComponent( this.$group.data( 'params_title' ) ) : '';
+		this.paramsTitle = ( this.$group.data( 'params_title' ) != undefined )
+			? decodeURIComponent( this.$group.data( 'params_title' ) )
+			: '';
+
 		if ( this.paramsTitle != undefined && this.paramsTitle != '' ) {
 			if ( this.isForButtons ) {
 				this.$title = this.$container.find( '.usof-form-group-item-title .usof-btn-label' );
@@ -3789,13 +4474,13 @@ function usof_utf8_encode( argString ) {
 				this.$title = this.$container.find( '.usof-form-group-item-title' );
 			}
 			for ( var fieldId in this.fields ) {
-				if ( !this.fields.hasOwnProperty( fieldId ) ) {
+				if ( ! this.fields.hasOwnProperty( fieldId ) ) {
 					continue;
 				}
 				this.fields[ fieldId ].on( 'change', function() {
 					var paramsTitleResult = this.paramsTitle;
 					for ( var fieldId in this.fields ) {
-						if ( !this.fields.hasOwnProperty( fieldId ) ) {
+						if ( ! this.fields.hasOwnProperty( fieldId ) ) {
 							continue;
 						}
 						if ( paramsTitleResult.indexOf( '{{' + fieldId + '}}' ) !== - 1 ) {
@@ -3807,9 +4492,9 @@ function usof_utf8_encode( argString ) {
 			}
 		}
 
-		if ( !this.isBuilder ) {
+		if ( ! this.isBuilder ) {
 			for ( var fieldId in this.fields ) {
-				if ( !this.fields.hasOwnProperty( fieldId ) ) {
+				if ( ! this.fields.hasOwnProperty( fieldId ) ) {
 					continue;
 				}
 				this.fields[ fieldId ].on( 'change', function( field, value ) {
@@ -3822,16 +4507,14 @@ function usof_utf8_encode( argString ) {
 					}
 				}.bind( this ) );
 			}
-
-			this.$container.data( 'usofGroupParams', this );
 		}
+
+		this.$container.data( 'usofGroupParams', this );
 
 		if ( this.isForButtons ) {
 			this.$buttonPreview = this.$container.find( '.usof-form-group-item-title .usof-btn-preview' );
 			new $usof.ButtonPreview( this.$buttonPreview );
-		}
-
-		else if ( this.isForFormElms ) {
+		} else if ( this.isForFormElms ) {
 			new $usof.FormElmsPreview( this.$container.find( '.usof-input-preview' ) );
 		}
 
@@ -3847,7 +4530,7 @@ function usof_utf8_encode( argString ) {
 		this.fireFieldEvent( this.$container, 'afterShow' );
 
 		for ( var fieldId in this.fields ) {
-			if ( !this.fields.hasOwnProperty( fieldId ) ) {
+			if ( ! this.fields.hasOwnProperty( fieldId ) ) {
 				continue;
 			}
 			this.fields[ fieldId ].on( 'change', function( field, value ) {
@@ -3929,7 +4612,7 @@ function usof_utf8_encode( argString ) {
 		this.valuesChanged = {};
 		this.saveStateTimer = null;
 		for ( var fieldId in this.fields ) {
-			if ( !this.fields.hasOwnProperty( fieldId ) ) {
+			if ( ! this.fields.hasOwnProperty( fieldId ) ) {
 				continue;
 			}
 			this.fields[ fieldId ].on( 'change', function( field, value ) {
@@ -3975,7 +4658,7 @@ function usof_utf8_encode( argString ) {
 		},
 
 		resize: function() {
-			if ( !this.$header.length ) {
+			if ( ! this.$header.length ) {
 				return;
 			}
 			this.headerAreaSize = this.$header.offset().top + this.$header.outerHeight();
@@ -4087,4 +4770,116 @@ function usof_utf8_encode( argString ) {
 			} );
 		} );
 	} );
+
+
 }( jQuery );
+
+/**
+ * Auto optimize assets
+ */
+;( function( $, undefined ) {
+	/**
+	 * @class AutoOptimizeAssets
+	 */
+	function AutoOptimizeAssets() {
+		// Variabels
+		this.assets = {};
+		this._data = {
+			action: 'us_auto_optimize_assets'
+		};
+
+		// Elements
+		this.$container = $( '[data-name="optimize_assets_start"]' );
+		this.$button = $( '.usof-button.type_auto_optimize', this.$container );
+		this.$message = $( '.usof-message.type_auto_optimize', this.$container );
+
+		// Load data
+		if ( this.$button.is( '[onclick]' ) ) {
+			this._data = $.extend( this._data, this.$button[ 0 ].onclick() || {} );
+			this.$button.removeAttr( 'onclick' );
+		}
+
+		$( '.usof-checkbox-list input[name="assets"]', this.$container ).each( function( _, checkbox ) {
+			this.assets[ $( checkbox ).attr( 'value' ) ] = checkbox;
+		}.bind( this ) );
+
+		// Events
+		this.$container
+			.on( 'click', '.usof-button.type_auto_optimize', this._events.clickButton.bind( this ) )
+			.on( 'change', 'input[name="assets"]', this._events.clearMessage.bind( this ) );
+	}
+
+	// Export API
+	AutoOptimizeAssets.prototype = {
+		// Event handler's
+		_events: {
+			/**
+			 * Button click
+			 * @param JQueryEventObject e
+			 * @return void
+			 */
+			clickButton: function( e ) {
+				if ( ! this.$button.hasClass( 'loading' ) ) {
+					this.$button.addClass( 'loading' );
+					this._request.call( this, 'request' );
+					this._events.clearMessage.call( this );
+				}
+			},
+			/**
+			 * Clear message
+			 * @param JQueryEventObject e
+			 * @return void
+			 */
+			clearMessage: function( e ) {
+				this.$message.addClass( 'hidden' ).html( '' );
+			}
+		},
+		/**
+		 * Asset Use Requests
+		 * @param string type Request type
+		 * @return void
+		 */
+		_request: function( type ) {
+			$.post( $usof.ajaxUrl, $.extend( this._data, { type: type } ), function( res ) {
+				if ( res.data.processing ) {
+					this._request.call( this, 'iteration' );
+				} else {
+					this.$button.removeClass( 'loading' );
+
+					// Show message
+					if ( $.trim( res.data.message ) ) {
+						this.showMessage.call( this, res.data.message );
+					}
+
+					// Reset checkboxes
+					$( 'input[type="checkbox"]', this.$container )
+						.prop( 'checked', false );
+
+					// Selected checkboxes
+					if ( res.data.used_assets ) {
+						$.each( res.data.used_assets, function( _, asset_name ) {
+							if ( this.assets.hasOwnProperty( asset_name ) ) {
+								$( this.assets[ asset_name ] ).prop( 'checked', true );
+							}
+						}.bind( this ) );
+
+						// Save Changes
+						$usof.instance.valuesChanged[ 'assets' ] = res.data.assets_value;
+						$usof.instance.save();
+					}
+
+				}
+			}.bind( this ), 'json' );
+		},
+		/**
+		 * Shows the message.
+		 * @param text html
+		 * @return void
+		 */
+		showMessage: function( html ) {
+			this.$message.html( html ).removeClass( 'hidden' );
+		}
+	};
+	// Init AutoOptimizeAssets
+	$( new AutoOptimizeAssets );
+} )( jQuery );

@@ -13,7 +13,7 @@ if ( ! function_exists( 'us_cookie_notice_output' ) ) {
 	function us_cookie_notice_output() {
 		$output = '';
 
-		$cookie_message = strip_tags( us_get_option( 'cookie_message', '' ) );
+		$cookie_message = us_get_option( 'cookie_message', '' );
 
 		// Add link to Privacy Policy page
 		if ( ! empty( us_get_option( 'cookie_privacy' ) ) ) {

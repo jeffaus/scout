@@ -158,81 +158,96 @@ function us_save_attachment_compat() {
 	wp_send_json_success( $attachment );
 }
 
-add_action( 'wp_ajax_query-attachments', 'us_ajax_media_categories_query_attachments', 0 );
-function us_ajax_media_categories_query_attachments() {
+if ( ! function_exists( 'us_ajax_media_categories_query_attachments' ) ) {
+	/**
+	 * Ajax handler for querying attachments.
+	 *
+	 * @return void
+	 */
+	function us_ajax_media_categories_query_attachments() {
 
-	// Bail if user cannot upload files
-	if ( ! current_user_can( 'upload_files' ) ) {
-		wp_send_json_error();
-	}
+		// Bail if user cannot upload files
+		if ( ! current_user_can( 'upload_files' ) ) {
+			wp_send_json_error();
+		}
 
-	// Get names of media taxonomies
-	$taxonomies = get_object_taxonomies( 'attachment', 'names' );
+		// Get names of media taxonomies
+		$taxonomies = get_object_taxonomies( 'attachment', 'names' );
 
-	// Look for query
-	$query = isset( $_REQUEST['query'] ) ? (array) $_REQUEST['query'] : array();
+		// Look for query
+		$query = isset( $_REQUEST['query'] ) ? (array) $_REQUEST['query'] : array();
 
-	// Default arguments
-	$defaults = array(
-		's',
-		'order',
-		'orderby',
-		'posts_per_page',
-		'paged',
-		'post_mime_type',
-		'post_parent',
-		'post__in',
-		'post__not_in',
-	);
+		// Default arguments
+		$defaults = array(
+			'monthnum',
+			'order',
+			'orderby',
+			'paged',
+			'post__in',
+			'post__not_in',
+			'post_mime_type',
+			'post_parent',
+			'posts_per_page',
+			's',
+			'year',
+		);
 
-	$query = array_intersect_key( $query, array_flip( array_merge( $defaults, $taxonomies ) ) );
+		$query = array_intersect_key( $query, array_flip( array_merge( $defaults, $taxonomies ) ) );
 
-	$query['post_type'] = 'attachment';
-	$query['post_status'] = 'inherit';
-	if ( current_user_can( get_post_type_object( 'attachment' )->cap->read_private_posts ) ) {
-		$query['post_status'] .= ',private';
-	}
+		$query['post_type'] = 'attachment';
+		$query['post_status'] = 'inherit';
+		if ( current_user_can( get_post_type_object( 'attachment' )->cap->read_private_posts ) ) {
+			$query['post_status'] .= ',private';
+		}
 
-	$query['tax_query'] = array( 'relation' => 'AND' );
+		// Filter query clauses to include filenames.
+		if ( isset( $query['s'] ) ) {
+			add_filter( 'posts_clauses', '_filter_query_attachment_filenames' );
+		}
 
-	foreach ( $taxonomies as $taxonomy ) {
-		if ( isset( $query[ $taxonomy ] ) ) {
+		if ( ! empty( $taxonomies ) ) {
+			$query['tax_query'] = array( 'relation' => 'AND' );
+			foreach ( $taxonomies as $taxonomy ) {
+				if ( isset( $query[ $taxonomy ] ) ) {
 
-			// Filter a specific category
-			if ( is_numeric( $query[ $taxonomy ] ) ) {
-				array_push(
-					$query['tax_query'], array(
-						'taxonomy' => $taxonomy,
-						'field' => 'id',
-						'terms' => $query[ $taxonomy ],
-					)
-				);
-			}
+					// Filter a specific category
+					if ( is_numeric( $query[ $taxonomy ] ) ) {
+						array_push(
+							$query['tax_query'], array(
+								'taxonomy' => $taxonomy,
+								'field' => 'id',
+								'terms' => $query[ $taxonomy ],
+							)
+						);
+					}
 
-			// Filter No category
-			if ( $query[ $taxonomy ] == 'no_category' ) {
-				$all_terms_ids = us_media_categories_get_terms_values( 'ids' );
-				array_push(
-					$query['tax_query'], array(
-						'taxonomy' => $taxonomy,
-						'field' => 'id',
-						'terms' => $all_terms_ids,
-						'operator' => 'NOT IN',
-					)
-				);
+					// Filter No category
+					if ( $query[ $taxonomy ] == 'no_category' ) {
+						$all_terms_ids = us_media_categories_get_terms_values( 'ids' );
+						array_push(
+							$query['tax_query'], array(
+								'taxonomy' => $taxonomy,
+								'field' => 'id',
+								'terms' => $all_terms_ids,
+								'operator' => 'NOT IN',
+							)
+						);
+					}
+				}
+
+				unset( $query[ $taxonomy ] );
 			}
 		}
 
-		unset( $query[ $taxonomy ] );
+		$query = apply_filters( 'ajax_query_attachments_args', $query );
+		$query = new WP_Query( $query );
+
+		$posts = array_map( 'wp_prepare_attachment_for_js', $query->posts );
+		$posts = array_filter( $posts );
+
+		wp_send_json_success( $posts );
 	}
-
-	$query = apply_filters( 'ajax_query_attachments_args', $query );
-	$query = new WP_Query( $query );
-
-	$posts = array_map( 'wp_prepare_attachment_for_js', $query->posts );
-	$posts = array_filter( $posts );
-
-	wp_send_json_success( $posts );
+	add_action( 'wp_ajax_query-attachments', 'us_ajax_media_categories_query_attachments', 0 );
 }
 
 // Get media categories

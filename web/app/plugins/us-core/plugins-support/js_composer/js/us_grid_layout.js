@@ -1,5 +1,5 @@
 ! function( $ ) {
-	$( '.us-grid-layout > .wpb-select' ).off( 'change' ).live( 'change', function() {
+	$( '.us-grid-layout > .wpb-select' ).off( 'change' ).on( 'change', function() {
 		var $select = $( this ),
 			$container = $select.closest( '.us-grid-layout' ),
 			$descEdit = $container.find( '.us-grid-layout-desc-edit' ),

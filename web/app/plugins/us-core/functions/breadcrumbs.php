@@ -178,31 +178,41 @@ class US_Breadcrumbs {
 			if ( get_post_type() == 'us_portfolio' AND us_get_option( 'portfolio_breadcrumbs_page' ) != '' ) {
 				$portfolio_breadcrumbs_page = get_post( us_get_option( 'portfolio_breadcrumbs_page' ) );
 				if ( $portfolio_breadcrumbs_page ) {
-					if ( class_exists( 'SitePress' ) AND defined( 'ICL_LANGUAGE_CODE' ) ) {
-						$current_page_ID = apply_filters( 'wpml_object_id', $portfolio_breadcrumbs_page->ID, get_post_type( $portfolio_breadcrumbs_page->ID ), TRUE );
-						$portfolio_breadcrumbs_page_title = get_the_title( $current_page_ID );
-					} else {
-						$portfolio_breadcrumbs_page_title = get_the_title( $portfolio_breadcrumbs_page->ID );
+					$portfolio_breadcrumbs_page_ID = $portfolio_breadcrumbs_page->ID;
+
+					if ( has_filter( 'us_tr_object_id' ) ) {
+						$portfolio_breadcrumbs_page_ID = apply_filters(
+							'us_tr_object_id',
+							$portfolio_breadcrumbs_page->ID,
+							$portfolio_breadcrumbs_page->post_type,
+							/* return_original_if_missing */ TRUE
+						);
 					}
-					$output .= $this->get_breadcrumb( get_permalink( $portfolio_breadcrumbs_page->ID ), $portfolio_breadcrumbs_page_title );
+
+					$portfolio_breadcrumbs_page_title = get_the_title( $portfolio_breadcrumbs_page_ID );
+					$output .= $this->get_breadcrumb( get_permalink( $portfolio_breadcrumbs_page_ID ), $portfolio_breadcrumbs_page_title );
+					$output .= $this->config['delimiter'];
 				}
 
 				// Posts
 			} elseif ( get_post_type() == 'post' ) {
 				$cat = get_the_category();
-				$cat = $cat[0];
-				$cats = get_category_parents( $cat, TRUE, $this->config['delimiter'] );
-				$cats = preg_replace( "#^(.+)" . $this->config['delimiter'] . "$#", "$1", $cats );
-				$cats = preg_replace( '#(<a\shref[^>]+>)([^<\/]+)(<\/a>)#', '${1}' . $this->config['name_before'] . '${2}' . $this->config['name_after'] . '${3}', $cats );
-				$cats = str_replace( '<a', $this->config['before'] . '<a' . $this->config['link_attr'], $cats );
-				$cats = str_replace( '</a>', '</a>' . $this->config['after'], $cats );
-				$cats = $this->get_breadcrumb_with_markup( $cats );
-				$output .= $cats;
+				if ( $cat = us_arr_path( $cat, '0' ) ) {
+					$cats = get_category_parents( $cat, TRUE, $this->config['delimiter'] );
+					$cats = preg_replace( "#^(.+)" . $this->config['delimiter'] . "$#", "$1", $cats );
+					$cats = preg_replace( '#(<a\shref[^>]+>)([^<\/]+)(<\/a>)#', '${1}' . $this->config['name_before'] . '${2}' . $this->config['name_after'] . '${3}', $cats );
+					$cats = str_replace( '<a', $this->config['before'] . '<a' . $this->config['link_attr'], $cats );
+					$cats = str_replace( '</a>', '</a>' . $this->config['after'], $cats );
+					$cats = $this->get_breadcrumb_with_markup( $cats );
+					$output .= $cats;
+					$output .= $this->config['delimiter'];
+				}
 
 				// The Events Calendar
 			} elseif ( get_post_type() == 'tribe_events' ) {
 				$post_type_obj = get_post_type_object( get_post_type() );
 				$output .= $this->get_breadcrumb( esc_url( tribe_get_events_link() ), $post_type_obj->labels->name );
+				$output .= $this->config['delimiter'];
 
 				// CPT
 			} else {
@@ -232,6 +242,7 @@ class US_Breadcrumbs {
 							$post_taxonomies = str_replace( '</a>', '</a>' . $this->config['after'], $post_taxonomies );
 							$post_taxonomies = $this->get_breadcrumb_with_markup( $post_taxonomies );
 							$output .= $post_taxonomies;
+							$output .= $this->config['delimiter'];
 							$taxonomies_found = TRUE;
 							break;
 						}
@@ -239,15 +250,17 @@ class US_Breadcrumbs {
 				}
 
 				if ( ! $taxonomies_found ) {
-					$post_type_obj = get_post_type_object( get_post_type() );
-					if ( ! empty( $post_type_obj->labels->name ) ) {
-						$output .= $this->config['before'] . $post_type_obj->labels->name . $this->config['after'];
+					$cpt_post_type = get_post_type_object( get_post_type() );
+					if ( $cpt_post_type->has_archive AND ! empty( $cpt_post_type->labels->name ) ) {
+						$cpt_slug = is_string( $cpt_post_type->has_archive )
+							? $cpt_post_type->has_archive
+							: $cpt_post_type->name;
+						$output .= $this->get_breadcrumb( get_option( 'siteurl' ) . '/' . $cpt_slug . '/', $cpt_post_type->labels->name );
+						$output .= $this->config['delimiter'];
 					}
 				}
-
 			}
 
-			$output .= $this->config['delimiter'];
 			$output .= $this->get_breadcrumb( get_permalink( $post->ID ), get_the_title( $post->ID ) );
 
 			// WooCommerce Shop page
@@ -256,13 +269,16 @@ class US_Breadcrumbs {
 				$output .= $this->config['before'] . get_the_title() . $this->config['after'];
 			} elseif ( $post->post_parent ) {
 				$parent_id = $post->post_parent;
+				$parent_ids = array();
 				$breadcrumbs = array();
 				while ( $parent_id ) {
 					$page = get_post( $parent_id );
-					$breadcrumbs[] = $this->get_breadcrumb( get_permalink( $page->ID ), get_the_title( $page->ID ) );
+					$parent_ids[] = $page->ID;
 					$parent_id = $page->post_parent;
 				}
-				$breadcrumbs = array_reverse( $breadcrumbs );
+				foreach ( array_reverse( $parent_ids ) as $id ) {
+					$breadcrumbs[] = $this->get_breadcrumb( get_permalink( $id ), get_the_title( $id ) );
+				}
 				for ( $i = 0; $i < count( $breadcrumbs ); $i ++ ) {
 					$output .= $breadcrumbs[ $i ];
 					if ( $i != count( $breadcrumbs ) - 1 ) {
@@ -281,6 +297,7 @@ class US_Breadcrumbs {
 		} elseif ( is_page() AND $post->post_parent ) {
 			$parent_id = $post->post_parent;
 			$breadcrumbs = array();
+			$parent_ids = array();
 			$front_page_id = get_option( 'page_on_front' );
 			$isFrontParent = FALSE;
 			while ( $parent_id ) {
@@ -293,10 +310,12 @@ class US_Breadcrumbs {
 					}
 					continue;
 				}
-				$breadcrumbs[] = $this->get_breadcrumb( get_permalink( $page->ID ), get_the_title( $page->ID ) );
+				$parent_ids[] = $page->ID;
 				$parent_id = $page->post_parent;
 			}
-			$breadcrumbs = array_reverse( $breadcrumbs );
+			foreach ( array_reverse( $parent_ids ) as $id ) {
+				$breadcrumbs[] = $this->get_breadcrumb( get_permalink( $id ), get_the_title( $id ) );
+			}
 			for ( $i = 0; $i < count( $breadcrumbs ); $i ++ ) {
 				$output .= $breadcrumbs[ $i ];
 				if ( $i != count( $breadcrumbs ) - 1 ) {

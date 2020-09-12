@@ -61,7 +61,7 @@ return array(
 			'wrap' => TRUE,
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '14px',
 					'line-height' => '1.6',
 				),
@@ -137,15 +137,15 @@ return array(
 			'css' => array(
 				'default' => array(
 					'font-size' => '14px',
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 				),
 			),
 		),
 		'vwrapper:1' => array(
 			'css' => array(
 				'default' => array(
-					'background-color' => us_get_color( 'color_content_bg', TRUE ),
-					'color' => us_get_color( 'color_content_heading' ),
+					'background-color' => '_content_bg',
+					'color' => '_content_heading',
 					'position' => 'absolute',
 					'left' => is_rtl() ? '2rem' : '0',
 					'right' => is_rtl() ? '0' : '2rem',
@@ -192,6 +192,7 @@ return array(
 		'post_image:1' => array(
 			'placeholder' => TRUE,
 			'thumbnail_size' => 'thumbnail',
+			'has_ratio' => TRUE,
 			'css' => array(
 				'default' => array(
 					'width' => '30%',
@@ -220,7 +221,7 @@ return array(
 			'wrap' => TRUE,
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '14px',
 					'line-height' => '1.6',
 				),
@@ -257,6 +258,7 @@ return array(
 		'post_image:1' => array(
 			'placeholder' => TRUE,
 			'thumbnail_size' => 'us_600_600_crop',
+			'has_ratio' => TRUE,
 			'css' => array(
 				'default' => array(
 					'width' => '50%',
@@ -298,7 +300,7 @@ return array(
 			'hide_below' => '600px',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '14px',
 					'line-height' => '1.4',
 				),
@@ -307,8 +309,8 @@ return array(
 		'post_title:1' => array(
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_heading' ),
-					'background' => us_get_color( 'color_content_bg', TRUE ),
+					'color' => '_content_heading',
+					'background' => '_content_bg',
 					'font-size' => '1.8rem',
 					'line-height' => '1.2',
 					'margin-left' => is_rtl() ? '-35%' : '',
@@ -376,6 +378,7 @@ return array(
 			'placeholder' => TRUE,
 			'circle' => TRUE,
 			'thumbnail_size' => 'us_600_600_crop',
+			'has_ratio' => TRUE,
 			'css' => array(
 				'default' => array(
 					'width' => '30%',
@@ -411,7 +414,7 @@ return array(
 			'wrap' => TRUE,
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 				),
 			),
@@ -457,8 +460,8 @@ return array(
 			'wrap' => TRUE,
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_text' ),
-					'background' => us_get_color( 'color_content_bg_alt', TRUE ),
+					'color' => '_content_text',
+					'background' => '_content_bg_alt',
 					'margin-left' => is_rtl() ? '' : '10%',
 					'margin-right' => is_rtl() ? '10%' : '',
 					'padding-top' => '6%',
@@ -556,8 +559,8 @@ return array(
 			'wrap' => TRUE,
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_text' ),
-					'background' => us_get_color( 'color_content_bg_alt', TRUE ),
+					'color' => '_content_text',
+					'background' => '_content_bg_alt',
 					'margin-left' => is_rtl() ? '10%' : '',
 					'margin-right' => is_rtl() ? '' : '10%',
 					'padding-top' => '6%',
@@ -696,8 +699,8 @@ return array(
 			'ratio' => 'custom',
 			'ratio_width' => '2',
 			'ratio_height' => '1',
-			'color_bg' => us_get_color( 'color_content_bg_alt', TRUE ),
-			'color_text' => us_get_color( 'color_content_heading' ),
+			'color_bg' => '_content_bg_alt',
+			'color_text' => '_content_heading',
 		),
 	),
 ),
@@ -753,8 +756,8 @@ return array(
 			'ratio' => 'custom',
 			'ratio_width' => '2',
 			'ratio_height' => '1',
-			'color_bg' => us_get_color( 'color_content_bg_alt', TRUE ),
-			'color_text' => us_get_color( 'color_content_heading' ),
+			'color_bg' => '_content_bg_alt',
+			'color_text' => '_content_heading',
 		),
 	),
 ),
@@ -799,7 +802,7 @@ return array(
 			'format' => 'smart',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '14px',
 					'margin-bottom' => '0.3rem',
 				),
@@ -836,8 +839,8 @@ return array(
 		),
 		'options' => array(
 			'overflow' => TRUE,
-			'color_bg' => us_get_color( 'color_content_bg', TRUE ),
-			'color_text' => us_get_color( 'color_content_heading' ),
+			'color_bg' => '_content_bg',
+			'color_text' => '_content_heading',
 			'border_radius' => us_get_option( 'rounded_corners' ) ? '0.3rem' : '',
 			'box_shadow' => '0.3rem',
 			'box_shadow_hover' => '1.2rem',
@@ -891,7 +894,7 @@ return array(
 			'wrap' => TRUE,
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 				),
 			),
@@ -926,8 +929,8 @@ return array(
 		),
 		'options' => array(
 			'overflow' => TRUE,
-			'color_bg' => us_get_color( 'color_content_bg', TRUE ),
-			'color_text' => us_get_color( 'color_content_text' ),
+			'color_bg' => '_content_bg',
+			'color_text' => '_content_text',
 			'border_radius' => us_get_option( 'rounded_corners' ) ? '0.3rem' : '',
 			'box_shadow' => '0.3rem',
 			'box_shadow_hover' => '1rem',
@@ -995,7 +998,7 @@ return array(
 		),
 		'options' => array(
 			'overflow' => TRUE,
-			'color_bg' => '#1e1e1e',
+			'color_bg' => '#333',
 			'border_radius' => us_get_option( 'rounded_corners' ) ? '0.3rem' : '',
 			'box_shadow' => '0.3rem',
 			'box_shadow_hover' => '1.2rem',
@@ -1110,7 +1113,7 @@ return array(
 			'wrap' => TRUE,
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '14px',
 				),
 			),
@@ -1188,7 +1191,7 @@ return array(
 			'format' => 'smart',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 				),
 			),
@@ -1206,7 +1209,7 @@ return array(
 			'wrap' => TRUE,
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 				),
 			),
@@ -1261,7 +1264,7 @@ return array(
 			'wrap' => TRUE,
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 				),
 			),
@@ -1347,7 +1350,7 @@ return array(
 			'wrap' => TRUE,
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 				),
 			),
@@ -1381,8 +1384,8 @@ return array(
 		),
 		'options' => array(
 			'overflow' => TRUE,
-			'color_bg' => us_get_color( 'color_content_bg', TRUE ),
-			'color_text' => us_get_color( 'color_content_text' ),
+			'color_bg' => '_content_bg',
+			'color_text' => '_content_text',
 			'box_shadow_hover' => '1.5rem',
 		),
 	),
@@ -1424,7 +1427,7 @@ return array(
 			'format' => 'smart',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '14px',
 				),
 			),
@@ -1515,6 +1518,7 @@ return array(
 	'data' => array(
 		'post_image:1' => array(
 			'link' => 'none',
+			'has_ratio' => TRUE,
 			'thumbnail_size' => 'us_600_600_crop',
 		),
 		'vwrapper:1' => array(
@@ -1564,7 +1568,7 @@ return array(
 			'type' => 'full_content',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 					'line-height' => '1.6',
 					'margin-top' => '0.2rem',
@@ -1596,6 +1600,7 @@ return array(
 	'data' => array(
 		'post_image:1' => array(
 			'link' => 'none',
+			'has_ratio' => TRUE,
 			'thumbnail_size' => 'us_600_600_crop',
 		),
 		'vwrapper:1' => array(
@@ -1766,8 +1771,8 @@ return array(
 		),
 		'options' => array(
 			'fixed' => TRUE,
-			'color_bg' => us_get_color( 'color_content_bg', TRUE ),
-			'color_text' => us_get_color( 'color_content_text' ),
+			'color_bg' => '_content_bg',
+			'color_text' => '_content_text',
 		),
 	),
 ),
@@ -2062,8 +2067,8 @@ return array(
 		),
 		'options' => array(
 			'fixed' => TRUE,
-			'color_bg' => us_get_color( 'color_content_bg', TRUE ),
-			'color_text' => us_get_color( 'color_content_text' ),
+			'color_bg' => '_content_bg',
+			'color_text' => '_content_text',
 		),
 	),
 ),
@@ -2941,8 +2946,8 @@ return array(
 		),
 		'options' => array(
 			'fixed' => TRUE,
-			'color_bg' => us_get_color( 'color_content_bg_alt', TRUE ),
-			'color_text' => us_get_color( 'color_content_heading' ),
+			'color_bg' => '_content_bg_alt',
+			'color_text' => '_content_heading',
 		),
 	),
 ),
@@ -3203,7 +3208,7 @@ return array(
 					'border-right-width' => '2px',
 					'border-bottom-width' => '2px',
 					'border-left-width' => '2px',
-					'border-color' => us_get_color( 'color_content_border' ),
+					'border-color' => '_content_border',
 					'border-radius' => us_get_option( 'rounded_corners' ) ? '0.3rem' : '',
 					'padding-top' => '2rem',
 					'padding-right' => '2rem',
@@ -3212,7 +3217,7 @@ return array(
 				),
 			),
 			'hover' => TRUE,
-			'color_border_hover' => us_get_color( 'color_content_primary' ),
+			'color_border_hover' => '_content_primary',
 		),
 		'post_content:1' => array(
 			'type' => 'full_content',
@@ -3259,7 +3264,7 @@ return array(
 			'key' => 'us_testimonial_role',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 					'line-height' => '1.5',
 				),
@@ -3269,7 +3274,7 @@ return array(
 			'key' => 'us_testimonial_rating',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_primary' ),
+					'color' => '_content_primary',
 				),
 			),
 		),
@@ -3344,7 +3349,7 @@ return array(
 			'key' => 'us_testimonial_role',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 					'line-height' => '1.5',
 					'margin-bottom' => '0',
@@ -3365,7 +3370,7 @@ return array(
 			'icon' => 'fas|quote-left',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_primary' ),
+					'color' => '_content_primary',
 					'font-size' => '3rem',
 					'line-height' => '1',
 					'position' => 'absolute',
@@ -3441,7 +3446,7 @@ return array(
 			'key' => 'us_testimonial_role',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 					'line-height' => '1.5',
 				),
@@ -3537,7 +3542,7 @@ return array(
 			'key' => 'us_testimonial_role',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 					'line-height' => '1.5',
 				),
@@ -3598,7 +3603,7 @@ return array(
 			'key' => 'us_testimonial_role',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 					'line-height' => '1.5',
 				),
@@ -3611,7 +3616,7 @@ return array(
 			'key' => 'us_testimonial_rating',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_primary' ),
+					'color' => '_content_primary',
 					'font-size' => '1.2rem',
 				),
 			),
@@ -3684,7 +3689,7 @@ return array(
 		'key' => 'us_testimonial_role',
 			'css' => array(
 				'default' => array(
-					'color' => us_get_color( 'color_content_faded' ),
+					'color' => '_content_faded',
 					'font-size' => '0.9rem',
 					'line-height' => '1.5',
 				),
@@ -3693,8 +3698,8 @@ return array(
 		'vwrapper:2' => array(
 			'css' => array(
 				'default' => array(
-					'background' => us_get_color( 'color_content_bg_alt', TRUE ),
-					'color' => us_get_color( 'color_content_text' ),
+					'background' => '_content_bg_alt',
+					'color' => '_content_text',
 					'padding-top' => '2rem',
 					'padding-right' => '2.5rem',
 					'padding-bottom' => '2rem',
@@ -3703,9 +3708,6 @@ return array(
 				),
 			),
 			'el_class' => 'grid_arrow_bottom',
-			'hover' => TRUE,
-			'color_bg_hover' => us_get_color( 'color_content_primary', TRUE ),
-			'color_text_hover' => '#fff',
 		),
 		'post_custom_field:3' => array(
 			'key' => 'us_testimonial_rating',
@@ -3758,7 +3760,7 @@ return array(
 					'font-size' => '12px',
 					'font-weight' => '700',
 					'text-transform' => 'uppercase',
-					'background' => us_get_color( 'color_content_primary', TRUE ),
+					'background' => '_content_primary',
 					'position' => 'absolute',
 					'top' => '10px',
 					'left' => is_rtl() ? '' : '10px',
@@ -3836,7 +3838,7 @@ return array(
 					'font-size' => '12px',
 					'font-weight' => '700',
 					'text-transform' => 'uppercase',
-					'background' => us_get_color( 'color_content_primary', TRUE ),
+					'background' => '_content_primary',
 					'position' => 'absolute',
 					'top' => '10px',
 					'left' => is_rtl() ? '' : '10px',
@@ -3891,6 +3893,7 @@ return array(
 				'default' => array(
 					'font-size' => '0.8rem',
 					'width' => '100%',
+					'border-radius' => '0',
 					'position' => 'absolute',
 					'right' => '0',
 					'bottom' => '0',
@@ -3917,8 +3920,8 @@ return array(
 		),
 		'options' => array(
 			'overflow' => TRUE,
-			'color_bg' => us_get_color( 'color_content_bg', TRUE ),
-			'color_text' => us_get_color( 'color_content_text' ),
+			'color_bg' => '_content_bg',
+			'color_text' => '_content_text',
 			'border_radius' => us_get_option( 'rounded_corners' ) ? '0.3rem' : '',
 			'box_shadow' => '0.3rem',
 			'box_shadow_hover' => '1rem',
@@ -3954,7 +3957,7 @@ return array(
 					'font-size' => '12px',
 					'font-weight' => '700',
 					'text-transform' => 'uppercase',
-					'background' => us_get_color( 'color_content_primary', TRUE ),
+					'background' => '_content_primary',
 					'position' => 'absolute',
 					'top' => '10px',
 					'left' => is_rtl() ? '' : '10px',
@@ -3993,6 +3996,7 @@ return array(
 				'default' => array(
 					'font-size' => '15px',
 					'width' => '100%',
+					'border-radius' => '0',
 					'position' => 'absolute',
 					'top' => '100%',
 					'right' => '0',
@@ -4019,8 +4023,8 @@ return array(
 			),
 		),
 		'options' => array(
-			'color_bg' => us_get_color( 'color_content_bg', TRUE ),
-			'color_text' => us_get_color( 'color_content_text' ),
+			'color_bg' => '_content_bg',
+			'color_text' => '_content_text',
 			'box_shadow_hover' => '1rem',
 		),
 	),

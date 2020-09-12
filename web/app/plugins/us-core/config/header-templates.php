@@ -986,7 +986,7 @@ return array(
 				'link' => '#',
 				'css' => array(
 					'default' => array(
-						'color' => '#f66',
+						'color' => '_content_primary',
 					)
 				),
 			),
@@ -998,7 +998,7 @@ return array(
 				'css' => array(
 					'default' => array(
 						'font-size' => '14px',
-						'color' => '#23ccaa',
+						'color' => '_content_primary',
 						'margin-bottom' => '4px',
 					),
 				),
@@ -1010,7 +1010,7 @@ return array(
 				'icon' => 'fas|truck',
 				'css' => array(
 					'default' => array(
-						'color' => '#23ccaa',
+						'color' => '_content_primary',
 						'font-size' => '14px',
 					)
 				),

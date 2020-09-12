@@ -6,8 +6,10 @@
 
 $us_layout = US_Layout::instance();
 
+us_register_context_layout( 'header' );
 get_header();
 
+us_register_context_layout( 'main' );
 ?>
 <main id="page-content" class="l-main"<?php echo ( us_get_option( 'schema_markup' ) ) ? ' itemprop="mainContentOfPage"' : ''; ?>>
 	<?php
@@ -51,4 +53,7 @@ get_header();
 	?>
 </main>
 
-<?php get_footer() ?>
+<?php
+us_register_context_layout( 'footer' );
+get_footer()
+?>

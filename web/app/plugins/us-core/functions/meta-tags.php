@@ -73,7 +73,7 @@ function us_save_post_add_og_image( $post_id ) {
 	// If the post has thumbnail - clear og_image meta data, in other case try to find an image inside post content
 	if ( $the_post_thumbnail_id = get_post_thumbnail_id( $post_id ) AND $the_post_thumbnail_src = wp_get_attachment_image_src( $the_post_thumbnail_id, 'large' ) ) {
 		update_post_meta( $post_id, 'us_og_image', '' );
-	} elseif ( $post = get_post( $post_id ) ) {
+	} elseif ( $post = get_post( $post_id ) AND ! empty( $post->post_content ) ) {
 		$the_content = $post->post_content;
 		$the_content = apply_filters( 'us_content_template_the_content', $the_content );
 		if ( preg_match( '/<img [^>]*src=["|\']([^"|\']+)/i', $the_content, $matches ) ) {

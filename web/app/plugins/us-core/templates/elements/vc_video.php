@@ -35,43 +35,110 @@ if ( ! empty( $source ) AND $source != 'custom' AND function_exists( 'get_field'
 	}
 }
 
-$classes = isset( $classes ) ? $classes : '';
-$classes .= $inline_css = $embed_html = $video_title = '';
-$hide_video_title = ! empty( $hide_video_title ) ? TRUE : FALSE;
-$hide_controls = ! empty( $hide_controls ) ? TRUE : FALSE;
-
+$_atts['class'] = 'w-video';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+$_atts['class'] .= ' align_' . $align;
 if ( ! empty( $ratio ) ) {
-	$classes .= ' ratio_' . $ratio;
+	$_atts['class'] .= ' ratio_' . $ratio;
+}
+if ( us_design_options_has_property( $css, 'border-radius' ) ) {
+	$_atts['class'] .= ' has_border_radius';
+}
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
 }
 
-$classes .= ' align_' . $align;
+// Image Overlay
+if ( $is_overlay_image = ! empty( $overlay_image ) ) {
+	$_atts['class'] .= ' with_overlay';
+	$_atts['style'] = sprintf( 'background-image:url(%s);', wp_get_attachment_image_url( $overlay_image, 'full' ) );
+}
 
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
+$embed_html = '';
 
 foreach ( us_config( 'embeds' ) as $provider => $embed ) {
 	if ( $embed['type'] != 'video' OR ! preg_match( $embed['regex'], $link, $matches ) ) {
 		continue;
 	}
 
-	if ( $hide_controls AND $provider == 'youtube' ) {
-		$video_title = '?controls=0';
-	} elseif ( $hide_video_title AND $provider == 'vimeo' ) {
-		$video_title = '&byline=0&title=0';
-	}
-	$video_id = $matches[ $embed['match_index'] ];
-	$embed_html = str_replace( '<id>', $video_id, $embed['html'] );
-	$embed_html = str_replace( '<video-title>', $video_title, $embed_html );
+	$url_params = array();
+	$embed_url_params = us_arr_path( $embed, 'url_params', array() );
 
+	switch ( $provider ) {
+		case 'youtube':
+			$url_params = array(
+				'autoplay' => (int) $is_overlay_image,
+				'origin' => get_site_url(),
+				'controls' => (int) ! $hide_controls,
+			);
+			break;
+		case 'vimeo':
+			$url_params = array(
+				'autoplay' => (int) $is_overlay_image,
+				'byline' => (int) $hide_video_title,
+				'title' => (int) $hide_video_title,
+			);
+			break;
+		default:
+			break;
+	}
+
+	if ( $provider == 'youtube' AND $overlay_image ) {
+		$url_params = array_merge(
+			$url_params,
+			array(
+				'playlist' => $matches[1],
+			)
+		);
+	}
+
+	$url_params = array_merge( $embed_url_params, $url_params );
+	$variables = array(
+		'id' => (string) $matches[ $embed['match_index'] ],
+		'url_params' => ! empty( $url_params )
+			? '?' . http_build_query( $url_params, '', '&' )
+			: '',
+	);
+
+	$embed_html = $embed['html'];
+	foreach ( $variables as $variable => $value ) {
+		$embed_html = str_replace( "<{$variable}>", $value, $embed_html );
+	}
 	break;
 }
 
 if ( empty( $embed_html ) ) {
+
 	// Using the default WordPress way
 	global $wp_embed;
 	$embed_html = $wp_embed->run_shortcode( '[embed]' . $link . '[/embed]' );
 }
 
-$output = '<div class="w-video' . $classes . '"' . $el_id . '><div class="w-video-h">' . $embed_html . '</div></div>';
+// If an overlay is used, then we use the template
+if ( $overlay_image ) {
+	$embed_html = '<script type="us-template/html">' . $embed_html . '</script>';
+}
+
+$output = '<div ' . us_implode_atts( $_atts ) . '>';
+$output .= '<div class="w-video-h">' . $embed_html . '</div>';
+
+// Play icon
+if ( $overlay_icon ) {
+	$output .= '<div class="w-video-icon" style="';
+	if ( ! empty( $overlay_icon_size ) ) {
+		$output .= 'font-size:' . esc_attr( $overlay_icon_size ) . ';';
+	}
+	if ( ! empty( $overlay_icon_bg_color ) ) {
+		$output .= 'background:' . us_get_color( $overlay_icon_bg_color, /* Gradient */ TRUE ) . ';';
+	}
+	if ( ! empty( $overlay_icon_text_color ) ) {
+		$output .= 'color:' . us_get_color( $overlay_icon_text_color ) . ';';
+	}
+	$output .= '"></div>';
+}
+$output .= '</div>';
 
 echo $output;

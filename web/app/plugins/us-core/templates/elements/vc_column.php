@@ -7,22 +7,22 @@
  *
  * Dev note: if you want to change some of the default values or acceptable attributes, overload the shortcodes config.
  *
- * @var $shortcode      string Current shortcode name
- * @var $shortcode_base string The original called shortcode name (differs if called an alias)
- * @var $content        string Shortcode's inner content
- * @var $classes        string Extend class names
+ * @var $shortcode           string Current shortcode name
+ * @var $shortcode_base      string The original called shortcode name (differs if called an alias)
+ * @var $content             string Shortcode's inner content
+ * @var $classes             string Extend class names
+ * @var $design_css_class    string Custom design css class
  *
- * @var $width          string Width in format: 1/2 (is set by WPBakery Page Builder renderer)
- * @var $text_color     string Text color
- * @var $animate        string Animation type: '' / 'fade' / 'afc' / 'afl' / 'afr' / 'afb' / 'aft' / 'hfc' / 'wfc'
- * @var $animate_delay  float Animation delay (in seconds)
- * @var $el_id          string element ID
- * @var $el_class       string Additional class
- * @var $offset         string WPBakery Page Builder classes for responsive behaviour
- * @var $css            string Custom CSS
+ * @var $width               string Width in format: 1/2 (is set by WPBakery Page Builder renderer)
+ * @var $text_color          string Text color
+ * @var $animate             string Animation type: '' / 'fade' / 'afc' / 'afl' / 'afr' / 'afb' / 'aft' / 'hfc' / 'wfc'
+ * @var $animate_delay       float Animation delay (in seconds)
+ * @var $el_id               string element ID
+ * @var $el_class            string Additional class
+ * @var $offset              string WPBakery Page Builder classes for responsive behaviour
+ * @var $css                 string Custom CSS
+ * @var $us_bg_overlay_color string
  */
-
-$inner_classes = $el_id_string = $link_html = $wrapper_inline_css = '';
 
 if ( function_exists( 'wpb_translateColumnWidthToSpan' ) ) {
 	$width = wpb_translateColumnWidthToSpan( $width );
@@ -37,47 +37,65 @@ if ( function_exists( 'vc_column_offset_class_merge' ) ) {
 } elseif ( function_exists( 'us_vc_column_offset_class_merge' ) ) {
 	$width = us_vc_column_offset_class_merge( $offset, $width );
 }
-$classes = isset( $classes ) ? ( $classes . ' ' ) : '';
-$classes .= $width . ' wpb_column vc_column_container';
 
-// Move us_custom_* class to external container
-if ( preg_match( '/(\sus_custom_\w+)\s/', $classes, $matches ) ) {
-	$classes = str_replace( $matches[0], '', $classes );
-	$inner_classes .= $matches[0];
+// Dev note: "width" classes should be the first for correct work of "columns_stacking_width" option
+$_atts['class'] = $width . ' wpb_column vc_column_container';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+
+$inner_atts['class'] = 'vc_column-inner';
+
+// Move us_custom_* class to other container
+if ( ! empty( $design_css_class ) ) {
+	$_atts['class'] = str_replace( ' ' . $design_css_class, '', $_atts['class'] );
+	$inner_atts['class'] .= ' ' . $design_css_class;
 }
 
 // When bg color or border is set in Design Options, add the specific class
 if ( us_design_options_has_property( $css, array( 'background-color', 'background-image' ) ) ) {
-	$classes .= ' has-fill';
+	$_atts['class'] .= ' has-fill';
 }
 
 // When text color is set in Design Options, add the specific class
 if ( us_design_options_has_property( $css, 'color' ) ) {
-	$classes .= ' has_text_color';
+	$_atts['class'] .= ' has_text_color';
 }
 
+// Animated Column
 if ( ! empty( $animate ) ) {
-	$classes .= ' animate_' . $animate;
-}
-
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
-
-// Link
-if ( $link_atts = us_generate_link_atts( $link ) ) {
-	$classes .= ' has-link';
-	$link_html = '<a class="vc_column-link smooth-scroll"' . $link_atts . '></a>';
-}
-
-// Sticky Column
-if ( $sticky ) {
-	$inner_classes .= ' type_sticky';
-	$wrapper_inline_css = us_prepare_inline_css( array( 'top' => $sticky_pos_top ) );
+	$_atts['class'] .= ' animate_' . $animate;
 }
 
 // Stretched Column
 if ( $stretch ) {
-	$classes .= ' stretched';
+	$_atts['class'] .= ' stretched';
+}
+
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
+
+// Background Overlay
+$bg_overlay_html = '';
+if ( ! empty( $us_bg_overlay_color ) ) {
+	$_atts['class'] .= ' with_overlay';
+	$bg_overlay_html = '<div class="vc_column-overlay" style="background:' . us_get_color( $us_bg_overlay_color, /* Gradient */ TRUE ) . '"></div>';
+}
+
+// Link
+$link_html = '';
+if ( $link_atts = us_generate_link_atts( $link ) ) {
+	$_atts['class'] .= ' has-link';
+	$link_html = '<a class="vc_column-link smooth-scroll"' . $link_atts . '></a>';
+}
+
+// Sticky Column
+$wrapper_inline_css = '';
+if ( $sticky ) {
+	$inner_atts['class'] .= ' type_sticky';
+	$wrapper_inline_css = us_prepare_inline_css( array( 'top' => $sticky_pos_top ) );
 }
 
 $inline_css = us_prepare_inline_css(
@@ -87,8 +105,9 @@ $inline_css = us_prepare_inline_css(
 );
 
 // Output the element
-$output = '<div class="' . $classes . '"' . $el_id . $inline_css . '>';
-$output .= '<div class="vc_column-inner' . $inner_classes . '">';
+$output = '<div ' . us_implode_atts( $_atts ) . $inline_css . '>';
+$output .= '<div ' . us_implode_atts( $inner_atts ) . '>';
+$output .= $bg_overlay_html;
 $output .= '<div class="wpb_wrapper"' . $wrapper_inline_css . '>' . do_shortcode( $content ) . '</div>';
 $output .= $link_html;
 $output .= '</div></div>';

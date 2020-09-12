@@ -85,13 +85,20 @@
 .rtl .usof-checkbox input[type="checkbox"] {
 	margin: 0 0 0 5px;
 	}
-.rtl .usof-color-clear {
+.rtl .usof-color.clear_left .usof-color-clear {
 	left: auto;
 	right: -30px;
 	}
-.rtl .usof-form-row.clear_right .usof-color-clear {
+.rtl .usof-color.clear_right .usof-color-clear {
 	left: -30px;
 	right: auto;
+	}
+.rtl .usof-color.dynamic_colors .usof-color-arrow {
+	left: 0;
+	right: auto;
+	}
+.rtl .usof-color.dynamic_colors .usof-color-list-item-name {
+	padding: 0 5px 0 15px;
 	}
 
 .rtl .usof-design-options-header-reset {
@@ -117,8 +124,8 @@
 .rtl .us-icon select {
 	border-radius: 0 3px 3px 0;
 	}
-.rtl .type_check_table .usof-checkbox:nth-child(2n) {
-	margin-left: 8%;
+.rtl .type_check_table .usof-checkbox-list {
+	margin-left: -40px;
 	margin-right: 0;
 	}
 .rtl .usof-radio:first-child > label {
@@ -136,7 +143,7 @@
 	}
 .rtl .usof-switcher > input:checked + label .usof-switcher-box > i {
 	left: auto;
-	right: 28px;
+	right: 23px;
 	}
 .rtl .usof-switcher-box {
 	margin-left: 10px;

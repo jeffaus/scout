@@ -10,22 +10,23 @@ add_action( 'usof_after_save', 'us_generate_asset_files' );
 add_action( 'usof_ajax_mega_menu_save_settings', 'us_generate_asset_files' );
 add_action( 'update_option_siteurl', 'us_generate_asset_files' );
 add_action( 'update_option_home', 'us_generate_asset_files' );
+
 function us_generate_asset_files() {
 	$subdomains = array();
-	//empty array without code for default language
+	// Empty array without code for default language
 	$language_domains[] = '';
 
+	//TODO: add support for subdomain asset files for Polylang?
+
 	// Is WPML installed and activated
-	if ( class_exists( 'SitePress' ) AND defined( 'ICL_LANGUAGE_CODE' ) ) {
-		global $sitepress;
+	if ( class_exists( 'SitePress' ) AND has_filter( 'us_tr_setting' ) ) {
+		$default_lang = apply_filters( 'us_tr_default_language', NULL );
+		// get negotiation type,  '2' is different domain per language
+		$language_negotiation_type = apply_filters( 'us_tr_setting', FALSE, 'language_negotiation_type' );
 
-		$default_language = $sitepress->get_default_language();
-		// get negotiation type, '2' is different domain per language
-		$language_negotiation_type = $sitepress->get_setting( 'language_negotiation_type', FALSE );
-
-		//create extra styles and js only if selected different domain per language negotiation type
-		if ( ! empty( $default_language ) AND $language_negotiation_type == '2' ) {
-			$language_domains = array_merge( $language_domains, $sitepress->get_setting( 'language_domains', array() ) );
+		// Create extra styles and js only if selected different domain per language negotiation type
+		if ( ! empty( $default_lang ) AND $language_negotiation_type == '2' ) {
+			$language_domains = array_merge( $language_domains, apply_filters( 'us_tr_setting', array(), 'language_domains' ) );
 		}
 	}
 
@@ -124,7 +125,13 @@ function us_get_asset_file( $ext, $url = FALSE, $custom_language_domain = '' ) {
 	return $file;
 }
 
-/* Generate main FRONTEND assets (JS or CSS) */
+/**
+ * Generate main FRONTEND assets (JS or CSS)
+ *
+ * @param string $ext file type (JS/CSS)
+ * @param string $custom_language_domain
+ * @return bool whether file was successfully created
+ */
 function us_generate_asset_file( $ext, $custom_language_domain = '' ) {
 	if ( empty( $ext ) ) {
 		return FALSE;
@@ -140,16 +147,27 @@ function us_generate_asset_file( $ext, $custom_language_domain = '' ) {
 		$assets_config = us_config( 'assets', array() );
 
 		foreach ( $assets_config as $component => $component_atts ) {
+			// Skip assets that do not meet requiremets specified in their config
 			if ( isset( $component_atts['apply_if'] ) AND ! $component_atts['apply_if'] ) {
 				continue;
 			}
+
+			// Skipp Lazy load assets if respective option is not set
 			if ( $component == 'lazy-load' AND ! us_get_option( 'lazy_load', 0 ) ) {
 				continue;
 			}
+
+			// Skip assets that have no files for current file type
 			if ( ! isset( $component_atts[ $ext ] ) OR ! $component_atts[ $ext ] ) {
 				continue;
 			}
-			if ( ( isset( $component_atts['hidden'] ) AND $component_atts['hidden'] ) OR ! isset( $usof_options['assets'] ) OR in_array( $component, $usof_options['assets'] ) ) {
+
+			// Include asset's files if it is included by default or checked by admin in theme options
+			if (
+				( isset( $component_atts['hidden'] ) AND $component_atts['hidden'] )
+				OR ! isset( $usof_options['assets'] )
+				OR ( ! isset( $usof_options['assets'][ $component ] ) OR $usof_options['assets'][ $component ] == 1 )
+			) {
 				$asset_filename = $us_template_directory . $component_atts[ $ext ];
 				if ( $ext == 'js' ) {
 					$asset_filename = str_replace( '.js', '.min.js', $asset_filename );
@@ -428,4 +446,25 @@ function us_filter_content_for_lazy_load( $content ) {
 // If the development version is activated, then maintenance mode is enabled
 if ( get_option( 'us_license_dev_activated', 0 ) ) {
 	us_update_option( 'maintenance_mode', 1 );
+}
+
+if (
+	is_admin()
+	AND has_filter( 'us_tr_default_language' )
+) {
+	/**
+	 * Add redirect for Theme Options page, so it is always displayed in default language
+	 * @return void
+	 */
+	global $pagenow;
+	$current_language = apply_filters( 'us_tr_current_language', NULL );
+	$default_language = apply_filters( 'us_tr_default_language', NULL );
+	if (
+		$current_language != $default_language
+		AND $pagenow == 'admin.php'
+		AND us_arr_path( $_GET, 'page' ) == 'us-theme-options'
+	) {
+		wp_redirect( admin_url() . 'admin.php?page=us-theme-options&lang=' . $default_language );
+		exit;
+	}
 }

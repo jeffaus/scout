@@ -4,15 +4,6 @@
  * List of Post Comments with response form
  */
 
-// Remove icons in Comments form
-if ( us_get_option( 'optimize_assets' ) AND ! in_array( 'font-awesome', us_get_option( 'assets' ) ) ) { // if "Font Awesome" asset is disabled
-	$with_icons = FALSE;
-} elseif ( US_THEMENAME == 'Zephyr' ) { // for Zephyr theme
-	$with_icons = FALSE;
-} else {
-	$with_icons = TRUE;
-}
-
 $comments_number = get_comments_number();
 ?>
 <div id="comments" class="w-comments">
@@ -58,7 +49,6 @@ $comments_number = get_comments_number();
 					'name' => 'comment',
 					'placeholder' => us_translate_x( 'Comment', 'noun' ),
 					'required' => TRUE,
-					'icon' => $with_icons ? 'far|edit' : '',
 				),
 				'author' => array(
 					'type' => 'text',
@@ -66,7 +56,6 @@ $comments_number = get_comments_number();
 					'placeholder' => us_translate( 'Name' ),
 					'required' => get_option( 'require_name_email' ),
 					'value' => $commenter['comment_author'],
-					'icon' => $with_icons ? 'far|user' : '',
 				),
 				'email' => array(
 					'type' => 'email',
@@ -74,7 +63,6 @@ $comments_number = get_comments_number();
 					'placeholder' => us_translate( 'Email' ),
 					'required' => get_option( 'require_name_email' ),
 					'value' => $commenter['comment_author_email'],
-					'icon' => $with_icons ? 'far|envelope' : '',
 				),
 			);
 

@@ -8,7 +8,7 @@ return array(
 	'icon' => 'fas fa-ellipsis-v',
 	'show_settings_on_create' => FALSE,
 	'as_parent' => array(
-		'except' => 'vc_row,vc_column,vc_tta_tabs,vc_tta_tour,vc_tta_accordion,vc_tta_section',
+		'except' => 'vc_row,vc_column,vc_tta_tabs,vc_tta_tour,vc_tta_accordion,vc_tta_section,us_vwrapper',
 	),
 	'js_view' => 'VcColumnView',
 	'params' => array_merge( array(

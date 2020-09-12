@@ -867,14 +867,20 @@ class us_migration_5_0 extends US_Migration_Translator {
 		/*
 		 * Blog Home Page
 		 */
-		if ( in_array( $options['blog_layout'], array( 'classic', 'smallcircle', 'smallsquare' ) ) AND $options['blog_cols'] != 1 ) {
-			$options['blog_items_gap'] = 1.5;
-		} elseif ( $options['blog_layout'] == 'tiles' ) {
-			$options['blog_items_gap'] = 0.15;
-		} elseif ( $options['blog_layout'] == 'flat' ) {
-			$options['blog_items_gap'] = 0.3;
-		} elseif ( $options['blog_layout'] == 'compact' ) {
-			$options['blog_items_gap'] = 1;
+		if ( isset( $options['blog_layout'] ) ) {
+			if (
+				in_array( $options['blog_layout'], array( 'classic', 'smallcircle', 'smallsquare' ) )
+				AND ! empty( $options['blog_cols'] )
+				AND $options['blog_cols'] != 1
+			) {
+				$options['blog_items_gap'] = 1.5;
+			} elseif ( $options['blog_layout'] == 'tiles' ) {
+				$options['blog_items_gap'] = 0.15;
+			} elseif ( $options['blog_layout'] == 'flat' ) {
+				$options['blog_items_gap'] = 0.3;
+			} elseif ( $options['blog_layout'] == 'compact' ) {
+				$options['blog_items_gap'] = 1;
+			}
 		}
 
 		$blog_layout_name = isset( $options['blog_layout'] ) ? $options['blog_layout'] : 'classic';
@@ -1042,14 +1048,20 @@ class us_migration_5_0 extends US_Migration_Translator {
 		/*
 		 * Archive Pages
 		 */
-		if ( in_array( $options['archive_layout'], array( 'classic', 'smallcircle', 'smallsquare' ) ) AND $options['archive_cols'] != 1 ) {
-			$options['archive_items_gap'] = 1.5;
-		} elseif ( $options['archive_layout'] == 'tiles' ) {
-			$options['archive_items_gap'] = 0.15;
-		} elseif ( $options['archive_layout'] == 'flat' ) {
-			$options['archive_items_gap'] = 0.3;
-		} elseif ( $options['archive_layout'] == 'compact' ) {
-			$options['archive_items_gap'] = 1;
+		if ( isset( $options['archive_layout'] ) ) {
+			if (
+				in_array( $options['archive_layout'], array( 'classic', 'smallcircle', 'smallsquare' ) )
+				AND ! empty( $options['archive_cols'] )
+				AND $options['archive_cols'] != 1
+			) {
+				$options['archive_items_gap'] = 1.5;
+			} elseif ( $options['archive_layout'] == 'tiles' ) {
+				$options['archive_items_gap'] = 0.15;
+			} elseif ( $options['archive_layout'] == 'flat' ) {
+				$options['archive_items_gap'] = 0.3;
+			} elseif ( $options['archive_layout'] == 'compact' ) {
+				$options['archive_items_gap'] = 1;
+			}
 		}
 
 		$blog_layout_name = isset( $options['archive_layout'] ) ? $options['archive_layout'] : 'classic';
@@ -1217,14 +1229,20 @@ class us_migration_5_0 extends US_Migration_Translator {
 		/*
 		 * Search Results Page
 		 */
-		if ( in_array( $options['search_layout'], array( 'classic', 'smallcircle', 'smallsquare' ) ) AND $options['search_cols'] != 1 ) {
-			$options['search_items_gap'] = 1.5;
-		} elseif ( $options['search_layout'] == 'tiles' ) {
-			$options['search_items_gap'] = 0.15;
-		} elseif ( $options['search_layout'] == 'flat' ) {
-			$options['search_items_gap'] = 0.3;
-		} elseif ( $options['search_layout'] == 'compact' ) {
-			$options['search_items_gap'] = 1;
+		if ( isset( $options['search_layout'] ) ) {
+			if (
+				in_array( $options['search_layout'], array( 'classic', 'smallcircle', 'smallsquare' ) )
+				AND ! empty( $options['search_cols'] )
+				AND $options['search_cols'] != 1
+			) {
+				$options['search_items_gap'] = 1.5;
+			} elseif ( $options['search_layout'] == 'tiles' ) {
+				$options['search_items_gap'] = 0.15;
+			} elseif ( $options['search_layout'] == 'flat' ) {
+				$options['search_items_gap'] = 0.3;
+			} elseif ( $options['search_layout'] == 'compact' ) {
+				$options['search_items_gap'] = 1;
+			}
 		}
 
 		$blog_layout_name = isset( $options['search_layout'] ) ? $options['search_layout'] : 'classic';

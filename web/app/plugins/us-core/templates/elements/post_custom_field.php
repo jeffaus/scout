@@ -7,16 +7,51 @@
  * @var $id string
  */
 
-if ( $us_elm_context == 'grid_term' ) {
-	global $us_grid_term;
-	$term = $us_grid_term;
-	$postID = NULL;
-} elseif ( $us_elm_context == 'shortcode' AND ( is_tax() OR is_tag() OR is_category() ) ) {
-	$term = get_queried_object();
-	$postID = NULL;
-} else {
-	$postID = get_the_ID();
-	$term = NULL;
+global $us_grid_object_type;
+
+if ( $us_elm_context == 'grid' ) {
+	if ( $us_grid_object_type == 'term' ) {
+		global $us_grid_term;
+		$term = $us_grid_term;
+		$postID = NULL;
+	} else { /* elseif $us_grid_object_type == 'post' */
+		$postID = get_the_ID();
+		$term = NULL;
+	}
+
+} else { /* elseif $us_elm_context == 'shortcode' */
+	// TODO, maybe we should replace $us_elm_context with $us_grid_listing_outputs_items
+	global $us_grid_listing_outputs_items;
+	// Shortcodes in full content element inside grid
+	if ( ! empty( $us_grid_listing_outputs_items ) ) {
+		if ( $us_grid_object_type == 'term' ) {
+			global $us_grid_term;
+			$term = $us_grid_term;
+			$postID = NULL;
+		} else  {
+			$postID = get_the_ID();
+			$term = NULL;
+		}
+		// Rest of conditions for shortcodes in regular content
+	} elseif ( is_tax() OR is_tag() OR is_category() ) {
+		$term = get_queried_object();
+		$postID = NULL;
+	} elseif (
+		is_404()
+		AND ( $page_404_ID = us_get_option( 'page_404' ) ) !== 'default'
+	) {
+		$postID = $page_404_ID;
+		$term = NULL;
+	} elseif (
+		is_search()
+		AND ( $search_page_ID = us_get_option( 'search_page' ) ) !== 'default'
+	) {
+		$postID = $search_page_ID;
+		$term = NULL;
+	} else { /* regular post */
+		$postID = get_the_ID();
+		$term = NULL;
+	}
 }
 
 global $us_predefined_post_custom_fields;
@@ -48,8 +83,7 @@ if ( $key == 'custom' ) {
 	if ( function_exists( 'get_field_object' ) ) {
 		if ( $postID ) {
 			$acf_obj = get_field_object( $key, $postID );
-
-			$value = $acf_obj['value'];
+			$value = us_arr_path( $acf_obj, 'value', '' );
 
 			// Force "image" type
 			// TODO: Add support for link
@@ -162,7 +196,7 @@ if ( $link === 'none' ) {
 }
 
 // Force "Open in a new tab" attributes
-if ( $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
+if ( ! empty( $link_atts ) AND $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
 	$link_atts .= ' target="_blank" rel="noopener nofollow"';
 }
 
@@ -176,6 +210,10 @@ if ( $link != 'none' AND $color_link ) {
 // When text color is set in Design Options, add the specific class
 if ( us_design_options_has_property( $css, 'color' ) ) {
 	$classes .= ' has_text_color';
+}
+
+if ( us_design_options_has_property( $css, 'border-radius' ) ) {
+	$classes .= ' has_border_radius';
 }
 
 $classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';

@@ -13,14 +13,18 @@
 $content_template_content = '';
 if ( $content_template_id = us_get_page_area_id( 'content' ) ) {
 
+	if ( function_exists( 'us_register_context_layout' ) ) {
+		us_register_context_layout( 'main' );
+	}
+
 	if ( $content_template = get_post( (int) $content_template_id ) ) {
 		us_open_wp_query_context();
 
 		// Some WPML tweaks
-		$translated_content_template_id = apply_filters( 'wpml_object_id', $content_template->ID, 'us_content_template', TRUE );
+		$translated_content_template_id = apply_filters( 'us_tr_object_id', $content_template->ID, 'us_content_template', TRUE );
 		// Fallback for case when post type is not yet migrated
 		if ( $content_template->post_type == 'us_page_block' ) {
-			$translated_content_template_id = apply_filters( 'wpml_object_id', $content_template->ID, 'us_page_block', TRUE );
+			$translated_content_template_id = apply_filters( 'us_tr_object_id', $content_template->ID, 'us_page_block', TRUE );
 		}
 		if ( $translated_content_template_id != $content_template->ID ) {
 			$content_template = get_post( $translated_content_template_id );

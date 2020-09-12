@@ -61,6 +61,23 @@
  * @var $us_shape_bring_to_front string Bring to front element
  */
 
+// Check the inner content for Page Blocks with the parent Row excluded, if so, output these Page Blocks only
+if ( strpos( $content, 'remove_rows="parent_row"' ) !== FALSE ) {
+	$page_blocks = '';
+	$page_block_regex = get_shortcode_regex( array( 'us_page_block' ) );
+
+	if ( preg_match_all( '/'. $page_block_regex .'/', $content, $matches, PREG_PATTERN_ORDER ) ) {
+		foreach ( us_arr_path( $matches, '0', array() ) as $page_block ) {
+			if ( strpos( $page_block, 'remove_rows="parent_row"' ) !== FALSE ) {
+				$page_blocks .= $page_block;
+			}
+		}
+	}
+	echo do_shortcode( $page_blocks );
+
+	return;
+}
+
 $atts = us_shortcode_atts( $atts, $shortcode_base );
 $classes = isset( $classes ) ? $classes : '';
 
@@ -109,7 +126,19 @@ if ( $us_bg_image_source == 'media' ) {
 	}
 
 	// Featured image source
-} elseif ( $us_bg_image_source == 'featured' AND ( isset( $GLOBALS['post'] ) OR is_404() OR is_search() OR is_archive() OR ( is_home() AND ! have_posts() ) ) ) {
+} elseif (
+	$us_bg_image_source == 'featured'
+	AND (
+		isset( $GLOBALS['post'] )
+		OR is_404()
+		OR is_search()
+		OR is_archive()
+		OR (
+			is_home()
+			AND ! have_posts()
+		)
+	)
+) {
 	$us_layout = US_Layout::instance();
 	if ( ! empty( $us_layout->post_id ) ) {
 		$image_src = wp_get_attachment_image_src( get_post_thumbnail_id( $us_layout->post_id ), 'full' );
@@ -123,8 +152,24 @@ if ( $us_bg_image_source == 'media' ) {
 	}
 
 	// Custom field image source
-} elseif ( $us_bg_image_source != 'none' AND $postID = get_the_ID() ) {
-	$_value = get_post_meta( $postID, $us_bg_image_source, TRUE );
+} elseif (
+	$us_bg_image_source != 'none'
+	AND $object_id = get_the_ID()
+) {
+	// ACF Custom Image
+	if (
+		function_exists( 'acf_get_field' )
+		AND $acf_field = acf_get_field( $us_bg_image_source )
+		AND us_arr_path( $acf_field, 'type', '' ) === 'image'
+	) {
+		$object_id = get_queried_object_id();
+	}
+
+	$meta_type = is_archive()
+		? 'term'
+		: 'post';
+
+	$_value = get_metadata( $meta_type, $object_id, $us_bg_image_source, TRUE );
 	$image_src = wp_get_attachment_image_src( $_value, 'full' );
 }
 
@@ -177,13 +222,13 @@ if ( $us_bg_show == 'video' AND $us_bg_video != '' ) {
 		$video_id = $matches[ $embed['match_index'] ];
 		if ( $provider == 'youtube' ) {
 			$classes .= ' with_youtube';
-			$video_title = '?autoplay=1&loop=1&playlist=' . $video_id . '&controls=0&mute=1&iv_load_policy=3&disablekb=1&wmode=transparent';
+			$video_params = '?autoplay=1&loop=1&playlist=' . $video_id . '&controls=0&mute=1&iv_load_policy=3&disablekb=1&wmode=transparent';
 		} elseif ( $provider == 'vimeo' ) {
 			$classes .= ' with_vimeo';
-			$video_title = '&autoplay=1&loop=1&muted=1&title=0&byline=0&background=1';
+			$video_params = '?autoplay=1&loop=1&muted=1&title=0&byline=0&background=1';
 		}
 		$embed_html = str_replace( '<id>', $matches[ $embed['match_index'] ], $embed['html'] );
-		$embed_html = str_replace( '<video-title>', $video_title, $embed_html );
+		$embed_html = str_replace( '<url_params>', $video_params, $embed_html );
 		break;
 	}
 	if ( $provider_matched ) {
@@ -245,7 +290,7 @@ if ( $us_bg_show == 'img_slider' AND ! empty( $us_bg_slider_ids ) ) {
 
 // Background Overlay
 $bg_overlay_html = '';
-if ( ! empty( $us_bg_overlay_color ) ) {
+if ( ! empty( $us_bg_overlay_color ) AND $us_bg_overlay_color = us_get_color( $us_bg_overlay_color, /* Gradient */ TRUE ) ) {
 	$classes .= ' with_overlay';
 	$bg_overlay_html = '<div class="l-section-overlay" style="background: ' . $us_bg_overlay_color . '"></div>';
 }
@@ -262,20 +307,38 @@ $bg_shape_html = '';
 /*
  * Compatibility old shape params with new (after version 7.1)
  */
-if ( empty( $us_shape_show_top ) AND empty( $us_shape_show_bottom ) AND ! empty( $us_shape_position ) AND ! empty( $us_shape ) AND ( $us_shape != 'none' ) ) {
+if (
+	empty( $us_shape_show_top )
+	AND empty( $us_shape_show_bottom )
+	AND ! empty( $us_shape_position )
+	AND ! empty( $us_shape )
+	AND ( $us_shape != 'none' )
+) {
 	${'us_shape_show_' . $us_shape_position} = 1;
 	${'us_shape_' . $us_shape_position} = $us_shape;
 
-	if ( ${'us_shape_height_' . $us_shape_position} == $defaults_atts[ 'us_shape_height_' . $us_shape_position ] AND $us_shape_height != $defaults_atts['us_shape_height'] ) {
+	if (
+		${'us_shape_height_' . $us_shape_position} == $defaults_atts[ 'us_shape_height_' . $us_shape_position ]
+		AND $us_shape_height != $defaults_atts['us_shape_height']
+	) {
 		${'us_shape_height_' . $us_shape_position} = $us_shape_height;
 	}
-	if ( ${'us_shape_color_' . $us_shape_position} == $defaults_atts[ 'us_shape_color_' . $us_shape_position ] AND $us_shape_color != $defaults_atts['us_shape_color'] ) {
+	if (
+		${'us_shape_color_' . $us_shape_position} == $defaults_atts[ 'us_shape_color_' . $us_shape_position ]
+		AND $us_shape_color != $defaults_atts['us_shape_color']
+	) {
 		${'us_shape_color_' . $us_shape_position} = $us_shape_color;
 	}
-	if ( ${'us_shape_overlap_' . $us_shape_position} == $defaults_atts[ 'us_shape_overlap_' . $us_shape_position ] AND $us_shape_overlap != $defaults_atts['us_shape_overlap'] ) {
+	if (
+		${'us_shape_overlap_' . $us_shape_position} == $defaults_atts[ 'us_shape_overlap_' . $us_shape_position ]
+		AND $us_shape_overlap != $defaults_atts['us_shape_overlap']
+	) {
 		${'us_shape_overlap_' . $us_shape_position} = $us_shape_overlap;
 	}
-	if ( ${'us_shape_flip_' . $us_shape_position} == $defaults_atts[ 'us_shape_flip_' . $us_shape_position ] AND $us_shape_flip != $defaults_atts['us_shape_flip'] ) {
+	if (
+		${'us_shape_flip_' . $us_shape_position} == $defaults_atts[ 'us_shape_flip_' . $us_shape_position ]
+		AND $us_shape_flip != $defaults_atts['us_shape_flip']
+	) {
 		${'us_shape_flip_' . $us_shape_position} = $us_shape_flip;
 	}
 
@@ -335,12 +398,14 @@ if ( $us_shape_show_top OR $us_shape_show_bottom ) {
 			}
 
 			// Height and color
-			${'svg_inline_css_' . $position} = us_prepare_inline_css(
-				array(
-					'height' => ( ${'us_shape_height_' . $position} === $defaults_atts["us_shape_height_{$position}"] ) ? '' : ${'us_shape_height_' . $position},
-					'color' => ( ${'us_shape_color_' . $position} === $defaults_atts["us_shape_color_{$position}"] ) ? '' : ${'us_shape_color_' . $position},
-				)
-			);
+			$svg_inline_css_data = array( 'color' => '', 'height' => '' );
+			if ( ${'us_shape_height_' . $position} !== $defaults_atts["us_shape_height_{$position}"] ) {
+				$svg_inline_css_data['height'] = ${'us_shape_height_' . $position};
+			}
+			if ( us_get_color( ${'us_shape_color_' . $position} ) !== $defaults_atts["us_shape_color_{$position}"] ) {
+				$svg_inline_css_data['color'] = us_get_color( ${'us_shape_color_' . $position} );
+			}
+			${'svg_inline_css_' . $position} = us_prepare_inline_css( $svg_inline_css_data );
 
 			$bg_shape_html .= '<div class="' . implode( ' ', ${'shape_classes_' . $position} ) . '"';
 			$bg_shape_html .= ${'svg_inline_css_' . $position};

@@ -9,6 +9,9 @@ function uscore_after_setup_theme() {
 		return;
 	}
 
+	// All methods that apply to Grid and Grid Filter
+	require US_CORE_DIR . 'functions/grid.php';
+
 	// UpSolution Header definitions
 	require US_CORE_DIR . 'functions/header.php';
 
@@ -50,6 +53,9 @@ function uscore_after_setup_theme() {
 	// Widgets
 	require US_CORE_DIR . 'functions/widgets.php';
 
+	// Regenerate Thumbnails
+	require_once US_CORE_DIR . 'admin/functions/regenerate_thumbnails.php';
+
 	if ( is_admin() ) {
 
 		// Admin Enqueue
@@ -72,6 +78,9 @@ function uscore_after_setup_theme() {
 
 		// Customize TinyMCE and Gutenberg editors
 		require US_CORE_DIR . 'admin/functions/customize-editors.php';
+
+		// Optimize assets
+		require US_CORE_DIR . 'admin/functions/optimize-assets.php';
 
 	} else {
 

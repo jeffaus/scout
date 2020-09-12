@@ -69,6 +69,7 @@
 			}
 			.usof-slider-runner {
 				position: absolute;
+				z-index: 1;
 				top: -10px;
 				height: 24px;
 				width: 24px;

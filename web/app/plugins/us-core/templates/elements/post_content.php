@@ -52,8 +52,9 @@ if ( ! empty( $el_id ) AND $us_elm_context == 'shortcode'  ) {
 // Default case
 $the_content = '';
 
+global $us_grid_object_type;
 // Get term description as "Excerpt" for Grid terms
-if ( $us_elm_context == 'grid_term' ) {
+if ( $us_elm_context == 'grid' AND $us_grid_object_type == 'term' ) {
 	global $us_grid_term;
 	$the_content = $us_grid_term->description;
 
@@ -90,18 +91,21 @@ if ( $us_elm_context == 'grid_term' ) {
 				$the_content = $shop_page->post_content;
 			}
 
-		} elseif ( isset( $us_is_search_page_block ) AND $us_is_search_page_block AND $us_elm_context == 'shortcode' ) {
-			$us_page = get_post( us_get_option( 'search_page' ) );
-			if ( $us_page ) {
-				$us_page = get_post( apply_filters( 'wpml_object_id', $us_page->ID, 'page', TRUE ) );
-				$the_content = $us_page->post_content;
+		} elseif ( ! empty( $us_is_search_page_block ) AND $us_elm_context == 'shortcode' AND $search_page = get_post( us_get_option( 'search_page' ) ) ) {
+			if ( has_filter( 'us_tr_object_id' ) ) {
+				$search_page = get_post( apply_filters( 'us_tr_object_id', $search_page->ID, 'page', TRUE ) );
 			}
+
+			// Replacing last post ID at page blocks stack with actual search page template ID
+			us_remove_from_page_block_ids();
+			us_add_to_page_block_ids( $search_page->ID );
+
+			$the_content = $search_page->post_content;
 			$us_is_search_page_block = FALSE;
 
-		} elseif ( is_404() AND $us_elm_context == 'shortcode' ) {
-			$page_404 = get_post( us_get_option( 'page_404' ) );
-			if ( class_exists( 'SitePress' ) ) {
-				$page_404 = get_post( apply_filters( 'wpml_object_id', $page_404->ID, 'page', TRUE ) );
+		} elseif ( is_404() AND $us_elm_context == 'shortcode' AND $page_404 = get_post( us_get_option( 'page_404' ) ) ) {
+			if ( has_filter( 'us_tr_object_id' ) ) {
+				$page_404 = get_post( apply_filters( 'us_tr_object_id', $page_404->ID, 'page', TRUE ) );
 			}
 			$the_content = $page_404->post_content;
 

@@ -53,7 +53,6 @@ if ( ! empty( $button_fullwidth ) ) {
 $classes = isset( $classes ) ? $classes : '';
 $classes .= ' layout_' . $fields_layout;
 $classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-
 $el_id = ( ! empty( $el_id ) ) ? $el_id : '';
 
 // Generate fields params

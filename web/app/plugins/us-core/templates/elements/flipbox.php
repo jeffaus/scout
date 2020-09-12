@@ -2,9 +2,9 @@
 
 /**
  * Flipbox
+ *
+ * @var $design_css_class string Custom design css class
  */
-
-$front_inline_css = $back_inline_css = array();
 
 // When rotating cubetilt in diagonal direction, we're actually doing a cube flip animation instead
 if ( in_array( $direction, array( 'ne', 'se', 'sw', 'nw' ) ) ) {
@@ -17,40 +17,29 @@ if ( in_array( $direction, array( 'ne', 'se', 'sw', 'nw' ) ) ) {
 }
 
 // Main element classes
-$classes = isset( $classes ) ? $classes : '';
-$classes .= ' animation_' . $animation;
-$classes .=' direction_' . $direction;
+$_atts['class'] = 'w-flipbox';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+$_atts['class'] .= ' animation_' . $animation;
+$_atts['class'] .= ' direction_' . $direction;
+
+// Move us_custom_* class to front and back containers
+if ( ! empty( $design_css_class ) ) {
+	$_atts['class'] = str_replace( ' ' . $design_css_class, '', $_atts['class'] );
+} else {
+	$design_css_class = '';
+}
 
 // When text color is set in Design Options, add the specific class
 if ( us_design_options_has_property( $css, 'color' ) ) {
-	$classes .= ' has_text_color';
+	$_atts['class'] .= ' has_text_color';
 }
 
-// Extract some properties from "css" attribute to use them inside flipbox for correct appearance
-if ( ! empty( $css ) AND $jsoncss = json_decode( urldecode( $css ), TRUE ) ) {
-	$jsoncss = us_arr_path( $jsoncss, 'default', array() );
-	$moved_props = array(
-		'height',
-		'border-style',
-		'border-bottom-width',
-		'border-left-width',
-		'border-right-width',
-		'border-top-width',
-		'border-color',
-		'padding-bottom',
-		'padding-left',
-		'padding-right',
-		'padding-top',
-	);
-	foreach ( $moved_props as $prop ) {
-		if ( isset( $jsoncss[ $prop ] ) AND $jsoncss[ $prop ] != '' ) {
-			$front_inline_css[ $prop ] = $back_inline_css[ $prop ] = trim( $jsoncss[ $prop ] );
-		}
-	}
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
 }
-
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
 
 // Link
 $tag = 'div';
@@ -77,7 +66,7 @@ if ( ! empty( $link_atts ) ) {
 }
 
 // Output the element
-$output = '<' . $tag . ' class="w-flipbox' . $classes . '"' . $el_id . $link_atts . '>';
+$output = '<' . $tag . ' ' . us_implode_atts( $_atts ) . $link_atts . '>';
 $helper_classes = ' easing_' . $easing;
 $helper_inline_css = us_prepare_inline_css(
 	array(
@@ -92,20 +81,23 @@ if ( $animation == 'cubeflip' AND in_array( $direction, array( 'ne', 'se', 'sw',
 }
 
 // Front Side
-$front_inline_css['background'] = $front_bgcolor;
-$front_inline_css['color'] = $front_textcolor;
+$front_inline_css = array(
+	'background' => us_get_color( $front_bgcolor, /* Gradient */ TRUE ),
+	'color' => us_get_color( $front_textcolor ),
+);
 
 if ( $front_bgimage_src = wp_get_attachment_image_url( $front_bgimage, $front_bgimage_size ) ) {
 	$front_inline_css['background-image'] = $front_bgimage_src;
 }
 
-$output .= '<div class="w-flipbox-front"' . us_prepare_inline_css( $front_inline_css ) . '><div class="w-flipbox-front-h">';
+$output .= '<div class="w-flipbox-front ' . $design_css_class . '"' . us_prepare_inline_css( $front_inline_css ) . '>';
+$output .= '<div class="w-flipbox-front-h">';
 $output_front_icon = '';
 if ( $front_icon_type == 'font' ) {
 	$icon_inline_css = array(
 		'font-size' => $front_icon_size,
-		'background' => $front_icon_bgcolor,
-		'color' => $front_icon_color,
+		'background' => us_get_color( $front_icon_bgcolor, /* Gradient */ TRUE ),
+		'color' => us_get_color( $front_icon_color ),
 	);
 	$output_front_icon .= '<div class="w-flipbox-front-icon style_' . $front_icon_style . '"' . us_prepare_inline_css( $icon_inline_css ) . '>';
 	$output_front_icon .= us_prepare_icon_tag( $front_icon_name );
@@ -129,10 +121,10 @@ if ( ! empty( $front_title ) ) {
 	$output_front_title .= us_prepare_inline_css(
 		array(
 			'font-size' => $front_title_size,
-			'color' => $front_textcolor,
+			'color' => us_get_color( $front_textcolor ),
 		)
 	);
-	$output_front_title .= '>' . esc_html( $front_title ) . '</' . $front_title_tag . '>';
+	$output_front_title .= '>' . strip_tags( $front_title ) . '</' . $front_title_tag . '>';
 }
 $output_front_desc = '';
 if ( ! empty( $front_desc ) ) {
@@ -148,24 +140,27 @@ if ( $front_icon_pos == 'below_title' ) {
 $output .= '</div></div>';
 
 // Back Side
-$back_inline_css['display'] = 'none';
-$back_inline_css['background'] = $back_bgcolor;
-$back_inline_css['color'] = $back_textcolor;
+$back_inline_css = array(
+	'display' => 'none',
+	'background' => us_get_color( $back_bgcolor, /* Gradient */ TRUE ),
+	'color' => us_get_color( $back_textcolor ),
+);
 
 if ( $back_bgimage_src = wp_get_attachment_image_url( $back_bgimage, $back_bgimage_size ) ) {
 	$back_inline_css['background-image'] = $back_bgimage_src;
 }
 
-$output .= '<div class="w-flipbox-back"' . us_prepare_inline_css( $back_inline_css ) . '><div class="w-flipbox-back-h">';
+$output .= '<div class="w-flipbox-back ' . $design_css_class . '"' . us_prepare_inline_css( $back_inline_css ) . '>';
+$output .= '<div class="w-flipbox-back-h">';
 if ( ! empty( $back_title ) ) {
 	$output .= '<' . $back_title_tag . ' class="w-flipbox-back-title"';
 	$output .= us_prepare_inline_css(
 		array(
 			'font-size' => $back_title_size,
-			'color' => $back_textcolor,
+			'color' => us_get_color( $back_textcolor ),
 		)
 	);
-	$output .= '>' . esc_html( $back_title ) . '</' . $back_title_tag . '>';
+	$output .= '>' . strip_tags( $back_title ) . '</' . $back_title_tag . '>';
 }
 if ( ! empty( $back_desc ) ) {
 	$output .= '<div class="w-flipbox-back-desc">' . wpautop( $back_desc ) . '</div>';
@@ -176,17 +171,19 @@ $output .= '</div></div>';
 // We need additional dom-elements for 'cubeflip' animations (:before / :after won't suit)
 if ( $animation == 'cubeflip' ) {
 
-	$front_bgcolor = ( ! empty( $front_bgcolor ) ) ? $front_bgcolor : us_get_color( 'color_content_bg_alt', TRUE );
+	$front_bgcolor = ( ! empty( $front_bgcolor ) )
+		? us_get_color( $front_bgcolor, /* Gradient */ TRUE )
+		: us_get_color( 'color_content_bg_alt', TRUE );
 
 	// Top & bottom flank with shaded color
 	if ( in_array( $direction, array( 'ne', 'e', 'se', 'sw', 'w', 'nw' ) ) ) {
-		$shaded_color = us_shade_color( $front_bgcolor );
+		$shaded_color = us_shade_color( us_get_color( $front_bgcolor, /* Gradient */ TRUE ) );
 		$output .= '<div class="w-flipbox-yflank"' . us_prepare_inline_css( array( 'display' => 'none', 'background' => $shaded_color ) ) . '></div>';
 	}
 
 	// Left & right flank with shaded color
 	if ( in_array( $direction, array( 'n', 'ne', 'se', 's', 'sw', 'nw' ) ) ) {
-		$shaded_color = us_shade_color( $front_bgcolor, 0.1 );
+		$shaded_color = us_shade_color( us_get_color( $front_bgcolor, /* Gradient */ TRUE ), 0.1 );
 		$output .= '<div class="w-flipbox-xflank"' . us_prepare_inline_css( array( 'display' => 'none', 'background' => $shaded_color ) ) . '></div>';
 	}
 }

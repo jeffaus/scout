@@ -86,7 +86,7 @@ return array(
 			'title' => __( 'Image Size', 'us' ),
 			'description' => $misc['desc_img_sizes'],
 			'type' => 'select',
-			'options' => us_image_sizes_select_values(),
+			'options' => us_get_image_sizes_list(),
 			'std' => 'us_350_350_crop',
 			'cols' => 2,
 			'group' => __( 'More Options', 'us' ),

@@ -112,8 +112,7 @@ if ( !function_exists( 'us_include_revslider_js_for_row_bg' ) ) {
 					$postID = us_get_option( 'portfolio_breadcrumbs_page' );
 				}
 
-				if ( ! empty( $postID ) ) {
-					$post = get_post( $postID );
+				if ( ! empty( $postID ) AND $post = get_post( $postID ) ) {
 					$post_content = $post->post_content;
 					$has_slider_special_page_content = ( ! empty( $post_content ) AND stripos( $post_content, '[rev_slider' ) !== FALSE );
 				}

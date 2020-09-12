@@ -42,6 +42,19 @@ if ( ! in_array( $bg_img_source, array( 'none', 'media' ) ) ) {
 		$bg_image = wp_get_attachment_image_url( get_post_meta( $postID, $bg_img_source, TRUE ), 'full' );
 	}
 
+	// Image types from ACF
+	if ( empty( $bg_image ) AND function_exists( 'acf_get_field' ) AND $acf_field = acf_get_field( $bg_img_source ) ) {
+		foreach ( array_keys( us_get_taxonomies() ) as $taxonomy_slug ) {
+			$taxonomy_ids = wp_get_object_terms( get_the_ID(), $taxonomy_slug, array( 'fields' => /* return */ 'ids' ) );
+			foreach ( $taxonomy_ids as $taxonomy_id ) {
+				if ( $term_meta = get_term_meta( $taxonomy_id, $bg_img_source, TRUE ) ) {
+					$bg_image = wp_get_attachment_image_url( $term_meta, 'full' );
+					break 2;
+				}
+			}
+		}
+	}
+
 	// If the image exists, combine it with other background properties
 	if ( ! empty( $bg_image ) ) {
 		$background_value .= 'url(' . $bg_image . ') ';
@@ -55,6 +68,8 @@ if ( ! in_array( $bg_img_source, array( 'none', 'media' ) ) ) {
 			? usof_meta( 'us_tile_bg_color' )
 			: us_arr_path( $grid_layout_settings, 'default.options.color_bg' );
 
+		$bg_color = us_get_color( $bg_color, /* Gradient */ TRUE );
+
 		// If the color value contains gradient, add comma for correct appearance
 		if ( strpos( $bg_color, 'gradient' ) !== FALSE ) {
 			$background_value .= ',';
@@ -63,11 +78,18 @@ if ( ! in_array( $bg_img_source, array( 'none', 'media' ) ) ) {
 	}
 }
 
+if ( ! $background_value ) {
+	$background_value = usof_meta( 'us_tile_bg_color' );
+	$background_value = us_get_color( $background_value, /* Gradient */ TRUE );
+}
+
+$color_value = usof_meta( 'us_tile_text_color' );
+
 // Custom colors for Portfolio Pages
 $inline_css = us_prepare_inline_css(
 	array(
-		'background' => $background_value ? $background_value : usof_meta( 'us_tile_bg_color' ),
-		'color' => usof_meta( 'us_tile_text_color' ),
+		'background' => $background_value,
+		'color' => us_get_color( $color_value ),
 	)
 );
 
@@ -134,7 +156,7 @@ $post_classes = apply_filters( 'us_grid_item_classes', $post_classes, get_the_id
 		<?php if ( $link_url ): ?>
 			<a class="w-grid-item-anchor" href="<?= esc_url( $link_url ) ?>"<?= $link_atts ?>></a>
 		<?php endif; ?>
-		<?php us_output_builder_elms( $grid_layout_settings, 'default', 'middle_center', 'grid' ); ?>
+		<?php us_output_builder_elms( $grid_layout_settings, 'default', 'middle_center', 'grid', 'post' ); ?>
 	</div>
 </article>
 <?php

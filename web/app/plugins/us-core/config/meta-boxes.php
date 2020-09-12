@@ -6,11 +6,14 @@
  * @filter us_config_meta-boxes
  */
 
+
+$posts_titles = (array) us_get_all_posts_titles_for( array( 'us_page_block', 'us_content_template', 'us_header' ) );
+
 // Get Page Blocks
-$us_page_blocks_list = us_get_posts_titles_for( 'us_page_block' );
+$us_page_blocks_list = us_arr_path( $posts_titles, 'us_page_block', array() );
 
 // Get Content templates
-$us_content_templates_list = us_get_posts_titles_for( 'us_content_template' );
+$us_content_templates_list = us_arr_path( $posts_titles, 'us_content_template', array() );
 
 // Use Page Blocks as Sidebars, if set in Theme Options
 if ( us_get_option( 'enable_page_blocks_for_sidebars', 0 ) ) {
@@ -43,10 +46,10 @@ return array(
 					array(
 						'__defaults__' => '&ndash; ' . __( 'As in Theme Options', 'us' ) . ' &ndash;',
 						'' => '&ndash; ' . __( 'Do not display', 'us' ) . ' &ndash;',
-					), us_get_posts_titles_for( 'us_header' )
+					), us_arr_path( $posts_titles, 'us_header', array() )
 				),
 				'std' => '__defaults__',
-				'classes' => 'width_full us_wpml_non_default_hidden',
+				'classes' => 'width_full',
 			),
 			'us_header_sticky_override' => array(
 				'title' => __( 'Sticky Header', 'us' ),
@@ -203,13 +206,15 @@ return array(
 			'us_tile_bg_color' => array(
 				'title' => __( 'Background Color', 'us' ),
 				'type' => 'color',
-				'classes' => 'clear_right',
+				'clear_pos' => 'right',
+				'std' => '',
 			),
 			'us_tile_text_color' => array(
 				'title' => __( 'Text Color', 'us' ),
 				'type' => 'color',
+				'clear_pos' => 'right',
 				'with_gradient' => FALSE,
-				'classes' => 'clear_right',
+				'std' => '',
 			),
 			'us_tile_size' => array(
 				'title' => __( 'Custom Size', 'us' ),

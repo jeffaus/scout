@@ -63,6 +63,17 @@ jQuery( document ).ready( function( $ ) {
 		}
 
 		this.initFields( this.$container );
+
+		// Delete all fields that are in design_options since they will be initialized by design_options,
+		// otherwise there will be duplication events on different parent objects
+		for ( var k in this.fields ) {
+			if (
+				this.fields[ k ].type === 'color'
+				&& this.fields[ k ].$row.closest( '.type_design_options' ).length
+			) {
+				delete this.fields[ k ];
+			}
+		}
 	};
 	$.extend( $usgb.EForm.prototype, $usof.mixins.Fieldset );
 
@@ -1394,19 +1405,29 @@ jQuery( function( $ ) {
 			clearTimeout( this.saveStateTimer );
 			this.$saveMessage.html( '' );
 			this.$saveControl.usMod( 'status', 'loading' );
+			var data = {
+				action: 'usgb_save',
+				ID: this.$container.data( 'id' ),
+				post_title: this.getValue( 'post_title' ),
+				post_content: JSON.stringify( this.getValue( 'post_content' ) ),
+				_wpnonce: this.$container.find( '[name="_wpnonce"]' ).val(),
+				_wp_http_referer: this.$container.find( '[name="_wp_http_referer"]' ).val()
+			};
+
+			// Inject polylang data from AJAX request
+			$.each( $('form#post').serializeArray() || {}, function( _, param ) {
+				$.each( [ 'post_lang_', 'post_tr_' ], function( _, param_prefix ) {
+					if ( param.name.indexOf( param_prefix ) !== -1 ) {
+						data[ param.name ] = param.value;
+					}
+				} );
+			} );
 
 			$.ajax( {
 				type: 'POST',
 				url: $usof.ajaxUrl,
 				dataType: 'json',
-				data: {
-					action: 'usgb_save',
-					ID: this.$container.data( 'id' ),
-					post_title: this.getValue( 'post_title' ),
-					post_content: JSON.stringify( this.getValue( 'post_content' ) ),
-					_wpnonce: this.$container.find( '[name="_wpnonce"]' ).val(),
-					_wp_http_referer: this.$container.find( '[name="_wp_http_referer"]' ).val()
-				},
+				data: data,
 				success: function( result ) {
 					if ( result.success ) {
 						this.valuesChanged = {};

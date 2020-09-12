@@ -5,12 +5,15 @@
  */
 
 if ( is_numeric( $id ) ) {
+	if ( has_filter( 'us_tr_object_id' ) ) {
+		$id = apply_filters( 'us_tr_object_id', $id, 'us_page_block', TRUE );
+	}
 	$page_block = get_post( $id );
 } else {
 	return;
 }
 
-if ( $page_block AND $page_block->post_type == 'us_page_block' ) {
+if ( $page_block instanceof WP_Post AND $page_block->post_type == 'us_page_block' ) {
 	us_add_to_page_block_ids( $page_block->ID );
 
 	$page_block_content = $page_block->post_content;
@@ -24,7 +27,7 @@ if ( $page_block AND $page_block->post_type == 'us_page_block' ) {
 }
 
 // Remove [vc_row] and [vc_column] if set
-if ( $remove_rows ) {
+if ( $remove_rows == '1' ) {
 	$page_block_content = str_replace( array( '[vc_row]', '[/vc_row]', '[vc_column]', '[/vc_column]' ), '', $page_block_content );
 	$page_block_content = preg_replace( '~\[vc_row (.+?)]~', '', $page_block_content );
 	$page_block_content = preg_replace( '~\[vc_column (.+?)]~', '', $page_block_content );

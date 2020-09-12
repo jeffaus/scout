@@ -4,19 +4,21 @@
  * The template for displaying the 404 page
  */
 
-$page_404 = get_post( us_get_option( 'page_404' ) );
-
 // Output specific page
-if ( $page_404 ) {
-	if ( class_exists( 'SitePress' ) ) {
-		$page_404 = get_post( apply_filters( 'wpml_object_id', $page_404->ID, 'page', TRUE ) );
+if ( $page_404 = get_post( us_get_option( 'page_404' ) ) ) {
+
+	if ( has_filter( 'us_tr_object_id' ) ) {
+		$page_404 = get_post( apply_filters( 'us_tr_object_id', $page_404->ID, 'page', TRUE ) );
 	}
 
+	us_register_context_layout( 'header' );
 	get_header();
 	// If set custom page load its css
 	if ( is_object( $page_404 ) ) {
 		us_output_design_css( [ $page_404 ] );
 	}
+
+	us_register_context_layout( 'main' );
 	?>
 	<main id="page-content" class="l-main"<?php echo ( us_get_option( 'schema_markup' ) ) ? ' itemprop="mainContentOfPage"' : ''; ?>>
 
@@ -56,13 +58,16 @@ if ( $page_404 ) {
 
 	</main>
 	<?php
+	us_register_context_layout( 'footer' );
 	get_footer();
 
 	// Output predefined layout
 } else {
 	$us_layout = US_Layout::instance();
 
+	us_register_context_layout( 'header' );
 	get_header();
+	us_register_context_layout( 'main' );
 	?>
 	<main id="page-content" class="l-main">
 		<section class="l-section height_<?php echo us_get_option( 'row_height', 'medium' ); ?>">
@@ -84,5 +89,6 @@ if ( $page_404 ) {
 		</section>
 	</main>
 	<?php
+	us_register_context_layout( 'footer' );
 	get_footer();
 }

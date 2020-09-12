@@ -172,11 +172,14 @@
 /* Builder Workspace */
 .us-bld-workspace {
 	display: flex;
-	padding: 30px;
+	align-items: flex-start;
+	padding: 20px;
 	}
 	.us-bld-editor {
+		position: sticky;
+		top: 100px;
 		flex-grow: 1;
-		padding-right: 30px;
+		padding-right: 20px;
 		-webkit-user-select: none;
 		-moz-user-select: none;
 		-ms-user-select: none;
@@ -1085,6 +1088,21 @@
 	margin: 0 15px 10px;
 	}
 
+/* Fix for Menu Colors */
+.usof-form.for_menu .usof-form-row[data-name*="color_"] {
+	padding-top: 0;
+	padding-bottom: 0;
+	}
+.usof-form.for_menu .usof-form-row[data-name*="color_"]:first-child {
+	padding-top: 10px;
+	}
+.usof-form.for_menu .usof-form-row[data-name*="color_"]:last-child {
+	padding-bottom: 10px;
+	}
+.usof-form.for_menu .usof-form-row[data-name="color_drop_bg"] {
+	padding-top: 30px;
+	}
+
 /* Group Simple */
 .us-bld-window .usof-form-group.type_simple .usof-form-group-item-controls {
 	top: 10px;
@@ -1222,21 +1240,24 @@
 
 /* Enable WPML, Polylang meta boxes
    ========================================================================== */
-.post-php.post-type-us_header #post-body.columns-2 #postbox-container-1 {
-	margin-right: -270px;
-	width: 300px;
+body.us_builder #post-body.columns-2 #postbox-container-1 {
+	margin-right: -280px;
+	width: 302px;
 	}
-.rtl.post-php.post-type-us_header #post-body.columns-2 #postbox-container-1 {
-	margin-left: -270px;
+body.rtl.us_builder #post-body.columns-2 #postbox-container-1  {
+	margin-left: -280px;
 	margin-right: 0;
 	}
-.post-php.post-type-us_header #post-body.columns-2 #side-sortables {
+body.us_builder #post-body.columns-2 #side-sortables {
 	min-height: 0;
 	}
-.post-php.post-type-us_header #poststuff #post-body.columns-2 #side-sortables {
+body.us_builder #poststuff #post-body.columns-2 #side-sortables {
 	width: auto;
 	}
-.post-php.post-type-us_header .postbox#ml_box,
-.post-php.post-type-us_header .postbox#icl_div {
-	display: block !important;
+body.us_builder #select-post-language .pll-select-flag {
+	margin-right: 24px;
+	}
+
+.usof-container select.post_lang_choice {
+	width: auto;
 	}

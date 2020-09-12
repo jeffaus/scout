@@ -97,6 +97,11 @@ function usgb_post_row_actions( $actions, $post ) {
 	if ( $post->post_type === 'us_grid_layout' ) {
 		// Removing duplicate post plugin affection
 		unset( $actions['duplicate'], $actions['edit_as_new_draft'] );
+
+		if ( empty( $actions ) ) {
+			$actions = array();
+		}
+
 		$actions = us_array_merge_insert(
 			$actions, array(
 			'duplicate' => '<a href="' . admin_url( 'post-new.php?post_type=us_grid_layout&duplicate_from=' . $post->ID ) . '" aria-label="' . esc_attr__( 'Duplicate', 'us' ) . '">' . esc_html__( 'Duplicate', 'us' ) . '</a>',

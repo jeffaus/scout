@@ -4,153 +4,193 @@
  * Interactive Text
  */
 
-$classes = isset( $classes ) ? $classes : '';
-$classes .= ' type_' . $animation_type . ' align_' . $align;
-if ( $dynamic_bold ) {
-	$classes .= ' dynamic_bold';
+$_atts['class'] = 'w-itext';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+$_atts['class'] .= ' type_' . $animation_type;
+$_atts['class'] .= ' align_' . $align;
+
+// Reset some values, if part animation is disabled
+if ( $disable_part_animation ) {
+	$_atts['class'] .= ' disable_part_animation';
+
+	$dynamic_bold = $html_spaces = FALSE;
+	$dynamic_color = '';
 }
 
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
+if ( $dynamic_bold ) {
+	$_atts['class'] .= ' dynamic_bold';
+}
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
 
 // Allows to use nbsps and other entities
 $texts = html_entity_decode( $texts );
-
 $texts_arr = explode( "\n", strip_tags( $texts ) );
 
 $js_data = array(
 	'duration' => floatval( $duration ) * 1000,
 	'delay' => floatval( $delay ) * 1000,
+	'disablePartAnimation' => !! $disable_part_animation,
 );
 if ( ! empty( $dynamic_color ) ) {
-	$js_data['dynamicColor'] = $dynamic_color;
+	$js_data['dynamicColor'] = us_get_color( $dynamic_color );
 }
 
-// Getting words and their delimiters to work on this level of abstraction
-$_parts = array();
-foreach ( $texts_arr as $index => $text ) {
-	preg_match_all( '~[\w\-]+|[^\w\-]+~u', $text, $matches );
-	$_parts[ $index ] = $matches[0];
+$groups = $group_map_changes = $group_map_unique = array();
+
+if ( ! $disable_part_animation ) {
+
+	// Getting words and their delimiters to work on this level of abstraction
+	$_parts = $_parts_reverse = array();
+	foreach ( $texts_arr as $index => $text ) {
+		if ( preg_match_all( '~[\w\-]+|[^\w\-]+~u', $text, $matches ) ) {
+			$_parts[ $index ] = $_parts_reverse[ $index ] = $matches[0];
+		}
+	}
+
+	$_max_parts = count( max( $_parts ) );
+
+	// Getting the whole set of parts with all the intermediate values (part_index => part_states)
+	for ( $i = count( $_parts ) - 1; $i > - 1; $i -- ) {
+		$empty_list = array_fill( 0, $_max_parts, ' ' );
+		$_parts[ $i ] = $_parts[ $i ] + $empty_list;
+		$empty_list = array_fill( 0, count( $_parts[ $i ] ) - count( $_parts_reverse[ $i ] ), ' ' );
+		$_parts_reverse[ $i ] = array_merge( $empty_list, $_parts_reverse[ $i ] );
+	}
+
+	// Determine where fewer changes are and choose a smaller option
+	$_part_changes = $_part_reverse_changes = 0;
+	for ( $i = $_max_parts - 1; $i > - 1; $i -- ) {
+		if ( count( array_unique( wp_list_pluck( $_parts, $i ) ) ) > 1 ) {
+			$_part_changes ++;
+		}
+		if ( count( array_unique( wp_list_pluck( $_parts_reverse, $i ) ) ) > 1 ) {
+			$_part_reverse_changes ++;
+		}
+	}
+	$_parts = $_part_changes < $_part_reverse_changes
+		? $_parts
+		: $_parts_reverse;
+	unset( $_part_reverse, $_part_changes, $_part_reverse_changes );
+
+	// Grouping and receiving map changes
+	for ( $i = count( max( $_parts ) ); $i > 0; $i -- ) {
+		$groups[ $i ] = wp_list_pluck( $_parts, $i - 1 );
+		$group_map_unique[ $i - 1 ] = count( array_unique( $groups[ $i ] ) );
+		$group_map_changes[ $i - 1 ] = $group_map_unique[ $i - 1 ] > 1;
+	}
+
+	$groups = array_reverse( $groups );
+	$group_map_changes = array_reverse( $group_map_changes );
+
+} else {
+	$groups = array( $texts_arr );
+	$group_map_changes = array_fill( 0, count( $texts_arr ), TRUE );
+	$animation_type = 'fadeIn';
 }
 
-// Getting the whole set of parts with all the intermediate values (part_index => part_states)
-$groups = array();
-foreach ( $_parts[0] as $part ) {
-	$groups[] = array( $part );
-}
-
-for ( $i_index = count( $_parts ) - 1; $i_index > 0; $i_index -- ) {
-	$f_index = isset( $_parts[ $i_index + 1 ] ) ? ( $i_index + 1 ) : 0;
-	$initial = &$_parts[ $i_index ];
-	$final = &$_parts[ $f_index ];
-	// Counting arrays edit distance for the strings parts to find the common parts
-	$dist = array();
-	for ( $i = 0; $i <= count( $initial ); $i ++ ) {
-		$dist[ $i ] = array( $i );
-	}
-	for ( $j = 1; $j <= count( $final ); $j ++ ) {
-		$dist[0][ $j ] = $j;
-		for ( $i = 1; $i <= count( $initial ); $i ++ ) {
-			if ( $initial[ $i - 1 ] == $final[ $j - 1 ] ) {
-				$dist[ $i ][ $j ] = $dist[ $i - 1 ][ $j - 1 ];
-			} else {
-				$dist[ $i ][ $j ] = min( $dist[ $i - 1 ][ $j ], $dist[ $i ][ $j - 1 ], $dist[ $i - 1 ][ $j - 1 ] ) + 1;
-			}
-		}
-	}
-	for ( $i = count( $initial ), $j = count( $final ); $i > 0 OR $j > 0; $i --, $j -- ) {
-		$min = $dist[ $i ][ $j ];
-		if ( $i > 0 ) {
-			$min = min( $min, $dist[ $i - 1 ][ $j ], ( $j > 0 ) ? $dist[ $i - 1 ][ $j - 1 ] : $min );
-		}
-		if ( $j > 0 ) {
-			$min = min( $min, $dist[ $i ][ $j - 1 ] );
-		}
-		if ( $min >= $dist[ $i ][ $j ] ) {
-			$groups[ $j - 1 ][ $i_index ] = $initial[ $i - 1 ];
-			continue;
-		}
-		if ( $i > 0 AND $j > 0 AND $min == $dist[ $i - 1 ][ $j - 1 ] ) {
-			// Modify
-			$groups[ $j - 1 ][ $i_index ] = $initial[ $i - 1 ];
-		} elseif ( $j > 0 AND $min == $dist[ $i ][ $j - 1 ] ) {
-			// Remove
-			$groups[ $j - 1 ][ $i_index ] = '';
-			$i ++;
-		} elseif ( $min == $dist[ $i - 1 ][ $j ] ) {
-			// Insert
-			if ( $j == 0 ) {
-				array_unshift( $groups, '' );
-			} else {
-				array_splice( $groups, $j, 0, '' );
-			}
-			$groups[ $j ] = array_fill( 0, count( $_parts ), '' );
-			$groups[ $j ][ $i_index ] = $initial[ $i - 1 ];
-			$j ++;
-		}
-	}
-	// Updating final parts
-	$_parts[ $i_index ] = array();
-	foreach ( $groups as $parts_group ) {
-		$_parts[ $i_index ][] = $parts_group[ $i_index ];
-	}
-}
-
-// Finding the dynamic parts and their animation indexes
-$group_changes = array();
 $nbsp_char = html_entity_decode( '&nbsp;' );
-foreach ( $groups as $index => $group ) {
-	$group_changes[ $index ] = array();
-	for ( $i = 0; $i < count( $_parts ); $i ++ ) {
-		if ( $group[ $i ] != $group[ isset( $group[ $i + 1 ] ) ? ( $i + 1 ) : 0 ] OR $group[ $i ] === '' ) {
-			$group_changes[ $index ][] = $i;
+$js_data['html_nbsp_char'] = TRUE;
+if ( empty( $html_spaces ) ) {
+	$nbsp_char = ' ';
+	$js_data['html_nbsp_char'] = FALSE;
+}
+
+// Adding spaces to words and
+for ( $i = count( $groups ) - 1; $i > 0; $i -- ) {
+	$is_empty = ! preg_replace( '/([\s]+)$/ui', '', implode( '', $groups[ $i ] ) );
+	if ( $group_map_unique[ $i ] == 1 AND $is_empty ) {
+		unset( $group_map_changes[ $i ] );
+	}
+	if ( isset( $groups[ $i - 1 ] ) AND $is_empty ) {
+		foreach ( $groups[ $i - 1 ] as &$text ) {
+			$text .= $nbsp_char;
 		}
-		// HTML won't show spans with spaces at all, so replacing them with nbsps
-		// A bit sophisticated check to speed up this frequent action
-		if ( strlen( $group[ $i ] ) AND $group[ $i ][0] == ' ' AND preg_match( '~^ +$~u', $group[ $i ][0] ) ) {
-			$groups[ $index ][ $i ] = str_replace( ' ', $nbsp_char, $group[ $i ] );
+		unset( $text, $groups[ $i ] );
+	}
+}
+unset( $group_map_unique );
+
+// Reset indexes
+$groups = array_values( $groups );
+$group_map_changes = array_values( $group_map_changes );
+
+// The combination of words that are near or all for printing
+for ( $i = count( $groups ); $i > 0; $i -- ) {
+	if (
+		isset( $group_map_changes[ $i ], $group_map_changes[ $i - 1 ] )
+		AND $group_map_changes[ $i ] === TRUE
+		AND $group_map_changes[ $i - 1 ] === TRUE
+		OR (
+			$animation_type === 'typingChars'
+			AND $group_map_changes[0] === TRUE
+		)
+	) {
+		foreach ( $groups[ $i - 1 ] as $text_i => &$text ) {
+			if ( isset( $groups[ $i ][ $text_i ] ) ) {
+				$text .= $groups[ $i ][ $text_i ];
+			}
 		}
+		unset( $text, $groups[ $i ], $group_map_changes[ $i ] );
 	}
 }
 
-// Combining groups that are either static, or are changed at the same time
-for ( $i = 1; $i < count( $group_changes ); $i ++ ) {
-	if ( $group_changes[ $i - 1 ] == $group_changes[ $i ] ) {
-		// Combining with the previous element
-		foreach ( $groups[ $i - 1 ] AS $index => $part ) {
-			$groups[ $i - 1 ][ $index ] .= $groups[ $i ][ $index ];
-		}
-		array_splice( $groups, $i, 1 );
-		array_splice( $group_changes, $i, 1 );
-		$i --;
-	}
+// Reset indexes
+$groups = array_values( $groups );
+$group_map_changes = array_values( $group_map_changes );
+$group_keys = array_keys( $groups );
+
+// The for spaces
+foreach ( $groups[ end( $group_keys ) ] as &$text ) {
+
+	// Replacing spaces with html entities
+	$text = str_replace( ' ', $nbsp_char, $text );
+
+	// Remove extra spaces from the end of a line
+	$text = preg_replace( '/([\s]+)$/ui', '', $text );
 }
+unset( $text );
 
 // Output the element
-$output = '<' . $tag . ' class="w-itext' . $classes . '"';
-$output .= $el_id;
+$output = '<' . $tag . ' ' . us_implode_atts( $_atts );
 $output .= us_pass_data_to_js( $js_data );
 $output .= '>';
 
 foreach ( $groups as $index => $group ) {
 	ksort( $group );
-	if ( empty( $group_changes[ $index ] ) ) {
+	if ( empty( $group_map_changes[ $index ] ) ) {
+
 		// Static part
 		$output .= $group[0];
 	} else {
 		$output .= '<span class="w-itext-part';
+
+		// Delete all indents and spaces at the beginning of a line
+		$group = array_map( function( $text ) {
+			return preg_replace( '/^\s+/', '', $text );
+		}, $group );
+
 		// Animation classes (just in case site editor wants some custom styling for them)
-		foreach ( $group_changes[ $index ] as $changesat ) {
-			$output .= ' changesat_' . $changesat;
+		if ( ! empty( $group_map_changes[ $index ] ) ) {
+			for ( $i = 0; $i < count( array_unique( $groups[ $index ] ) ); $i ++ ) {
+				$output .= ' changesat_' . $i;
+			}
 		}
-		if ( in_array( '0', $group_changes[ $index ] ) ) {
+		if ( ! empty( $group_map_changes[ $index ] ) ) {
+
 			// Highlighting dynamic parts at start
 			$output .= ' dynamic"' . us_prepare_inline_css( array( 'color' => $dynamic_color ) );
 		} else {
 			$output .= '"';
 		}
-		$output .= us_pass_data_to_js( $group ) . '><span>' . preg_replace( '/\s/', '&nbsp', htmlentities( $group[0] ) ) . '</span>';
-		if ( $animation_type === 'typingChars' ) {
+		$text = preg_replace( '/\s+/', $nbsp_char, htmlentities( $group[0] ) );
+		$output .= us_pass_data_to_js( $group ) . '><span>' . $text . '</span>';
+
+		if ( $animation_type === 'typingChars' AND $text && $text !== $nbsp_char ) {
 			$output .= '<i class="w-itext-cursor"></i>';
 		}
 		$output .= '</span>';

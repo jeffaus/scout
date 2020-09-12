@@ -11,6 +11,7 @@
  * @var $shortcode_base    string The original called shortcode name (differs if called an alias)
  * @var $content           string Shortcode's inner content
  * @var $classes           string Extend class names
+ * @var $design_css_class  string Custom design css class
  *
  * @var $title             string Section title
  * @var $tab_id            string Section slug
@@ -26,7 +27,8 @@
  * @var $el_class          string Extra class name
  */
 
-global $us_tabs_atts, $us_tab_index;
+global $us_tabs_atts, $us_tab_index, $us_faq_markup;
+
 // Tab indexes start from 1
 $us_tab_index = isset( $us_tab_index ) ? ( $us_tab_index + 1 ) : 1;
 
@@ -39,32 +41,29 @@ if ( isset( $us_tabs_atts[ $us_tab_index - 1 ] ) ) {
 
 $content_html = do_shortcode( $content );
 
-$classes = isset( $classes ) ? $classes : '';
-
-// If a custom class is installed, then transfer this class to w-tabs-section-content
-$content_classes = '';
-$classes = preg_replace_callback( '/(\sus_custom_\w+)/', function( $matches ) use ( &$content_classes ) {
-	$content_classes .= $matches[1];
-	return '';
-}, $classes );
+$_atts['class'] = 'w-tabs-section';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
 
 if ( $icon ) {
-	$classes .= ' with_icon';
+	$_atts['class'] .= ' with_icon';
 }
 if ( $indents == 'none' ) {
-	$classes .= ' no_indents';
+	$_atts['class'] .= ' no_indents';
 }
 if ( $active ) {
-	$classes .= ' active';
+	$_atts['class'] .= ' active';
 }
-// Hide the section with empty content
-if ( $content_html == '' ) {
-	$classes .= ' content-empty';
-}
-if ( ! empty( $el_class ) ) {
-	$classes .= ' ' . $el_class;
+if ( ! empty( $text_color ) ) {
+	$_atts['class'] .= ' has_text_color';
 }
 
+// Hide the section with empty content
+if ( $content_html == '' ) {
+	$_atts['class'] .= ' content-empty';
+}
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
 if ( empty( $tab_id ) ) {
 	$tab_id = uniqid();
 }
@@ -73,27 +72,61 @@ if ( empty( $tab_link ) ) {
 	$tab_link = 'javascript:void(0)';
 }
 
+$_atts['id'] = $tab_id;
+
 $inline_css = us_prepare_inline_css(
 	array(
-		'background' => $bg_color,
-		'color' => $text_color,
+		'background' => us_get_color( $bg_color, /* Gradient */ TRUE ),
+		'color' => us_get_color( $text_color ),
 	)
 );
 
-// Replace comments amount instead of variable
-$title = us_replace_comment_count_var( wptexturize( $title ) );
+$title_atts = array(
+	'class' => 'w-tabs-section-title',
+);
+$content_atts = array(
+	'class' => 'w-tabs-section-content',
+	'id' => 'content-' . $tab_id,
+	'aria-expanded' => $active ? 'true' : 'false',
+);
+$content_h_atts = array(
+	'class' => 'w-tabs-section-content-h i-cf',
+);
+
+// Move us_custom_* class to other container
+if ( ! empty( $design_css_class ) ) {
+	$_atts['class'] = str_replace( ' ' . $design_css_class, '', $_atts['class'] );
+	$content_atts['class'] .= ' ' . $design_css_class;
+}
+
+// Add atts for FAQs page
+if ( $us_faq_markup ) {
+	$_atts['itemscope'] = '';
+	$_atts['itemprop'] = 'mainEntity';
+	$_atts['itemtype'] = 'https://schema.org/Question';
+	$title_atts['itemprop'] = 'name';
+	$content_atts['itemscope'] = '';
+	$content_atts['itemprop'] = 'acceptedAnswer';
+	$content_atts['itemtype'] = 'https://schema.org/Answer';
+	$content_h_atts['itemprop'] = 'text';
+}
+
+// Apply filters to title text
+$title = us_replace_dynamic_value( $title, 'any' );
+$title = wptexturize( $title );
 
 // Output the element
-$output = '<div class="w-tabs-section' . $classes . '" id="' . $tab_id . '"' . $inline_css . '>';
+$output = '<div ' . us_implode_atts( $_atts ) . $inline_css . '>';
 
-$output .= '<button class="w-tabs-section-header'. ( $active ? ' active' : '' ) .'"' . us_prepare_inline_css( array( 'font-size' => $title_size ) ) . ' aria-controls="content-'. $tab_id .'"><div class="w-tabs-section-header-h">';
+$output .= '<button class="w-tabs-section-header' . ( $active ? ' active' : '' ) . '"' . us_prepare_inline_css( array( 'font-size' => $title_size ) ) . ' aria-controls="content-' . $tab_id . '">';
+$output .= '<div class="w-tabs-section-header-h">';
 if ( $c_position == 'left' ) {
 	$output .= '<div class="w-tabs-section-control"></div>';
 }
 if ( $icon AND $i_position == 'left' ) {
 	$output .= us_prepare_icon_tag( $icon );
 }
-$output .= '<' . $title_tag . ' class="w-tabs-section-title">' . $title . '</' . $title_tag . '>';
+$output .= '<' . $title_tag . ' ' . us_implode_atts( $title_atts ) . '>' . $title . '</' . $title_tag . '>';
 if ( $icon AND $i_position == 'right' ) {
 	$output .= us_prepare_icon_tag( $icon );
 }
@@ -101,8 +134,8 @@ if ( $c_position == 'right' ) {
 	$output .= '<div class="w-tabs-section-control"></div>';
 }
 $output .= '</div></button>';
-
-$output .= '<div class="w-tabs-section-content'. $content_classes .'" id="content-'. $tab_id .'" aria-expanded="'. ( $active ? 'true' : 'false' ) .'"><div  class="w-tabs-section-content-h i-cf">' . $content_html . '</div></div>';
-$output .= '</div>';
+$output .= '<div ' . us_implode_atts( $content_atts ) . '>';
+$output .= '<div ' . us_implode_atts( $content_h_atts ) . '>' . $content_html . '</div>';
+$output .= '</div></div>';
 
 echo $output;

@@ -15,6 +15,10 @@
 if ( ! empty( $value ) AND is_string( $value ) AND $value[0] === '{' ) {
 	$value = json_decode( $value, TRUE );
 }
+
+// Fallback
+$value = us_hb_settings_fallback( $value );
+
 $value = us_fix_header_settings( $value );
 
 $output = '<div class="us-bld" data-ajaxurl="' . esc_attr( admin_url( 'admin-ajax.php' ) ) . '">';

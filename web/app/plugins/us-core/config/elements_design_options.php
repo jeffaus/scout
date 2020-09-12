@@ -40,6 +40,7 @@ return array(
 			'color' => array(
 				'title' => us_translate( 'Color' ),
 				'type' => 'color',
+				'clear_pos' => 'left',
 				'with_gradient' => FALSE,
 				'std' => '',
 				'cols' => 2,
@@ -139,6 +140,7 @@ return array(
 			'background-color' => array(
 				'title' => __( 'Background Сolor', 'us' ),
 				'type' => 'color',
+				'clear_pos' => 'left',
 				'std' => '',
 				'group' => __( 'Background', 'us' ),
 			),
@@ -211,7 +213,7 @@ return array(
 				'group' => __( 'Sizes', 'us' ),
 			),
 			'max-width' => array(
-				'title' => __( 'Max Width', 'us' ),
+				'title' => us_translate( 'Max Width' ),
 				'description' => $misc['desc_width'],
 				'type' => 'text',
 				'std' => '',
@@ -219,7 +221,7 @@ return array(
 				'group' => __( 'Sizes', 'us' ),
 			),
 			'max-height' => array(
-				'title' => __( 'Max Height', 'us' ),
+				'title' => us_translate( 'Max Height' ),
 				'description' => $misc['desc_height'],
 				'type' => 'text',
 				'std' => '',
@@ -380,6 +382,7 @@ return array(
 			'border-color' => array(
 				'title' => __( 'Border Сolor', 'us' ),
 				'type' => 'color',
+				'clear_pos' => 'left',
 				'with_gradient' => FALSE,
 				'std' => '',
 				'group' => __( 'Border', 'us' ),
@@ -481,6 +484,7 @@ return array(
 			'box-shadow-color' => array(
 				'title' => us_translate( 'Color' ),
 				'type' => 'color',
+				'clear_pos' => 'left',
 				'with_gradient' => FALSE,
 				'std' => '',
 				'group' => __( 'Box Shadow', 'us' ),

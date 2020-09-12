@@ -1337,7 +1337,7 @@ class us_migration_5_0 extends US_Migration_Translator {
 		/*
 		 * Search Results Page
 		 */
-		if ( in_array( $options['search_layout'], array( 'classic', 'smallcircle', 'smallsquare' ) ) AND $options['search_cols'] != 1 ) {
+		if ( empty( $options['search_layout'] ) OR ( in_array( $options['search_layout'], array( 'classic', 'smallcircle', 'smallsquare' ) ) AND $options['search_cols'] != 1 ) ) {
 			$options['search_items_gap'] = 1.5;
 		} elseif ( $options['search_layout'] == 'flat' ) {
 			$options['search_items_gap'] = 0;

@@ -3,8 +3,14 @@
 $misc = us_config( 'elements_misc' );
 $design_options = us_config( 'elements_design_options' );
 
+global $pagenow;
+
 // Get params from Grid config and exclude unneeded
-$grid_params = us_config( 'elements/grid.params' );
+// Receive data only on the edit page or create a record
+$grid_params = ( wp_doing_ajax() OR in_array( $pagenow, array( 'post.php', 'post-new.php' ) ) )
+	? us_config( 'elements/grid.params' )
+	: array();
+
 foreach( $grid_params as $grid_param_name => $grid_param ) {
 
 	if ( strpos( $grid_param_name, 'pagination' ) !== FALSE ) { // exclude Pagination options
@@ -37,12 +43,24 @@ return array(
 		),
 		'carousel_arrows_style' => array(
 			'title' => __( 'Arrows Style', 'us' ),
+			'description' => $misc['desc_btn_styles'],
 			'type' => 'select',
-			'options' => array(
-				'circle' => __( 'Circles', 'us' ),
-				'block' => __( 'Full height blocks', 'us' ),
+			'options' => us_array_merge(
+				array(
+					'circle' => '– ' . __( 'Circles', 'us' ) . ' –',
+					'block' => '– ' . __( 'Full height blocks', 'us' ) . ' –',
+				), us_get_btn_styles()
 			),
 			'std' => 'circle',
+			'cols' => 2,
+			'show_if' => array( 'carousel_arrows', '!=', FALSE ),
+			'group' => __( 'Carousel', 'us' ),
+		),
+		'carousel_arrows_size' => array(
+			'title' => __( 'Arrows Size', 'us' ),
+			'description' => __( 'Examples:', 'us' ) . ' <span class="usof-example">26px</span>, <span class="usof-example">3rem</span>',
+			'type' => 'text',
+			'std' => '1.8rem',
 			'cols' => 2,
 			'show_if' => array( 'carousel_arrows', '!=', FALSE ),
 			'group' => __( 'Carousel', 'us' ),
@@ -55,15 +73,6 @@ return array(
 				'inside' => __( 'Inside', 'us' ),
 			),
 			'std' => 'outside',
-			'cols' => 2,
-			'show_if' => array( 'carousel_arrows', '!=', FALSE ),
-			'group' => __( 'Carousel', 'us' ),
-		),
-		'carousel_arrows_size' => array(
-			'title' => __( 'Arrows Size', 'us' ),
-			'description' => __( 'Examples:', 'us' ) . ' <span class="usof-example">26px</span>, <span class="usof-example">3rem</span>',
-			'type' => 'text',
-			'std' => '1.8rem',
 			'cols' => 2,
 			'show_if' => array( 'carousel_arrows', '!=', FALSE ),
 			'group' => __( 'Carousel', 'us' ),
@@ -87,19 +96,38 @@ return array(
 			'type' => 'switch',
 			'switch_text' => __( 'First item in the center', 'us' ),
 			'std' => FALSE,
-			'show_if' => array( 'type', '=', 'carousel' ),
+			'classes' => 'for_above',
+			'show_if' => array( 'columns', '!=', '1' ),
 			'group' => __( 'Carousel', 'us' ),
 		),
 		'carousel_slideby' => array(
 			'type' => 'switch',
 			'switch_text' => __( 'Slide by several items instead of one', 'us' ),
 			'std' => FALSE,
+			'classes' => 'for_above',
+			'show_if' => array( 'carousel_center', '!=', '1' ),
+			'group' => __( 'Carousel', 'us' ),
+		),
+		'carousel_loop' => array(
+			'type' => 'switch',
+			'switch_text' => __( 'Infinite loop', 'us' ),
+			'std' => FALSE,
+			'classes' => 'for_above',
+			'show_if' => array( 'carousel_slideby', '!=', '1' ),
 			'group' => __( 'Carousel', 'us' ),
 		),
 		'carousel_autoheight' => array(
 			'type' => 'switch',
 			'switch_text' => __( 'Auto height (for 1 column only)', 'us' ),
 			'std' => FALSE,
+			'classes' => 'for_above',
+			'group' => __( 'Carousel', 'us' ),
+		),
+		'carousel_fade' => array(
+			'type' => 'switch',
+			'switch_text' => __( 'Fade transition (for 1 column only)', 'us' ),
+			'std' => FALSE,
+			'classes' => 'for_above',
 			'group' => __( 'Carousel', 'us' ),
 		),
 		'carousel_autoplay' => array(
@@ -129,6 +157,7 @@ return array(
 			'description' => $misc['desc_milliseconds'],
 			'type' => 'text',
 			'std' => '250',
+			'show_if' => array( 'carousel_fade', '=', FALSE ),
 			'group' => __( 'Carousel', 'us' ),
 		),
 		'carousel_transition' => array(
@@ -136,6 +165,7 @@ return array(
 			'description' => '<a href="http://cubic-bezier.com/" target="_blank" rel="noopener">' . __( 'Use timing function', 'us' ) . '</a>' . '. ' . __( 'Examples:', 'us' ) . ' <span class="usof-example">linear</span>, <span class="usof-example">cubic-bezier(0,1,.8,1)</span>, <span class="usof-example">cubic-bezier(.78,.13,.15,.86)</span>',
 			'type' => 'text',
 			'std' => '',
+			'show_if' => array( 'carousel_fade', '=', FALSE ),
 			'group' => __( 'Carousel', 'us' ),
 		),
 

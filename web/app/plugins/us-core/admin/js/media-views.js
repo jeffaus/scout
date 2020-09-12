@@ -53,21 +53,16 @@ window.wp = window.wp || {};
 						taxonomy: taxonomy,
 						termList: values.term_list,
 						termListTitle: values.list_title,
-						className: 'attachment-taxonomy-filters'
+						className: 'attachment-filters for_us_media'
 					} ).render() );
 				}
 			} );
 		}
 	} );
-	// Relocate the new dropdown
-	//	$( document ).ready( function() {
-	//		$( '.media-toolbar.wp-filter .delete-selected-button' ).before( $('.media-toolbar.wp-filter
-	// .select-mode-toggle-button' ) ); } );
-
 
 	$.extend( wp.Uploader.prototype, {
 		success: function( file_attachment ) {
-			var category = $( ".attachment-taxonomy-filters" ).val();
+			var category = $( ".attachment-filters.for_us_media" ).val();
 			var data = {
 				action: 'us_ajax_set_category_on_upload',
 				post_id: file_attachment.attributes.id,

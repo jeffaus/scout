@@ -20,7 +20,8 @@ function usof_ajax_save() {
 
 	// Logic do not seek here, young padawan. For WPML string translation compability such copying method is used.
 	// If result of array_merge is put directly to $updated_options, the options will not save.
-	$usof_options_fallback = array_merge( usof_defaults(), $usof_options );
+	$usof_defaults = usof_defaults();
+	$usof_options_fallback = array_merge( $usof_defaults, $usof_options );
 	$updated_options = array();
 	foreach ( $usof_options_fallback as $key => $val ) {
 		$updated_options[ $key ] = $val;
@@ -37,7 +38,7 @@ function usof_ajax_save() {
 	}
 
 	foreach ( $post_options as $key => $value ) {
-		if ( isset( $updated_options[ $key ] ) ) {
+		if ( isset( $updated_options[ $key ] ) AND isset( $usof_defaults[ $key ] ) ) {
 			$updated_options[ $key ] = $value;
 		}
 	}
@@ -350,87 +351,140 @@ function usof_get_google_fonts() {
 /**
  *  All ajax actions for autocomplete
  */
-
-if ( wp_doing_ajax() ) {
-	if ( ! function_exists( 'usof_all_fonts_autocomplete' ) ) {
-		add_action( 'wp_ajax_usof_all_fonts_autocomplete', 'usof_all_fonts_autocomplete', 1 );
-		/**
-		 * Request AJAX handler for usof_all_fonts_autocomplete
-		 * @return string
-		 */
-		function usof_all_fonts_autocomplete() {
-			if ( ! check_ajax_referer( 'usof_ajax_all_fonts_autocomplete', '_nonce', FALSE ) ) {
-				wp_send_json_error(
-					array(
-						'message' => us_translate( 'An error has occurred. Please reload the page and try again.' ),
-					)
-				);
-				wp_die();
-			}
-
-			// Get all fonts
-			$get_h1 = isset( $_GET['get_h1'] ) ? boolval( $_GET['get_h1'] ) : FALSE;
-			$only_google = isset( $_GET['only_google'] ) ? boolval( $_GET['only_google'] ) : TRUE;
-			$all_fonts = us_get_all_fonts( $only_google, $get_h1 );
-
-			// Create a inline data array
-			$inline_fonts = array();
-			foreach ( $all_fonts as $value => $name ) {
-				if ( is_array( $name ) ) {
-					foreach ( $name as $_value => $_name ) {
-						$inline_fonts[ $_value ] = $_name;
-					}
-				} else {
-					$inline_fonts[ $value ] = $name;
-				}
-			}
-			// Font name search or apply filter by 'params:'
-			$search = isset( $_GET['search'] ) ? $_GET['search'] : '';
-			$is_params = strpos( $search, 'params:' ) === 0;
-			if ( $search ) {
-				$inline_fonts = array_filter(
-					$inline_fonts, function ( $key ) use ( $search, $is_params ) {
-					$key = strtolower( $key );
-					$search = strtolower( $search );
-					if ( $is_params ) {
-						// This separator `|` is set to initialize the autocomplete field.
-						$params = explode( '|', substr( $search, strlen( 'params:' ) ) );
-
-						return in_array( $key, array_map( 'strtolower', $params ) );
-					} elseif ( strpos( $key, $search ) !== FALSE OR strpos( str_replace( '/\s|\,/', '', $key ), $search ) !== FALSE ) {
-						return TRUE;
-					}
-
-					return FALSE;
-				}, ARRAY_FILTER_USE_KEY
-				);
-			}
-			// Trim the array to the set size
-			if ( ! $is_params ) {
-				$font_limit = isset( $_GET['font_limit'] ) ? intval( $_GET['font_limit'] ) : 50; // Default 50 items
-				$offset = isset( $_GET['offset'] ) ? intval( $_GET['offset'] ) : 0;
-				if( $offset === 1 ) {
-					$offset = 0;
-				}
-				$inline_fonts = array_slice( $inline_fonts, $offset, $font_limit );
-			}
-			// Create result
-			$result = array();
-			foreach ( $all_fonts as $value => $name ) {
-				if ( is_array( $name ) ) {
-					foreach ( $name as $_value => $_name ) {
-						if ( isset( $inline_fonts[ $_value ] ) ) {
-							$result[ $value ][ $_value ] = $_name;
-						}
-					}
-				} elseif ( isset( $inline_fonts[ $value ] ) ) {
-					$result[ $value ] = $name;
-				}
-			}
-			unset( $inline_fonts, $all_fonts );
-
-			wp_send_json_success( array( 'items' => $result ) );
+if ( wp_doing_ajax() AND ! function_exists( 'usof_all_fonts_autocomplete' ) ) {
+	add_action( 'wp_ajax_usof_all_fonts_autocomplete', 'usof_all_fonts_autocomplete', 1 );
+	/**
+	 * Request AJAX handler for usof_all_fonts_autocomplete
+	 * @return string
+	 */
+	function usof_all_fonts_autocomplete() {
+		if ( ! check_ajax_referer( 'usof_ajax_all_fonts_autocomplete', '_nonce', FALSE ) ) {
+			wp_send_json_error(
+				array(
+					'message' => us_translate( 'An error has occurred. Please reload the page and try again.' ),
+				)
+			);
 			wp_die();
 		}
+
+		// Get all fonts
+		$get_h1 = isset( $_GET['get_h1'] ) ? boolval( $_GET['get_h1'] ) : FALSE;
+		$only_google = isset( $_GET['only_google'] ) ? boolval( $_GET['only_google'] ) : TRUE;
+		$all_fonts = us_get_all_fonts( $only_google, $get_h1 );
+
+		// Create a inline data array
+		$inline_fonts = array();
+		foreach ( $all_fonts as $value => $name ) {
+			if ( is_array( $name ) ) {
+				foreach ( $name as $_value => $_name ) {
+					$inline_fonts[ $_value ] = $_name;
+				}
+			} else {
+				$inline_fonts[ $value ] = $name;
+			}
+		}
+		// Font name search or apply filter by 'params:'
+		$search = isset( $_GET['search'] ) ? $_GET['search'] : '';
+		$is_params = strpos( $search, 'params:' ) === 0;
+		if ( $search ) {
+			$inline_fonts = array_filter(
+				$inline_fonts, function ( $key ) use ( $search, $is_params ) {
+				$key = strtolower( $key );
+				$search = strtolower( $search );
+				if ( $is_params ) {
+					// This separator `|` is set to initialize the autocomplete field.
+					$params = explode( '|', substr( $search, strlen( 'params:' ) ) );
+
+					return in_array( $key, array_map( 'strtolower', $params ) );
+				} elseif ( strpos( $key, $search ) !== FALSE OR strpos( str_replace( '/\s|\,/', '', $key ), $search ) !== FALSE ) {
+					return TRUE;
+				}
+
+				return FALSE;
+			}, ARRAY_FILTER_USE_KEY
+			);
+		}
+		// Trim the array to the set size
+		if ( ! $is_params ) {
+			$font_limit = isset( $_GET['font_limit'] ) ? intval( $_GET['font_limit'] ) : 50; // Default 50 items
+			$offset = isset( $_GET['offset'] ) ? intval( $_GET['offset'] ) : 0;
+			if( $offset === 1 ) {
+				$offset = 0;
+			}
+			$inline_fonts = array_slice( $inline_fonts, $offset, $font_limit );
+		}
+		// Create result
+		$result = array();
+		foreach ( $all_fonts as $value => $name ) {
+			if ( is_array( $name ) ) {
+				foreach ( $name as $_value => $_name ) {
+					if ( isset( $inline_fonts[ $_value ] ) ) {
+						$result[ $value ][ $_value ] = $_name;
+					}
+				}
+			} elseif ( isset( $inline_fonts[ $value ] ) ) {
+				$result[ $value ] = $name;
+			}
+		}
+		unset( $inline_fonts, $all_fonts );
+
+		wp_send_json_success( array( 'items' => $result ) );
 	}
+}
+
+if ( wp_doing_ajax() AND ! function_exists( 'usof_dynamic_colors' ) ) {
+	/**
+	 * Get a list of dynamic colors
+	 * @return string
+	 */
+	function usof_dynamic_colors() {
+		if ( ! check_ajax_referer( 'us_ajax_color_dynamic_colors', '_nonce', FALSE ) ) {
+			wp_send_json_error(
+				array(
+					'message' => us_translate( 'An error has occurred. Please reload the page and try again.' ),
+				)
+			);
+			wp_die();
+		}
+
+		$group_name = NULL;
+		$list = array();
+
+		foreach ( us_config( 'theme-options.colors.fields', array() ) as $field_name => $field ) {
+			// Group Search
+			if (
+				isset( $field['type'] )
+				AND $field['type'] === 'heading'
+				AND ! empty( $field['title'] )
+			) {
+				$group_name = $field['title'];
+			}
+
+			// Skip all types except color
+			if ( isset( $field['type'] ) AND $field['type'] !== 'color' ) {
+				continue;
+			}
+
+			// Remove "color" prefix for better UI
+			if ( strpos( $field_name, 'color' ) === 0 ) {
+				$field_name = substr( $field_name, strlen( 'color' ) );
+			}
+
+			// Color options
+			$item = array(
+				'name' => $field_name,
+				'title' => us_arr_path( $field, 'text', '' ),
+				'value' => us_get_color( $field_name, /* Gradient */ TRUE ),
+			);
+
+			if ( ! is_null( $group_name ) ) {
+				$list[ $group_name ][] = $item;
+			} else {
+				$list[] = $item;
+			}
+		}
+
+		wp_send_json_success( array( 'list' => $list ) );
+	}
+	add_action( 'wp_ajax_usof_dynamic_colors', 'usof_dynamic_colors', 1 );
 }

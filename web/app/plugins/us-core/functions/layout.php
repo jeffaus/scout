@@ -154,11 +154,6 @@ class US_Layout {
 
 		$classes = 'type_' . $this->canvas_type;
 
-		// Language modificator
-		if ( defined( 'ICL_LANGUAGE_CODE' ) AND ICL_LANGUAGE_CODE ) {
-			$classes .= ' wpml_lang_' . ICL_LANGUAGE_CODE;
-		}
-
 		return $classes;
 	}
 

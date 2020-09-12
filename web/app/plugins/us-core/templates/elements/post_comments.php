@@ -8,8 +8,10 @@ if ( is_admin() AND ( ! defined( 'DOING_AJAX' ) OR ! DOING_AJAX ) ) {
 	return;
 }
 
+global $us_grid_object_type;
+
 // Cases when the Comments shouldn't be shown
-if ( $us_elm_context == 'grid_term' ) {
+if ( $us_elm_context == 'grid' AND $us_grid_object_type == 'term' ) {
 	return;
 } elseif ( $us_elm_context == 'shortcode' AND is_archive() ) {
 	return;

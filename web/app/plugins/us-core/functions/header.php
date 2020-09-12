@@ -1,24 +1,82 @@
 <?php defined( 'ABSPATH' ) OR die( 'This script cannot be accessed directly.' );
 
-/**
- * Get header option for the specified state
- *
- * @param string $name Option name
- * @param string $state Header state: 'default' / 'tablets' / 'mobiles'
- * @param string $default
- *
- * @return string
- */
-function us_get_header_option( $name, $state = 'default', $default = NULL ) {
-	global $us_header_settings;
-	us_load_header_settings_once();
-	$shared_options = array( 'top_fullwidth', 'middle_fullwidth', 'bottom_fullwidth' );
-	if ( $state != 'default' AND ( ! isset( $us_header_settings[ $state ]['options'][ $name ] ) OR in_array( $name, $shared_options ) ) ) {
-		$state = 'default';
-	}
+if ( ! function_exists( 'us_get_header_option' ) ) {
+	/**
+	 * Get header option for the specified state
+	 *
+	 * @param string $name Option name
+	 * @param string $state Header state: 'default' / 'tablets' / 'mobiles'
+	 * @param string $default
+	 *
+	 * @return string
+	 */
+	function us_get_header_option( $name, $state = 'default', $default = NULL ) {
+		global $us_header_settings;
+		us_load_header_settings_once();
 
-	return isset( $us_header_settings[ $state ]['options'][ $name ] ) ? $us_header_settings[ $state ]['options'][ $name ] : $default;
+		// These options are available in Default state only
+		$shared_options = array(
+			'top_fullwidth',
+			'top_bg_color',
+			'top_text_color',
+			'top_text_hover_color',
+			'top_transparent_bg_color',
+			'top_transparent_text_color',
+			'top_transparent_text_hover_color',
+			'middle_fullwidth',
+			'middle_bg_color',
+			'middle_text_color',
+			'middle_text_hover_color',
+			'middle_transparent_bg_color',
+			'middle_transparent_text_color',
+			'middle_transparent_text_hover_color',
+			'bottom_fullwidth',
+			'bottom_bg_color',
+			'bottom_text_color',
+			'bottom_text_hover_color',
+			'bottom_transparent_bg_color',
+			'bottom_transparent_text_color',
+			'bottom_transparent_text_hover_color',
+		);
+
+		if (
+			$state != 'default'
+			AND ( ! isset( $us_header_settings[ $state ]['options'][ $name ] )
+			OR in_array( $name, $shared_options ) )
+		) {
+			$state = 'default';
+		}
+
+		if ( ! empty( $us_header_settings[ $state ]['options'][ $name ] ) ) {
+			return $us_header_settings[ $state ]['options'][ $name ];
+		}
+
+		/*
+		 * Default settings from the config
+		 * @var array
+		 */
+		static $default_header_settings = array();
+		if ( is_null( $default ) AND empty( $default_header_settings ) ) {
+			foreach ( us_config( 'header-settings.options', array() ) as $group ) {
+				if ( ! is_array( $group ) ) {
+					continue;
+				}
+				foreach ( $group as $param_name => $options ) {
+					if ( us_arr_path( $options, 'type' ) == 'color' AND ! empty( $options['std'] ) ) {
+						$default_header_settings[ $param_name ] = $options['std'];
+					}
+				}
+			}
+		}
+
+		if ( is_null( $default ) AND ! empty( $default_header_settings[ $name ] ) ) {
+			return $default_header_settings[ $name ];
+		}
+
+		return $default;
+	}
 }
+
 
 /**
  * Get header layout for the specified state
@@ -78,9 +136,10 @@ function us_load_header_settings_once() {
  * @param array $settings Current layout
  * @param string $state Current state
  * @param string $place Outputted place
- * @param string $context 'header' / 'grid' / 'grid_term'
+ * @param string $context 'header' / 'grid'
+ * @param string $grid_object_type 'post' / 'term'
  */
-function us_output_builder_elms( &$settings, $state, $place, $context = 'header' ) {
+function us_output_builder_elms( &$settings, $state, $place, $context = 'header', $grid_object_type = 'post' ) {
 
 	$layout = &$settings[ $state ]['layout'];
 	$data = &$settings['data'];
@@ -115,7 +174,7 @@ function us_output_builder_elms( &$settings, $state, $place, $context = 'header'
 		}
 		if ( $context === 'header' ) {
 			$classes .= ' ush_' . str_replace( ':', '_', $elm );
-		} elseif ( in_array( $context, array( 'grid', 'grid_term' ) ) ) {
+		} elseif ( $context === 'grid' ) {
 			$classes .= ' usg_' . str_replace( ':', '_', $elm );
 		}
 		if ( substr( $elm, 1, 7 ) == 'wrapper' ) {
@@ -166,6 +225,7 @@ function us_output_builder_elms( &$settings, $state, $place, $context = 'header'
 			$values['id'] = $elm;
 			$values['classes'] = ( isset( $values['classes'] ) ? $values['classes'] : '' ) . $classes;
 			$values['us_elm_context'] = $context;
+			$values['us_grid_object_type'] = $grid_object_type;
 
 			// Adding special classes
 			us_load_template( 'templates/elements/' . $type, $values );
@@ -419,8 +479,12 @@ function us_pass_header_settings_to_js() {
 function us_get_header_design_options_css() {
 	global $us_header_settings;
 	us_load_header_settings_once();
-	$tablets_breakpoint = ( isset( $us_header_settings['tablets']['options']['breakpoint'] ) ) ? intval( $us_header_settings['tablets']['options']['breakpoint'] ) : 900;
-	$mobiles_breakpoint = ( isset( $us_header_settings['mobiles']['options']['breakpoint'] ) ) ? intval( $us_header_settings['mobiles']['options']['breakpoint'] ) : 600;
+	$tablets_breakpoint = ( isset( $us_header_settings['tablets']['options']['breakpoint'] ) )
+		? intval( $us_header_settings['tablets']['options']['breakpoint'] )
+		: 900;
+	$mobiles_breakpoint = ( isset( $us_header_settings['mobiles']['options']['breakpoint'] ) )
+		? intval( $us_header_settings['mobiles']['options']['breakpoint'] )
+		: 600;
 	$device_sizes = array(
 		'default' => '',
 		'tablets' => '(min-width: ' . $mobiles_breakpoint . 'px) and (max-width: ' . ( $tablets_breakpoint - 1 ) . 'px)',
@@ -435,6 +499,7 @@ function us_get_header_design_options_css() {
 		foreach ( array_keys( $device_sizes ) as $device_type ) {
 			if ( $css_options = us_arr_path( $elm, 'css.' . $device_type, FALSE ) ) {
 				$class_name = 'ush_' . str_replace( ':', '_', $elm_id );
+				$css_options = apply_filters( 'us_output_design_css_options', $css_options, $device_type );
 				$jsoncss_collection[ $device_type ][ $class_name ] = $css_options;
 			}
 		}
@@ -509,51 +574,50 @@ if ( ! function_exists( 'us_admin_bar_menu' ) ) {
 			);
 
 			/**
-			 * Get recursively all page block IDs
-			 *
-			 * @param array $acc
-			 * @param string $content
-			 * @param integer $current_level
+			 * Add the page blocks in a collection $area_ids and $received_posts
+			 * @param WP_Post $post
 			 * @return void
 			 */
-			$func_get_page_block_ids = function ( &$acc = array(), $content, $current_level = 1 ) use ( &$func_get_page_block_ids, &$received_posts ) {
-				if ( $current_level >= 15 ) {
-					return;
-				}
-				$shortcode_regex = get_shortcode_regex( array( 'us_page_block' ) );
-				if ( $content AND preg_match_all( '/' . $shortcode_regex . '/s', $content, $matches ) ) {
-					foreach ( us_arr_path( $matches, '3', array() ) as $atts ) {
-						$atts = shortcode_parse_atts( $atts );
-						$id = intval( us_arr_path( $atts, 'id', 0 ) );
-						if ( $id ) {
-							$acc[] = $id;
-							if ( $post = get_post( $id ) ) {
-								$received_posts[ $id ] = $post;
-								$func_get_page_block_ids( $acc, $post->post_content, ++ $current_level );
-							}
-						}
-					}
+			$func_acc_page_blocks = function ( $post ) use ( &$area_ids, &$received_posts ) {
+				if ( $post instanceof WP_Post AND ! empty( $post->post_content ) ) {
+					$received_posts[ $post->ID ] = $post;
+					$area_ids['page_blocks'][] = $post->ID;
 				}
 			};
+
 			// Search for page block in the current page object
 			$current_page = get_queried_object();
-			if ( $current_page instanceof WP_Post AND strpos( $current_page->post_content, '[us_page_block' ) !== FALSE ) {
-				$func_get_page_block_ids( $area_ids['page_blocks'], $current_page->post_content );
+			if (
+				$current_page instanceof WP_Post AND strpos( $current_page->post_content, '[us_page_block' ) !== FALSE ) {
+				// Recursive get of all page blocks
+				us_get_recursive_parse_page_block( $current_page, $func_acc_page_blocks );
 			}
 			unset( $current_page );
+
 			// Get all ids
 			foreach ( array_keys( $area_names ) as $area ) {
-				if ( $area == 'page_blocks' AND $content = us_get_current_page_block_content() ) {
-					$func_get_page_block_ids( $area_ids[ $area ], $content );
+				if ( $area == 'page_blocks' AND $page_block_ids = (array) us_get_current_page_block_ids() ) {
+					$query_args = array(
+						'nopaging' => TRUE,
+						'post__in' => $page_block_ids,
+						'post_type' => array( 'us_page_block', 'us_content_template' ),
+						'suppress_filters' => TRUE,
+					);
+					foreach ( get_posts( $query_args ) as $post ) {
+						// Recursive get of all page blocks
+						us_get_recursive_parse_page_block( $post, $func_acc_page_blocks );
+					}
 					if ( ! empty( $area_ids[ $area ] ) AND is_array( $post_args['post__in'] ) ) {
 						$post_args['post__in'] = array_merge( $post_args['post__in'], $area_ids[ $area ] );
 					}
 				} elseif ( $area_id = us_get_page_area_id( $area ) ) {
 					$post_args['post__in'][] = $area_ids[ $area ] = $area_id;
 
-					// If there are WPML translations add identifiers to $area_ids
-					if ( $wpml_area_id = apply_filters( 'wpml_object_id', $area_id, 'post' ) ) {
-						$post_args['post__in'][] = $area_ids[ $area ] = $wpml_area_id;
+					if (
+						has_filter( 'us_tr_object_id' )
+						AND $translated_id = apply_filters( 'us_tr_object_id', $area_id, 'post', TRUE )
+					) {
+						$post_args['post__in'][] = $area_ids[ $area ] = $translated_id;
 					}
 				}
 				$edit_menu[ $area ] = array(
@@ -594,14 +658,19 @@ if ( ! function_exists( 'us_admin_bar_menu' ) ) {
 						$keys = $area_ids;
 						unset( $keys['page_blocks'] );
 						$keys = array_flip( $keys );
-						$key = $keys[ $post->ID ];
+						if ( ! empty( $keys[ $post->ID ] ) ) {
+							$key = $keys[ $post->ID ];
+						}
+
 						unset( $keys );
 					}
-					$edit_menu[ $key ]['meta']['html'] .= sprintf(
-						'<a href="%s">%s</a>',
-						admin_url( 'post.php?post=' . $post->ID . '&action=edit' ),
-						strip_tags( $post->post_title )
-					);
+					if ( isset( $key ) AND isset( $edit_menu[ $key ]['meta']['html'] ) ) {
+						$edit_menu[ $key ]['meta']['html'] .= sprintf(
+							'<a href="%s">%s</a>',
+							admin_url( 'post.php?post=' . $post->ID . '&action=edit' ),
+							strip_tags( $post->post_title )
+						);
+					}
 				}
 			}
 			if ( ! empty( $edit_menu ) ) {
@@ -625,7 +694,28 @@ if ( ! function_exists( 'us_admin_bar_menu' ) ) {
 					}
 				'
 				);
-				echo '<style id="us-admin-bar">' . $style . '</style>';
+				echo '<style id="us-admin-bar-style">' . $style . '</style>';
+
+				// Moved the edit link to the drop-down list, this is only necessary for the mobile devices
+				if ( wp_is_mobile() AND $admin_bar_nodes = $wp_admin_bar->get_nodes() ) {
+					$edit_node = (array) $admin_bar_nodes[ 'edit' ];
+					$edit_node = array_merge( $edit_node, array(
+						'id' => 'mobile_edit',
+						'parent' => 'edit',
+					) );
+					$wp_admin_bar->add_menu( $edit_node );
+					unset( $admin_bar_nodes );
+
+					// US Admin bar javascript
+					echo '<script id="us-admin-bar-javascript">
+						;(function( $ ){
+							$( "#wp-admin-bar-edit > a:first").on( "click", function( e ) {
+								e.preventDefault();
+								e.stopPropagation();
+							} );
+						})( jQuery );
+					</script>';
+				}
 
 				foreach ( $edit_menu as $area => $values ) {
 					if ( ! empty( $values['meta']['html'] ) ) {
@@ -635,5 +725,114 @@ if ( ! function_exists( 'us_admin_bar_menu' ) ) {
 			}
 			unset( $area_ids, $area_names, $post_args, $received_posts, $edit_menu );
 		}
+	}
+}
+
+if ( ! function_exists( 'us_hb_settings_fallback' ) ) {
+	/**
+	 * Apply fallback changes for old header settings on update
+	 *
+	 * @param $header_settings
+	 * @return array
+	 */
+	function us_hb_settings_fallback( $header_settings ) {
+		global $usof_options;
+
+		// Check if the settings are empty and abort following execution in this case
+		if ( ! is_array( $header_settings ) OR empty( $header_settings['default'] ) ) {
+			return $header_settings;
+		}
+
+		// Fallback for options
+		if ( ! isset( $header_settings['default']['options']['top_transparent_text_hover_color'] ) ) {
+			$header_settings['default']['options']['top_transparent_text_hover_color'] =
+				isset( $usof_options['color_header_bottom_text_hover'] ) ? '_header_transparent_text_hover' : '_header_top_transparent_text_hover';
+		}
+
+		if ( ! isset( $header_settings['default']['options']['bottom_bg_color'] ) ) {
+			$header_settings['default']['options']['bottom_bg_color'] =
+				us_arr_path( $usof_options, 'color_header_bottom_bg', '_header_middle_bg' );
+		}
+
+		if ( ! isset( $header_settings['default']['options']['bottom_text_hover_color'] ) ) {
+			$header_settings['default']['options']['bottom_text_hover_color'] =
+				us_arr_path( $usof_options, 'color_header_bottom_text_hover', '_header_middle_text_hover' );
+		}
+
+		if ( ! isset( $header_settings['default']['options']['bottom_text_color'] ) ) {
+			$header_settings['default']['options']['bottom_text_color'] =
+				us_arr_path( $usof_options, 'color_header_bottom_text', '_header_middle_text' );
+		}
+
+		// Fallback for elements
+		foreach ( $header_settings['data'] as $elm_id => $elm_data ) {
+
+			// Menu
+			if ( substr( $elm_id, 0, 4 ) == 'menu' ) {
+				if ( ! isset( $elm_data['color_active_bg'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_active_bg'] =
+						us_arr_path( $usof_options, 'color_menu_active_bg', 'transparent' );
+				}
+				if ( ! isset( $elm_data['color_active_text'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_active_text'] =
+						us_arr_path( $usof_options, 'color_menu_active_text', '_header_middle_text_hover' );
+				}
+				if ( ! isset( $elm_data['color_transparent_active_bg'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_transparent_active_bg'] =
+						us_arr_path( $usof_options, 'color_menu_transparent_active_bg', 'transparent' );
+				}
+				if ( ! isset( $elm_data['color_transparent_active_text'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_transparent_active_text'] =
+						us_arr_path( $usof_options, 'color_menu_transparent_active_text', '_header_transparent_text_hover' );
+				}
+				if ( ! isset( $elm_data['color_hover_bg'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_hover_bg'] =
+						us_arr_path( $usof_options, 'color_menu_hover_bg', 'transparent' );
+				}
+				if ( ! isset( $elm_data['color_hover_text'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_hover_text'] =
+						us_arr_path( $usof_options, 'color_menu_hover_text', '_header_middle_text_hover' );
+				}
+				if ( ! isset( $elm_data['color_drop_bg'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_drop_bg'] =
+						us_arr_path( $usof_options, 'color_drop_bg', '_header_middle_bg' );
+				}
+				if ( ! isset( $elm_data['color_drop_text'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_drop_text'] =
+						us_arr_path( $usof_options, 'color_drop_text', '_header_middle_text' );
+				}
+				if ( ! isset( $elm_data['color_drop_hover_bg'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_drop_hover_bg'] =
+						us_arr_path( $usof_options, 'color_drop_hover_bg', 'transparent' );
+				}
+				if ( ! isset( $elm_data['color_drop_hover_text'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_drop_hover_text'] =
+						us_arr_path( $usof_options, 'color_drop_hover_text', '_header_middle_text_hover' );
+				}
+				if ( ! isset( $elm_data['color_drop_active_bg'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_drop_active_bg'] =
+						us_arr_path( $usof_options, 'color_drop_active_bg', 'transparent' );
+				}
+				if ( ! isset( $elm_data['color_drop_active_text'] ) ) {
+					$header_settings['data'][ $elm_id ]['color_drop_active_text'] =
+						us_arr_path( $usof_options, 'color_drop_active_text', '_header_middle_text_hover' );
+				}
+			}
+
+			// Search
+			if ( substr( $elm_id, 0, 5 ) == 'search' ) {
+				if ( ! isset( $elm_data['field_bg_color'] ) ) {
+					$header_settings['data'][ $elm_id ]['field_bg_color'] =
+						us_arr_path( $usof_options, 'color_header_search_bg', '' );
+				}
+				if ( ! isset( $elm_data['field_text_color'] ) ) {
+					$header_settings['data'][ $elm_id ]['field_text_color'] =
+						us_arr_path( $usof_options, 'color_header_search_text', '' );
+				}
+			}
+
+		}
+
+		return $header_settings;
 	}
 }

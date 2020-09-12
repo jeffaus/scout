@@ -174,10 +174,16 @@ class US_Shortcodes {
 			unset( $custom_output_before );
 		}
 
-		$_filename = US_CORE_DIR . 'templates/elements/' . $element . '.php';
+		$_filename = us_locate_file( 'templates/elements/' . $element . '.php' );
 
-		// We are using this context in some element templates
+		// We are using the context variable in some elements templates
 		$us_elm_context = 'shortcode';
+
+		// Fallback for elements that used both in shortcodes and in grid builder
+		global $us_grid_object_type;
+		if ( ! $us_grid_object_type ) {
+			$us_grid_object_type = 'post';
+		}
 
 		$filled_atts = us_shortcode_atts( $atts, $shortcode );
 
@@ -190,11 +196,13 @@ class US_Shortcodes {
 		// Add custom CSS class name from Design Options
 		if ( ! empty( $filled_atts['css'] ) ) {
 			if ( function_exists( 'us_get_design_css_class' ) ) {
-				$css_class_name = us_get_design_css_class( $filled_atts['css'] );
+				$design_css_class = us_get_design_css_class( $filled_atts['css'] );
+				$filled_atts['design_css_class'] = $design_css_class;
+
 				if ( ! isset( $filled_atts['classes'] ) ) {
-					$filled_atts['classes'] = ' ' . $css_class_name;
+					$filled_atts['classes'] = ' ' . $design_css_class;
 				} else {
-					$filled_atts['classes'] .= ' ' . $css_class_name;
+					$filled_atts['classes'] .= ' ' . $design_css_class;
 				}
 			}
 		}
@@ -362,5 +370,5 @@ function us_prepare_attachment_for_js( $response, $attachment, $meta ) {
 // Add theme image sizes to WP selector in Gallery options
 add_filter( 'image_size_names_choose', 'us_image_size_names_choose' );
 function us_image_size_names_choose( $sizes ) {
-	return us_image_sizes_select_values();
+	return us_get_image_sizes_list();
 }

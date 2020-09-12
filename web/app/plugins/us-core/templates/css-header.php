@@ -47,6 +47,57 @@ foreach ( array( 'default', 'tablets', 'mobiles' ) as $state ) {
 ?>
 
 /* =============================================== */
+/* ================ Header Colors ================ */
+/* =============================================== */
+
+<?php foreach ( array( 'top', 'middle', 'bottom' ) as $area ):
+
+	// Do not output extra CSS, if top or bottom areas are disabled in all states
+	$show_state = FALSE;
+	foreach ( array( 'default', 'tablets', 'mobiles' ) as $state ) {
+		if ( us_get_header_option( $area . '_show', $state ) ) {
+			$show_state = TRUE;
+			break;
+		}
+	}
+	if ( $area !== 'middle' AND ! $show_state ) {
+		continue;
+	}
+?>
+.l-subheader.at_<?= $area ?>,
+.l-subheader.at_<?= $area ?> .w-dropdown-list,
+.l-subheader.at_<?= $area ?> .type_mobile .w-nav-list.level_1 {
+	background: <?= us_get_color( us_get_header_option( $area . '_bg_color' ), TRUE ) ?>;
+	color: <?= us_get_color( us_get_header_option( $area . '_text_color' ) ) ?>;
+	}
+.no-touch .l-subheader.at_<?= $area ?> a:hover,
+.no-touch .l-header.bg_transparent .l-subheader.at_<?= $area ?> .w-dropdown.opened a:hover {
+	color: <?= us_get_color( us_get_header_option( $area . '_text_hover_color' ) ) ?>;
+	}
+.l-header.bg_transparent:not(.sticky) .l-subheader.at_<?= $area ?> {
+	background: <?= us_get_color( us_get_header_option( $area . '_transparent_bg_color' ), TRUE ) ?>;
+	color: <?= us_get_color( us_get_header_option( $area . '_transparent_text_color' ) ) ?>;
+	}
+.no-touch .l-header.bg_transparent:not(.sticky) .at_<?= $area ?> .w-cart-link:hover,
+.no-touch .l-header.bg_transparent:not(.sticky) .at_<?= $area ?> .w-text a:hover,
+.no-touch .l-header.bg_transparent:not(.sticky) .at_<?= $area ?> .w-html a:hover,
+.no-touch .l-header.bg_transparent:not(.sticky) .at_<?= $area ?> .w-nav > a:hover,
+.no-touch .l-header.bg_transparent:not(.sticky) .at_<?= $area ?> .w-menu a:hover,
+.no-touch .l-header.bg_transparent:not(.sticky) .at_<?= $area ?> .w-search > a:hover,
+.no-touch .l-header.bg_transparent:not(.sticky) .at_<?= $area ?> .w-dropdown a:hover,
+.no-touch .l-header.bg_transparent:not(.sticky) .at_<?= $area ?> .type_desktop .menu-item.level_1:hover > a {
+	color: <?= us_get_color( us_get_header_option( $area . '_transparent_text_hover_color' ) ) ?>;
+	}
+<?php endforeach; ?>
+
+.header_ver .l-header {
+	background: <?= us_get_color( us_get_header_option( 'middle_bg_color' ), TRUE ) ?>;
+	color: <?= us_get_color( us_get_header_option( 'middle_text_color' ) ) ?>;
+	}
+
+
+
+/* =============================================== */
 /* ================ Default state ================ */
 /* =============================================== */
 
@@ -639,16 +690,24 @@ if ( us_get_header_option( 'elm_align', 'mobiles' ) == 'right' ) { ?>
 /* Menu */
 
 <?php foreach ( us_get_header_elms_of_a_type( 'menu' ) as $class => $param ): ?>
-.header_hor .<?= $class ?>.type_desktop .w-nav-list.level_1 > .menu-item > a {
+.header_hor .<?= $class ?>.type_desktop .menu-item.level_1 > a:not(.w-btn) {
 	padding-left: <?= $param['indents'] ?>;
 	padding-right: <?= $param['indents'] ?>;
 }
-.header_ver .<?= $class ?>.type_desktop .w-nav-list.level_1 > .menu-item > a {
+.header_hor .<?= $class ?>.type_desktop .menu-item.level_1 > a.w-btn {
+	margin-left: <?= $param['indents'] ?>;
+	margin-right: <?= $param['indents'] ?>;
+}
+.header_ver .<?= $class ?>.type_desktop .menu-item.level_1 > a:not(.w-btn) {
 	padding-top: <?= $param['indents'] ?>;
 	padding-bottom: <?= $param['indents'] ?>;
 }
+.header_ver .<?= $class ?>.type_desktop .menu-item.level_1 > a.w-btn {
+	margin-top: <?= $param['indents'] ?>;
+	margin-bottom: <?= $param['indents'] ?>;
+}
 <?php if ( $param['dropdown_arrow'] ): ?>
-.<?= $class ?>.type_desktop .menu-item-has-children .w-nav-anchor.level_1 > .w-nav-arrow {
+.<?= $class ?>.type_desktop .menu-item-has-children.level_1 > a > .w-nav-arrow {
 	display: inline-block;
 }
 <?php endif; ?>
@@ -693,6 +752,54 @@ if ( us_get_header_option( 'elm_align', 'mobiles' ) == 'right' ) { ?>
 		display: block;
 	}
 }
+
+/* MENU COLORS */
+
+/* Menu Item on hover */
+.<?= $class ?> .menu-item.level_1 > a:not(.w-btn):focus,
+.no-touch .<?= $class ?> .menu-item.level_1.opened > a:not(.w-btn),
+.no-touch .<?= $class ?> .menu-item.level_1:hover > a:not(.w-btn) {
+	background: <?= us_get_color( $param['color_hover_bg'], /* Gradient */ TRUE ) ?>;
+	color: <?= us_get_color( $param['color_hover_text'] ) ?>;
+	}
+
+/* Active Menu Item */
+.<?= $class ?> .menu-item.level_1.current-menu-item > a:not(.w-btn),
+.<?= $class ?> .menu-item.level_1.current-menu-ancestor > a:not(.w-btn),
+.<?= $class ?> .menu-item.level_1.current-page-ancestor > a:not(.w-btn) {
+	background: <?= us_get_color( $param['color_active_bg'], /* Gradient */ TRUE ) ?>;
+	color: <?= us_get_color( $param['color_active_text'] ) ?>;
+	}
+
+/* Active Menu Item in transparent header */
+.l-header.bg_transparent:not(.sticky) .<?= $class ?>.type_desktop .menu-item.level_1.current-menu-item > a:not(.w-btn),
+.l-header.bg_transparent:not(.sticky) .<?= $class ?>.type_desktop .menu-item.level_1.current-menu-ancestor > a:not(.w-btn),
+.l-header.bg_transparent:not(.sticky) .<?= $class ?>.type_desktop .menu-item.level_1.current-page-ancestor > a:not(.w-btn) {
+	background: <?= us_get_color( $param['color_transparent_active_bg'], /* Gradient */ TRUE ) ?>;
+	color: <?= us_get_color( $param['color_transparent_active_text'] ) ?>;
+	}
+
+/* Dropdowns */
+.<?= $class ?> .w-nav-list:not(.level_1) {
+	background: <?= us_get_color( $param['color_drop_bg'], /* Gradient */ TRUE ) ?>;
+	color: <?= us_get_color( $param['color_drop_text'] ) ?>;
+	}
+
+/* Dropdown Item on hover */
+.no-touch .<?= $class ?> .menu-item:not(.level_1) > a:focus,
+.no-touch .<?= $class ?> .menu-item:not(.level_1):hover > a {
+	background: <?= us_get_color( $param['color_drop_hover_bg'], /* Gradient */ TRUE ) ?>;
+	color: <?= us_get_color( $param['color_drop_hover_text'] ) ?>;
+	}
+
+/* Dropdown Active Item */
+.<?= $class ?> .menu-item:not(.level_1).current-menu-item > a,
+.<?= $class ?> .menu-item:not(.level_1).current-menu-ancestor > a,
+.<?= $class ?> .menu-item:not(.level_1).current-page-ancestor > a {
+	background: <?= us_get_color( $param['color_drop_active_bg'], /* Gradient */ TRUE ) ?>;
+	color: <?= us_get_color( $param['color_drop_active_text'] ) ?>;
+	}
+
 <?php endforeach; ?>
 
 
@@ -730,8 +837,12 @@ if ( in_array( $param['layout'], array( 'simple', 'modern' ) ) AND ( ! empty( $p
 ?>
 
 .<?= $class ?> .w-search-form {
-	background: <?= ! empty( $param['field_bg_color'] ) ? $param['field_bg_color'] : us_get_color( 'color_content_bg', TRUE ) ?>;
-	color: <?= ! empty( $param['field_text_color'] ) ? $param['field_text_color'] : us_get_color( 'color_content_text' ) ?>;
+	background: <?php echo ! empty( $param['field_bg_color'] )
+		? us_get_color( $param['field_bg_color'], /* Gradient */ TRUE )
+		: us_get_color( 'color_content_bg', /* Gradient */ TRUE ) ?>;
+	color: <?php echo ! empty( $param['field_text_color'] )
+		? us_get_color( $param['field_text_color'] )
+		: us_get_color( 'color_content_text' ) ?>;
 }
 
 @media <?= $desktop_query ?> {

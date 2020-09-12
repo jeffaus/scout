@@ -44,7 +44,11 @@ $us_layout = US_Layout::instance();
 </head>
 <body <?php body_class( 'l-body ' . $us_layout->body_classes() );
 if ( us_get_option( 'schema_markup' ) ) {
-	echo ' itemscope itemtype="https://schema.org/WebPage"';
+	if ( us_is_faqs_page() ) {
+		echo ' itemscope itemtype="https://schema.org/FAQPage"';
+	} else {
+		echo ' itemscope itemtype="https://schema.org/WebPage"';
+	}
 } ?>>
 <?php
 global $us_iframe;

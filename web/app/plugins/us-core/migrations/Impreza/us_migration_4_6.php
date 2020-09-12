@@ -10,19 +10,25 @@ class us_migration_4_6 extends US_Migration_Translator {
 		if ( isset( $options['button_text_style'] ) AND in_array( 'bold', $options['button_text_style'] ) ) {
 			$options['button_fontweight'] = 700;
 			$changed = TRUE;
-		}		
-		// Default Sidebar options
-		if ( isset( $options['page_sidebar_id'] ) ) {
-			$options['sidebar_id'] = $options['page_sidebar_id'];
-			unset( $options['page_sidebar_id'] );
-			$changed = TRUE;
 		}
-		if ( isset( $options['page_sidebar'] ) AND in_array( $options['page_sidebar'], array( 'left', 'right' ) ) ) {
-			$options['sidebar'] = 1;
-			$options['sidebar_pos'] = $options['page_sidebar'];
+		// Default Sidebar options
+		if ( ! empty( $options['page_sidebar'] )) {
+			if ( $options['page_sidebar'] === 'none' ) {
+				$options['sidebar_pos'] = 0;
+			} else {
+				$options['sidebar_pos'] = $options['page_sidebar'];
+			}
 			unset( $options['page_sidebar'] );
 			$changed = TRUE;
 		}
+		if ( isset( $options['page_sidebar_id'] ) ) {
+			$options['sidebar_id'] = $options['sidebar_pos']
+				? $options['page_sidebar_id']
+				: '';
+			unset( $options['page_sidebar_id'] );
+			$changed = TRUE;
+		}
+
 		// Portfolio Sidebar
 		if ( isset( $options['portfolio_sidebar'] ) ) {
 			if ( $options['portfolio_sidebar'] == 'none' ) {
@@ -281,7 +287,7 @@ class us_migration_4_6 extends US_Migration_Translator {
 							$post_content = json_encode( $translated_header_options );
 						}
 						$post_content = str_replace( "\\n", "\\\\n", $post_content );
-						
+
 						$translated_header_post_array = array(
 							'post_type' => 'us_header',
 							'post_date' => date( 'Y-m-d H:i', time() - 86400 ),
@@ -397,8 +403,6 @@ class us_migration_4_6 extends US_Migration_Translator {
 				set_transient( 'us_migration_46_transient', 1, 5 * MINUTE_IN_SECONDS );
 			}
 		}
-
-
 
 		return $changed;
 	}

@@ -17,10 +17,12 @@ if ( ! empty( $align ) ) {
 	$classes .= ' align_' . $align;
 }
 
-$classes .= ' style_' . $style;
-$classes .= ' hover_' . $hover;
 $classes .= ' color_' . $icons_color;
 $classes .= ' shape_' . $shape;
+if ( $shape != 'none' ) {
+	$classes .= ' style_' . $style;
+	$classes .= ' hover_' . $hover;
+}
 
 if ( $us_elm_context == 'shortcode' ) {
 	$list_inline_css = us_prepare_inline_css(
@@ -30,7 +32,7 @@ if ( $us_elm_context == 'shortcode' ) {
 	);
 	$item_inline_css = us_prepare_inline_css(
 		array(
-			'padding' => $gap,
+			'padding' => empty( $gap ) ? '' : $gap,
 		)
 	);
 } else {
@@ -68,12 +70,12 @@ foreach ( $items as $index => $item ) {
 		}
 		$social_custom_bg = us_prepare_inline_css(
 			array(
-				'background' => $item['color'],
+				'background' => us_get_color( $item['color'], /* Gradient */ TRUE ),
 			)
 		);
 		$social_custom_color = us_prepare_inline_css(
 			array(
-				'color' => $item['color'],
+				'color' => us_get_color( $item['color'] ),
 			)
 		);
 	// Email type

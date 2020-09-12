@@ -4,8 +4,7 @@
  * Output Button element
  */
 
-// Default variables
-$output = $wrapper_classes = '';
+global $us_grid_object_type;
 
 // Check existence of Button Style, if not, set the default
 $btn_styles = us_get_btn_styles();
@@ -13,17 +12,21 @@ if ( ! array_key_exists( $style, $btn_styles ) ) {
 	$style = '1';
 }
 
-// Button classes & inline styles
-$btn_classes = 'w-btn us-btn-style_' . $style;
-$btn_classes .= isset( $classes ) ? $classes : '';
-$btn_classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
+$_atts['class'] = 'w-btn us-btn-style_' . $style;
+$_atts['class'] .= isset( $classes ) ? $classes : '';
 
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
 
+$wrapper_class = '';
 if ( $us_elm_context == 'shortcode' ) {
-	$wrapper_classes .= ' width_' . $width_type;
+	$wrapper_class .= ' width_' . $width_type;
 	if ( $width_type != 'full' ) {
-		$wrapper_classes .= ' align_' . $align;
+		$wrapper_class .= ' align_' . $align;
 	}
 }
 
@@ -31,7 +34,7 @@ if ( $us_elm_context == 'shortcode' ) {
 $icon_html = '';
 if ( ! empty( $icon ) ) {
 	$icon_html = us_prepare_icon_tag( $icon );
-	$btn_classes .= ' icon_at' . $iconpos;
+	$_atts['class'] .= ' icon_at' . $iconpos;
 
 	// Swap icon position for RTL
 	if ( is_rtl() ) {
@@ -42,7 +45,8 @@ if ( ! empty( $icon ) ) {
 // Text
 $text = trim( strip_tags( $label, '<br>' ) );
 if ( $text == '' ) {
-	$btn_classes .= ' text_none';
+	$_atts['class'] .= ' text_none';
+	$_atts['aria-label'] = us_translate( 'Button' );
 }
 
 // Link
@@ -51,7 +55,7 @@ if ( $link_type === 'none' ) {
 } elseif ( $link_type === 'post' ) {
 
 	// Terms of selected taxonomy in Grid
-	if ( $us_elm_context == 'grid_term' ) {
+	if ( $us_elm_context == 'grid' AND $us_grid_object_type == 'term' ) {
 		global $us_grid_term;
 		$link_atts = ' href="' . get_term_link( $us_grid_term ) . '"';
 	} else {
@@ -86,14 +90,15 @@ if ( $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
 	$link_atts .= ' target="_blank" rel="noopener nofollow"';
 }
 
-// Output the element
-if ( $us_elm_context == 'shortcode' ) {
-	$output .= '<div class="w-btn-wrapper' . $wrapper_classes . '">';
-}
-$output .= '<a class="' . $btn_classes . '"';
-$output .= $link_atts . $el_id;
-$output .= '>';
+// Apply filters to button text
+$text = us_replace_dynamic_value( $text, $us_elm_context, $us_grid_object_type );
 
+// Output the element
+$output = '';
+if ( $us_elm_context == 'shortcode' ) {
+	$output .= '<div class="w-btn-wrapper' . $wrapper_class . '">';
+}
+$output .= '<a ' . us_implode_atts( $_atts ) . $link_atts . '>';
 if ( $iconpos == 'left' ) {
 	$output .= $icon_html;
 }

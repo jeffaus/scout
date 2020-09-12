@@ -57,21 +57,27 @@ if ( $us_elm_context == 'shortcode' ) {
 
 	// Main Items colors
 	if ( ! empty( $main_color_bg ) AND $main_style == 'blocks' ) {
+		$main_color_bg = us_get_color( $main_color_bg, /* Gradient */ TRUE );
 		$css_styles .= '.us_menu_' . $us_menu_id . ' .menu > li > a { background:' . $main_color_bg . '; }';
 	}
 	if ( ! empty( $main_color_text ) ) {
+		$main_color_text = us_get_color( $main_color_text );
 		$css_styles .= '.us_menu_' . $us_menu_id . ' .menu > li > a { color:' . $main_color_text . '; }';
 	}
 	if ( ! empty( $main_color_bg_hover ) AND $main_style == 'blocks' ) {
+		$main_color_bg_hover = us_get_color( $main_color_bg_hover, /* Gradient */ TRUE );
 		$css_styles .= '.us_menu_' . $us_menu_id . ' .menu > .menu-item > a:hover { background:' . $main_color_bg_hover . '; }';
 	}
 	if ( ! empty( $main_color_text_hover ) ) {
+		$main_color_text_hover = us_get_color( $main_color_text_hover );
 		$css_styles .= '.us_menu_' . $us_menu_id . ' .menu > .menu-item > a:hover { color:' . $main_color_text_hover . '; }';
 	}
 	if ( ! empty( $main_color_bg_active ) AND $main_style == 'blocks' ) {
+		$main_color_bg_active = us_get_color( $main_color_bg_active, /* Gradient */ TRUE );
 		$css_styles .= '.us_menu_' . $us_menu_id . ' .menu > .current-menu-item > a { background:' . $main_color_bg_active . '; }';
 	}
 	if ( ! empty( $main_color_text_active ) ) {
+		$main_color_text_active = us_get_color( $main_color_text_active );
 		$css_styles .= '.us_menu_' . $us_menu_id . ' .menu > .current-menu-item > a { color:' . $main_color_text_active . '; }';
 	}
 

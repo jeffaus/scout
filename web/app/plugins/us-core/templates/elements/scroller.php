@@ -19,25 +19,32 @@
  *
  */
 
-$classes = isset( $classes ) ? $classes : '';
-$classes = $data_atts = '';
+$_atts = array(
+	'class' => 'w-scroller',
+	'aria-hidden' => 'true',
+);
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+$_atts['class'] .= ' style_' . $dots_style;
+$_atts['class'] .= ' pos_' . $dots_pos;
 
-$classes .= ' style_' . $dots_style . ' pos_' . $dots_pos;
-
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
 
 if ( $speed != '' ) {
-	$data_atts = ' data-speed="' . $speed . '"';
+	$_atts['data-speed'] = $speed;
 }
 if ( $disable_width != '' ) {
-	$data_atts .= ' data-disablewidth="' . intval( $disable_width ) . '"';
+	$_atts['data-disablewidth'] = intval( $disable_width );
 }
-
 if ( $include_footer ) {
-	$data_atts .= ' data-footer-dots="true"';
+	$_atts['data-footer-dots'] = 'true';
 }
 
+$dots_color = us_get_color( $dots_color );
 $dot_inline_css = us_prepare_inline_css(
 	array(
 		'font-size' => $dots_size,
@@ -47,10 +54,10 @@ $dot_inline_css = us_prepare_inline_css(
 );
 
 // Output the element
-$output = '<div class="w-scroller' . $classes . '"' . $el_id . $data_atts . ' aria-hidden="true">';
+$output = '<div ' . us_implode_atts( $_atts ) . '>';
 if ( $dots ) {
 	$output .= '<div class="w-scroller-dots">';
-	$output .= '<a href="javascript:void(0);" class="w-scroller-dot"><span' . $dot_inline_css . '></span></a>';
+	$output .= '<a href="javascript:void(0);" tabindex="-1" class="w-scroller-dot"><span' . $dot_inline_css . '></span></a>';
 	$output .= '</div>';
 }
 $output .= '</div>';

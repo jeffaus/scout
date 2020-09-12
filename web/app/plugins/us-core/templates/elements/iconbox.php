@@ -9,7 +9,7 @@
  * @param $style          string Icon style: 'default' / 'circle' / 'outlined'
  * @param $color          string Icon color: 'primary' / 'secondary' / 'light' / 'contrast' / 'custom'
  * @param $icon_color     string Icon color value
- * @param $bg_color       string Icon circle color
+ * @param $circle_color   string Icon circle color
  * @param $iconpos        string Icon position: 'top' / 'left'
  * @param $size           string Icon size in pixels
  * @param $img            int Icon image (from WordPress media)
@@ -49,6 +49,9 @@ $classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
 $el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
 
 $title = wptexturize( $title );
+
+$icon_color = us_get_color( $icon_color, /* Gradient */ TRUE );
+$circle_color = us_get_color( $circle_color, /* Gradient */ TRUE );
 
 // Add specific inline styles to icon, if gradient color is set
 $inline_icon_css = '';
@@ -102,7 +105,7 @@ if ( ! empty( $link_atts ) ) {
 	if ( $title != '' ) {
 		$link_atts .= ' aria-label="' . esc_attr( $title ) . '"';
 	} else {
-		$link_atts .= ' aria-hidden="true"';
+		$link_atts .= ' aria-label="' . esc_attr( $icon ) . '"';
 	}
 	$link_opener = '<a class="w-iconbox-link"' . $link_atts . '>';
 	$link_closer = '</a>';
@@ -113,7 +116,7 @@ $icon_inline_css = us_prepare_inline_css(
 		'font-size' => ( $size == '36px' ) ? '' : $size,
 		'box-shadow' => empty( $circle_color ) ? '' : '0 0 0 2px ' . $circle_color . ' inset',
 		'background' => $circle_color,
-		'color' => $icon_color,
+		'color' => us_gradient2hex( $icon_color ),
 	)
 );
 

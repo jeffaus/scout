@@ -11,6 +11,7 @@ $us_layout = US_Layout::instance();
 global $us_iframe, $us_hide_footer;
 if ( ( ! isset( $us_iframe ) OR ! $us_iframe ) AND ( ! isset( $us_hide_footer ) OR ! $us_hide_footer ) ) {
 	do_action( 'us_before_footer' );
+	us_register_context_layout( 'footer' );
 	?>
 	<footer id="page-footer" class="l-footer"<?php echo ( us_get_option( 'schema_markup' ) ) ? ' itemscope itemtype="https://schema.org/WPFooter"' : ''; ?>>
 		<?php
@@ -24,8 +25,8 @@ if ( ( ! isset( $us_iframe ) OR ! $us_iframe ) AND ( ! isset( $us_hide_footer ) 
 
 			us_open_wp_query_context();
 			if ( $footer ) {
-				$translated_footer_id = apply_filters( 'wpml_object_id', $footer->ID, 'us_page_block', TRUE );
-				if ( $translated_footer_id != $footer->ID ) {
+				$translated_footer_id = apply_filters( 'us_tr_object_id', $footer->ID, 'us_page_block', TRUE );
+				if ( $translated_footer_id AND $translated_footer_id != $footer->ID ) {
 					$footer = get_post( $translated_footer_id );
 				}
 
@@ -51,10 +52,19 @@ if ( ( ! isset( $us_iframe ) OR ! $us_iframe ) AND ( ! isset( $us_hide_footer ) 
 	<?php
 	do_action( 'us_after_footer' );
 }
+
+// Output "Back to top" button
 if ( us_get_option( 'back_to_top', 1 ) ) {
-	?>
-	<a class="w-toplink pos_<?php echo us_get_option( 'back_to_top_pos', 'right' ) ?>" href="#" title="<?php _e( 'Back to top', 'us' ); ?>" aria-hidden="true"></a>
-	<?php
+	$back_to_top_atts = array(
+		'class' => 'w-toplink pos_' . us_get_option( 'back_to_top_pos', 'right' ),
+		'href' => '#',
+		'title' => __( 'Back to top', 'us' ),
+	);
+	if ( $back_to_top_style = us_get_option( 'back_to_top_style', '' ) ) {
+		$back_to_top_atts['class'] .= ' w-btn us-btn-style_' . $back_to_top_style;
+	}
+
+	echo '<a ' . us_implode_atts( $back_to_top_atts ) . '><span></span></a>';
 }
 
 if ( $us_layout->header_show != 'never' ) {

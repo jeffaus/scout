@@ -111,11 +111,14 @@ function us_get_post_preview( &$the_content, $strip_from_the_content = FALSE ) {
  */
 function us_get_post_format_link_url( $url, $post ) {
 
-	if ( get_post_format( $post->ID ) != 'link' ) {
-		return $url;
+	$post_content = '';
+	if ( $post instanceof WP_Post ) {
+		if ( get_post_format( $post->ID ) != 'link' ) {
+			return $url;
+		}
+		$post_content = $post->post_content;
 	}
 
-	$post_content = $post->post_content;
 	$link = '';
 
 	if ( preg_match( '$(https?|ftp|file)://[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|]$i', $post_content, $matches ) ) {
@@ -211,6 +214,14 @@ function us_maintenance_admin_bar_menu( $wp_admin_bar ) {
 		$maintenance_page = get_post( us_get_option( 'maintenance_page' ) );
 		if ( $maintenance_page ) {
 
+			if (
+				has_filter( 'us_tr_object_id' )
+				AND $_maintenance_page = get_post( (int) apply_filters( 'us_tr_object_id', $maintenance_page->ID, 'page', TRUE ) )
+			) {
+				$maintenance_page = $_maintenance_page;
+			}
+
+
 			$wp_admin_bar->add_node(
 				array(
 					'id' => 'us-maintenance-notice',
@@ -231,8 +242,11 @@ function us_display_maintenance_page() {
 	$maintenance_page = get_post( us_get_option( 'maintenance_page' ) );
 
 	if ( $maintenance_page ) {
-		if ( class_exists( 'SitePress' ) ) {
-			$maintenance_page = get_post( apply_filters( 'wpml_object_id', $maintenance_page->ID, 'page', TRUE ) );
+		if (
+			has_filter( 'us_tr_object_id' )
+			AND $_maintenance_page = get_post( (int) apply_filters( 'us_tr_object_id', $maintenance_page->ID, 'page', TRUE ) )
+		) {
+			$maintenance_page = $_maintenance_page;
 		}
 		us_open_wp_query_context();
 		global $wp_query;
@@ -271,7 +285,6 @@ function us_display_maintenance_page() {
 		exit();
 	}
 }
-
 
 if ( ! function_exists( 'us_update_postmeta_for_custom_css' ) ) {
 	/**

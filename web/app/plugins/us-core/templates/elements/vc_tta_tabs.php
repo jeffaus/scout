@@ -13,6 +13,7 @@
  * @var $classes        string Extend class names
  *
  * @var $toggle         bool {@for [vc_tta_accordion]} Act as toggle?
+ * @var $scrolling      bool {@for [vc_tta_accordion]} Scrolling when opening a section?
  * @var $c_align        string {@for [vc_tta_accordion], [vc_tta_tour]} Text alignment: 'left' / 'center' / 'right'
  * @var $c_icon         string {@for [vc_tta_accordion]} Icon: '' / 'chevron' / 'plus' / 'triangle'
  * @var $c_position     string {@for [vc_tta_accordion]} Icon position: 'left' / 'right'
@@ -36,25 +37,55 @@ if ( $shortcode_base == 'vc_tour' ) {
 	$shortcode_base = 'vc_tta_tabs';
 }
 
-$classes = isset( $classes ) ? $classes : '';
-$classes .= $list_classes = $list_inline_css = $el_id_string = '';
+// Identify is this FAQs page
+global $us_faq_markup;
+$us_faq_markup = (
+	$shortcode_base == 'vc_tta_accordion'
+	AND ( us_is_faqs_page() OR $faq_markup )
+);
+
+$_atts['class'] = 'w-tabs';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+
+$list_classes = $list_inline_css = '';
 
 // Extract tab attributes for future html preparations
 global $us_tabs_atts;
-preg_match_all( '/\[vc_tta_section([^\]]*?)\]/i', $content, $matches, PREG_OFFSET_CAPTURE );
-$us_tabs_atts = isset( $matches[0] ) ? $matches[0] : array();
+$us_tabs_atts = array();
 $active_tab_indexes = array();
-foreach ( $us_tabs_atts as $index => $tab_atts ) {
-	$us_tabs_atts[ $index ] = shortcode_parse_atts( '[' . rtrim( $tab_atts[0], '[]' ) . ' ]' );
-	if ( isset( $us_tabs_atts[ $index ]['active'] ) AND $us_tabs_atts[ $index ]['active'] ) {
+
+/**
+ * Removing empty section and parse data
+ *
+ * @param array $matches
+ * @return string
+ */
+$func_parse_vc_tta_section = function( $matches ) use( &$us_tabs_atts, &$active_tab_indexes ) {
+	// If the content is empty then skip the section
+	if ( empty( $matches[5] ) ) {
+		return;
+	}
+
+	$index = count( $us_tabs_atts );
+	$item_atts = shortcode_parse_atts( '['. $matches[2] .' ' . trim( $matches[3] ) . ' ]' );
+	unset( $item_atts[0], $item_atts[1] );
+
+	if ( isset( $item_atts['active'] ) AND $item_atts['active'] ) {
 		$active_tab_indexes[] = $index;
-		$us_tabs_atts[ $index ]['defined_active'] = 1;
+		$item_atts['defined_active'] = 1;
 	}
+
 	// If a unique identifier is not set, then we generate automatically for the normal operation of tabs and sections
-	if ( empty( $us_tabs_atts[ $index ]['tab_id'] ) ) {
-		$us_tabs_atts[ $index ]['tab_id'] = uniqid();
+	if ( empty( $item_atts['tab_id'] ) ) {
+		$item_atts['tab_id'] = uniqid();
 	}
-}
+
+	$us_tabs_atts[ $index ] = $item_atts;
+	return $matches[0];
+};
+
+$regex_vc_tta_section = get_shortcode_regex( array( 'vc_tta_section' ) );
+$content = preg_replace_callback( '/' . $regex_vc_tta_section . '/', $func_parse_vc_tta_section, $content, PREG_OFFSET_CAPTURE );
 
 // If none of the tabs is active, the first one will be
 if ( empty( $active_tab_indexes ) AND $shortcode_base != 'vc_tta_accordion' ) {
@@ -91,53 +122,60 @@ if ( isset( $title_size ) ) {
 }
 
 if ( $shortcode_base == 'vc_tta_tabs' ) {
-	$classes .= ' layout_hor';
+	$_atts['class'] .= ' layout_hor';
 	$list_classes .= ' hidden';
 } elseif ( $shortcode_base == 'vc_tta_tour' ) {
-	$classes .= ' layout_ver';
-	$classes .= ' navpos_' . $tab_position;
-	$classes .= ' navwidth_' . $controls_size;
-	$classes .= ' title_at' . $c_align;
+	$_atts['class'] .= ' layout_ver';
+	$_atts['class'] .= ' navpos_' . $tab_position;
+	$_atts['class'] .= ' navwidth_' . $controls_size;
+	$_atts['class'] .= ' title_at' . $c_align;
 }
 
 if ( empty( $layout ) ) {
 	$layout = 'default';
 }
 if ( $layout == 'timeline2' ) {
-	$classes .= ' style_timeline zephyr';
+	$_atts['class'] .= ' style_timeline zephyr';
 } else {
-	$classes .= ' style_' . $layout;
+	$_atts['class'] .= ' style_' . $layout;
 }
-$classes .= ' switch_' . $switch_sections;
+$_atts['class'] .= ' switch_' . $switch_sections;
+
 $list_classes .= ' items_' . count( $us_tabs_atts );
 $list_classes .= ( $stretch ) ? ' stretch' : '';
 
 // Accordion-specific settings
 if ( $shortcode_base == 'vc_tta_accordion' ) {
-	$classes .= ' accordion';
+	$_atts['class'] .= ' accordion';
+	if ( ! isset( $atts['scrolling'] ) ) {
+		$_atts['class'] .= ' has_scrolling';
+	}
 	if ( $toggle ) {
-		$classes .= ' type_togglable';
+		$_atts['class'] .= ' type_togglable';
 	}
 	if ( $remove_indents ) {
-		$classes .= ' remove_indents';
+		$_atts['class'] .= ' remove_indents';
 	}
-	$classes .= ' title_at' . $c_align;
+	$_atts['class'] .= ' title_at' . $c_align;
 	if ( ! empty( $c_icon ) ) {
-		$classes .= ' icon_' . $c_icon . ' iconpos_' . $c_position;
+		$_atts['class'] .= ' icon_' . $c_icon . ' iconpos_' . $c_position;
 	} else {
-		$classes .= ' icon_none';
+		$_atts['class'] .= ' icon_none';
 	}
+
+	// For 'accordion' state of tabs
 } else {
-	// For accordion state of tabs
-	$classes .= ' icon_chevron iconpos_right';
+	$_atts['class'] .= ' icon_chevron';
+	$_atts['class'] .= ( is_rtl() ? ' iconpos_left' : ' iconpos_right' );
+	$_atts['class'] .= ( is_rtl() ? ' title_atright' : ' title_atleft' );
 }
 
 if ( ! empty( $el_class ) ) {
-	$classes .= ' ' . $el_class;
+	$_atts['class'] .= ' ' . $el_class;
 }
 
-if ( $el_id != '' ) {
-	$el_id_string = ' id="' . esc_attr( $el_id ) . '"';
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
 }
 
 // Generate inline styles for Tabs & Tour
@@ -154,7 +192,7 @@ if ( $shortcode_base != 'vc_tta_accordion' ) {
 }
 
 // Output the element
-$output = '<div class="w-tabs' . $classes . ' "' . $el_id_string . '>';
+$output = '<div ' . us_implode_atts( $_atts ) . '>';
 
 // Add tabs items
 if ( $shortcode_base != 'vc_tta_accordion' ) {
@@ -162,23 +200,33 @@ if ( $shortcode_base != 'vc_tta_accordion' ) {
 	$output .= '<div class="w-tabs-list-h">';
 
 	foreach ( $us_tabs_atts as $index => $tab_atts ) {
-		$tab_atts['title'] = isset( $tab_atts['title'] ) ? us_replace_comment_count_var( $tab_atts['title'] ) : '';
+		$tab_atts['title'] = isset( $tab_atts['title'] ) ? us_replace_dynamic_value( $tab_atts['title'], 'any' ) : '';
 		$tab_atts['title'] = wptexturize( $tab_atts['title'] );
 		$tab_atts['i_position'] = isset( $tab_atts['i_position'] ) ? $tab_atts['i_position'] : 'left';
 
-		$item_class = isset( $tab_atts['el_class'] ) ? ' ' . $tab_atts['el_class'] : '';
-		$item_class .= ( isset( $tab_atts['active'] ) AND $tab_atts['active'] ) ? ' active' : '';
-		$item_class .= ( isset( $tab_atts['defined_active'] ) AND $tab_atts['defined_active'] ) ? ' defined-active' : '';
-		$item_class .= isset( $tab_atts['icon'] ) ? ' with_icon' : '';
+		$tabs_item_atts = array(
+			'class' => 'w-tabs-item',
+			'aria-controls' => 'content-' . $tab_atts['tab_id'],
+		);
+
+		// Add aria-label when title is empty to avoid accessibility issues
+		if ( empty( $tab_atts['title'] ) ) {
+			$tabs_item_atts['aria-label'] = $tab_atts['icon'];
+		}
+
+		$tabs_item_atts['class'] .= ! empty( $tab_atts['el_class'] ) ? ' ' . $tab_atts['el_class'] : '';
+		$tabs_item_atts['class'] .= ! empty( $tab_atts['active'] ) ? ' active' : '';
+		$tabs_item_atts['class'] .= ! empty( $tab_atts['defined_active'] ) ? ' defined-active' : '';
+		$tabs_item_atts['class'] .= ! empty( $tab_atts['icon'] ) ? ' with_icon' : '';
 
 		// Check if the relevant section has a link
 		if ( isset( $tab_atts['tab_link'] ) ) {
-			$item_link_atts = us_generate_link_atts( $tab_atts['tab_link'] );
+			$tabs_item_link_atts = us_generate_link_atts( $tab_atts['tab_link'] );
 		} else {
-			$item_link_atts = ' href="javascript:void(0);"';
+			$tabs_item_link_atts = ' href="javascript:void(0);"';
 		}
 
-		$output .= '<a ' . $item_link_atts . ' class="w-tabs-item' . $item_class . '" aria-controls="content-' . $tab_atts['tab_id'] . '">';
+		$output .= '<a ' . us_implode_atts( $tabs_item_atts ) . $tabs_item_link_atts . '>';
 		if ( isset( $tab_atts['icon'] ) AND $tab_atts['i_position'] == 'left' ) {
 			$output .= us_prepare_icon_tag( $tab_atts['icon'] );
 		}

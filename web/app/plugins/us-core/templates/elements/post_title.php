@@ -20,7 +20,9 @@ if ( ! empty( $us_grid_listing_outputs_items ) AND $us_elm_context == 'shortcode
 	return;
 }
 
-if ( $us_elm_context == 'grid_term' ) {
+// Overriding the type of an object based on the availability of terms
+global $us_grid_object_type;
+if ( $us_elm_context == 'grid' AND $us_grid_object_type == 'term' ) {
 	global $us_grid_term;
 	$title = $us_grid_term->name;
 
@@ -29,7 +31,6 @@ if ( $us_elm_context == 'grid_term' ) {
 	// Get title based on page type
 	if ( is_home() ) {
 		if ( ! is_front_page() ) {
-
 			// Get Posts Page Title
 			$title = get_the_title( get_option( 'page_for_posts', TRUE ) );
 		} else {
@@ -122,7 +123,7 @@ if ( ! empty( $icon ) ) {
 }
 
 // Force "Open in a new tab" attributes
-if ( $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
+if ( ! empty( $link_atts ) AND $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
 	$link_atts .= ' target="_blank" rel="noopener nofollow"';
 }
 
@@ -130,7 +131,7 @@ if ( ! empty( $link_atts ) ) {
 	$output .= '<a' . $link_atts . '>';
 }
 
-$output .= $title;
+$output .= wptexturize( $title );
 
 if ( ! empty( $link_atts ) ) {
 	$output .= '</a>';

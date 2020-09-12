@@ -19,6 +19,8 @@ $is_menu = ( isset( $us_is_menu_page_block ) AND $us_is_menu_page_block ) ? TRUE
 $classes = isset( $classes ) ? $classes : '';
 $filter_taxonomy_name = isset( $filter_taxonomy_name ) ? $filter_taxonomy_name : '';
 $terms = isset( $terms ) ? $terms : FALSE; // for empty condition
+$_default_query_args = isset( $_default_query_args ) ? $_default_query_args : NULL;
+
 if ( is_array( $terms ) ) {
 	if ( count( $terms ) > 0 ) {
 		// for disable $use_custom_query
@@ -27,6 +29,11 @@ if ( is_array( $terms ) ) {
 		$terms = FALSE;
 	}
 }
+
+global $us_grid_object_type;
+$us_grid_object_type = ! empty( $terms )
+	? 'term'
+	: 'post';
 
 // Check Grid params and use default values from config, if its not set
 $default_grid_params = us_shortcode_atts( array(), 'us_grid' );
@@ -47,9 +54,16 @@ if ( $type == 'carousel' ) {
 }
 
 if ( ! $is_widget AND ! $is_menu AND $post_id != NULL AND $type != 'carousel' ) {
-	$us_grid_ajax_indexes[ $post_id ] = isset( $us_grid_ajax_indexes[ $post_id ] ) ? ( $us_grid_ajax_indexes[ $post_id ] ) : 1;
+	$us_grid_ajax_indexes[ $post_id ] = isset( $us_grid_ajax_indexes[ $post_id ] )
+		? ( $us_grid_ajax_indexes[ $post_id ] )
+		: 1;
 } else {
 	$us_grid_ajax_indexes = NULL;
+}
+
+// If the Grid is displayed in the context of the menu, then disable pagination
+if ( ! empty( $is_menu ) ) {
+	$pagination = 'none';
 }
 
 // Get Grid Layout templates
@@ -66,7 +80,7 @@ if ( ! empty( $items_layout ) ) {
 		if ( $grid_layout instanceof WP_Post AND $grid_layout->post_type === 'us_grid_layout' ) {
 			//check if layout has translate
 			// TODO add polylang support
-			$translated_grid_layout_id = apply_filters( 'wpml_object_id', $grid_layout->ID, 'us_page_block', TRUE );
+			$translated_grid_layout_id = apply_filters( 'us_tr__object_id', $grid_layout->ID, 'us_page_block', TRUE );
 			if ( $translated_grid_layout_id != $grid_layout->ID ) {
 				$grid_layout = get_post( $translated_grid_layout_id );
 			}
@@ -105,23 +119,22 @@ if ( empty( $us_grid_index ) OR ! is_array( $us_grid_skip_ids ) ) {
 	$us_grid_skip_ids = array();
 }
 
+// Grid Filter parameters obtained through AJAX
+if ( ! wp_doing_ajax() OR ! isset( $us_grid_filter_params ) ) {
+	$us_grid_filter_params = NULL;
+}
+
 $use_custom_query = ! empty( $query_args ) AND is_array( $query_args ) AND empty( $terms );
 if ( $use_custom_query ) {
 	us_open_wp_query_context();
 
-	// Remove The Events Calendar plugin filter
-	if ( class_exists( 'Tribe__Events__Query' ) ) {
-		add_action( 'tribe_events_pre_get_posts', 'us_delete_events_calendar_filter', 10 );
-
-		// Show past events if set in Grid settings
-		if ( $events_calendar_show_past ) {
-			add_action( 'pre_get_posts', 'us_the_events_calendar_display_past', 9999 );
-		} else {
-			add_action( 'pre_get_posts', 'us_the_events_calendar_dont_display_past', 9999 );
-		}
-	}
+	// Run actions before data is received
+	do_action( 'us_grid_before_custom_query', get_defined_vars() );
 
 	$wp_query = new WP_Query( $query_args );
+
+	// Run actions after data is received
+	do_action( 'us_grid_after_custom_query', get_defined_vars() );
 
 	// current query
 } elseif ( empty( $terms ) ) {
@@ -144,13 +157,7 @@ if ( $use_custom_query ) {
 		$query_args['post_status'] = $matches[1];
 	}
 	// Fetching additional params for WooCommerce Products
-	if (
-		$query_args['post_type'] == 'product'
-		OR (
-			is_array( $query_args['post_type'] )
-			AND in_array( 'product', $query_args['post_type'] )
-		)
-	) {
+	if ( us_is_available_post_type( $query_args['post_type'], array( 'product' ) ) ) {
 		if ( ! isset( $query_args['posts_per_page'] ) AND ! empty( $wp_query->query_vars['posts_per_page'] ) ) {
 			$query_args['posts_per_page'] = $wp_query->query_vars['posts_per_page'];
 		}
@@ -169,26 +176,12 @@ if ( $use_custom_query ) {
 
 // Check if the grid have items to output, separately for posts and terms
 $no_results = FALSE;
-if ( in_array( $post_type, array( 'taxonomy_terms', 'current_child_terms', 'ids_terms' ) ) ) {
+if ( us_is_available_post_type( $post_type, array( 'taxonomy_terms', 'current_child_terms', 'ids_terms' ) ) ) {
 	if ( empty( $terms ) ) {
 		$no_results = TRUE;
 	}
 } elseif ( ! have_posts() ) {
 	$no_results = TRUE;
-}
-
-// Output No results
-if ( $no_results ) {
-
-	// Output No results message if it is not empty
-	if ( ! empty( $no_items_message ) ) {
-		echo '<h4 class="w-grid-none">' . strip_tags( $no_items_message, '<br><strong>' ) . '</h4>';
-	}
-	if ( $use_custom_query ) {
-		us_close_wp_query_context();
-	}
-
-	return;
 }
 
 // Setting global variable for Image size to use in grid elements
@@ -241,21 +234,26 @@ if ( $filter_taxonomy_name != '' AND $type != 'carousel' AND $pagination != 'reg
 
 // Get all needed variables to pass into listing-start & listing-end templates
 $template_vars = array(
-	'grid_layout_settings' => $grid_layout_settings,
-	'us_grid_index' => $us_grid_index,
+	'_default_query_args' => $_default_query_args,
+	'_us_grid_post_type' => ! empty( $_us_grid_post_type ) ? $_us_grid_post_type : NULL,
 	'classes' => $classes,
-	'filter_html' => $filter_html,
-	'is_widget' => $is_widget,
 	'data_atts' => $data_atts,
-	'query_args' => $query_args,
+	'filter_html' => $filter_html,
+	'grid_layout_settings' => $grid_layout_settings,
+	'is_widget' => $is_widget,
 	'post_id' => $post_id,
+	'query_args' => $query_args,
 	'us_grid_ajax_indexes' => $us_grid_ajax_indexes,
+	'us_grid_filter_params' => $us_grid_filter_params,
+	'us_grid_index' => $us_grid_index,
 	'wp_query' => $wp_query,
 );
+
 // Add default values for unset variables from Grid config
 foreach ( $default_grid_params as $param => $value ) {
 	$template_vars[ $param ] = isset( $$param ) ? $$param : $value;
 }
+
 // Add default values for unset variables from Carousel config
 if ( $type == 'carousel' ) {
 	foreach ( $default_carousel_params as $param => $value ) {
@@ -266,58 +264,80 @@ if ( $type == 'carousel' ) {
 // Load listing Start
 us_load_template( 'templates/us_grid/listing-start', $template_vars );
 
-// Load posts
-global $us_grid_listing_post_atts, $us_grid_listing_outputs_items;
+// If there are no results, then we will skip this part of the block and save only the grid structure
+if ( ! $no_results ) {
 
-// Set var, that indicates grid starts displaying its items, for processing in other elements (e.g. Post Title)
-$us_grid_listing_outputs_items = TRUE;
+	// Load posts
+	global $us_grid_listing_post_atts, $us_grid_listing_outputs_items;
 
-$us_grid_listing_post_atts = array(
-	'grid_layout_settings' => $grid_layout_settings,
-	'type' => $type,
-	'is_widget' => $is_widget,
-	'overriding_link' => $overriding_link,
-);
+	// Set var, that indicates grid starts displaying its items, for processing in other elements (e.g. Post Title)
+	$us_grid_listing_outputs_items = TRUE;
 
-if ( empty( $terms ) ) {
-	$template_vars['items_count'] = $wp_query->post_count;
-	while ( have_posts() ) {
-		the_post();
-		if ( ! $is_widget AND ! $is_menu ) {
-			$us_grid_skip_ids[] = get_the_ID();
+	$us_grid_listing_post_atts = array(
+		'grid_layout_settings' => $grid_layout_settings,
+		'type' => $type,
+		'is_widget' => $is_widget,
+		'overriding_link' => $overriding_link,
+	);
+
+	if ( empty( $terms ) ) {
+		$template_vars['items_count'] = $wp_query->post_count;
+		while ( have_posts() ) {
+			the_post();
+			if ( ! $is_widget AND ! $is_menu ) {
+				$us_grid_skip_ids[] = get_the_ID();
+			}
+
+			$listing_post = us_get_template( 'templates/us_grid/listing-post' );
+
+			// Add a not-lazy class to disable LazyLoad for all carousel images
+			if ( $type == 'carousel' AND us_get_option( 'lazy_load', 1 ) ) {
+				$listing_post = preg_replace_callback(
+					'/<img([^>]+)>/is', function ( $matches ) {
+					$atts = strstr( $matches[1], 'class="' ) !== FALSE
+						? preg_replace( '/(class=")([^"]+)/is', "$1not-lazy $2", $matches[1] )
+						: ' class="not-lazy" ' . $matches[1];
+
+					return '<img' . $atts . '>';
+				}, $listing_post
+				);
+			}
+
+			echo $listing_post;
 		}
-
-		$listing_post = us_get_template( 'templates/us_grid/listing-post' );
-
-		// Add a not-lazy class to disable LazyLoad for all carousel images
-		if ( $type == 'carousel' AND us_get_option( 'lazy_load', 1 ) ) {
-			$listing_post = preg_replace_callback(
-				'/<img([^>]+)>/is', function ( $matches ) {
-				$atts = strstr( $matches[1], 'class="' ) !== FALSE
-					? preg_replace( '/(class=")([^"]+)/is', "$1not-lazy $2", $matches[1] )
-					: ' class="not-lazy" ' . $matches[1];
-
-				return '<img' . $atts . '>';
-			}, $listing_post
-			);
+	} else {
+		global $us_grid_term;
+		$template_vars['items_count'] = count( $terms );
+		foreach ( $terms as $term ) {
+			$us_grid_term = $term;
+			us_load_template( 'templates/us_grid/listing-term' );
 		}
+	}
 
-		echo $listing_post;
+	// Fix for multi-filter ajax pagination
+	if ( isset( $paged ) ) {
+		$template_vars['paged'] = intval( $paged );
 	}
-} else {
-	global $us_grid_term;
-	$template_vars['items_count'] = count( $terms );
-	foreach ( $terms as $term ) {
-		$us_grid_term = $term;
-		us_load_template( 'templates/us_grid/listing-term' );
-	}
+
+	// Unset var, that indicates grid stops displaying its items, for processing in other elements (e.g. Post Title)
+	unset( $GLOBALS['us_grid_listing_outputs_items'] );
+
 }
 
-// Unset var, that indicates grid stops displaying its items, for processing in other elements (e.g. Post Title)
-unset( $GLOBALS['us_grid_listing_outputs_items'] );
-
 // Load listing End
-us_load_template( 'templates/us_grid/listing-end', $template_vars );
+us_load_template( 'templates/us_grid/listing-end', array_merge(
+	$template_vars,
+	// Variables to display a message about the absence of records
+	array(
+		'no_items_message' => $no_items_message,
+		'no_results' => $no_results,
+		'use_custom_query' => $use_custom_query,
+	)
+) );
+
+if ( $no_results ) {
+	return;
+}
 
 // If we are in front end editor mode, apply JS to the current grid
 if ( function_exists( 'vc_is_page_editable' ) AND vc_is_page_editable() ) {
@@ -335,17 +355,16 @@ if ( $use_custom_query ) {
 	// Cleaning up
 	us_close_wp_query_context();
 
+	// Removing filters added for events calendar
+	if ( class_exists( 'Tribe__Events__Query' ) ) {
+		// Preventing custom queries from messing main events query
+		remove_filter( 'tribe_events_views_v2_should_hijack_page_template', 'us_the_events_calendar_return_true_for_hijack' );
+	}
+
 	if (
 		(
-			! empty( $query_args['post_type'] ) AND
-			(
-				$query_args['post_type'] == 'product'
-				OR (
-					is_array( $query_args['post_type'] )
-					AND in_array( 'product', $query_args['post_type'] )
-				)
-				OR $query_args['post_type'] == 'any'
-			)
+			! empty( $query_args['post_type'] )
+			AND us_is_available_post_type( $query_args['post_type'], array( 'product', 'any' ) )
 		)
 		AND function_exists( 'wc_reset_loop' ) ) {
 		wc_reset_loop();

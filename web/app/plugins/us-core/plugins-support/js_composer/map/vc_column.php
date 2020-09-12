@@ -137,5 +137,13 @@ vc_add_params( 'vc_column', array(
 		( ( $config['atts']['stretch'] !== FALSE ) ? 'std' : '_std' ) => $config['atts']['stretch'],
 		'weight' => 8,
 	),
+	array(
+		'param_name' => 'us_bg_overlay_color',
+		'heading' => __( 'Background Overlay', 'us' ),
+		'type' => 'us_color',
+		'clear_pos' => 'right',
+		'std' => us_arr_path( $config, 'atts.us_bg_overlay_color', '' ),
+		'weight' => 7,
+	),
 )
 );

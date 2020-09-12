@@ -25,7 +25,7 @@
 		$value.val( icon_val );
 
 	};
-	$( '.us-icon-select' ).off( 'change' ).live( 'change', function() {
+	$( '.us-icon-select' ).off( 'change' ).on( 'change', function() {
 		var $select = $( this ),
 			$container = $select.closest( '.us-icon' ),
 			$descContainer = $container.siblings( '.us-icon-desc' ).first(),
@@ -37,7 +37,7 @@
 
 		USIconSetValue( $container );
 	} );
-	$( '.us-icon-text' ).off( 'change keyup' ).live( 'change keyup', function() {
+	$( '.us-icon-text' ).off( 'change keyup' ).on( 'change keyup', function() {
 		var $input = $( this ),
 			$container = $input.closest( '.us-icon' ),
 			val = $input.val();

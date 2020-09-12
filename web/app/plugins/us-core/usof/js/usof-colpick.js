@@ -92,12 +92,17 @@
 			this.$gradientDot = this.$colpick.find( '.second .usof-colpick-color-selector' );
 
 			// State switchers Solid/Gradient
-			this.$switchers = this.$colpick.find( '.usof-radio-list input[type="radio"]' );
+			this.$switchers = this.$colpick.find( '.usof-colpick-palette + .usof-radio-list input[type="radio"]' );
 			this.$switchersBox = this.$colpick.find( '.usof-radio-list' );
 
 			// Do not proceed if the color value is not valid
 			if ( ! this.isValidColor( this.value ) ) {
 				return;
+			}
+
+			// If the gradient is disabled but the value can hold the gradient, then we will convert it to HEX
+			if ( ! this.withGradient && this.isGradient( this.value ) ) {
+				 this.value = this.gradientParser( this.value ).hex;
 			}
 
 			// Deactivate gradient colorpicker for certain inputs
@@ -201,7 +206,8 @@
 			this.$switchers.filter( '[value="' + this.colors.state + '"]' ).attr( 'checked', 'checked' );
 
 			// Solid/Gradient handler
-			this.$switchers.off( 'change' ).live( 'change', function( ev ) {
+			$( document ).off( 'change', '.usof-colpick-palette + .usof-radio-list input[type="radio"]' )
+				.on( 'change', '.usof-colpick-palette + .usof-radio-list input[type="radio"]', function( ev ) {
 				ev.preventDefault();
 				ev.stopPropagation();
 

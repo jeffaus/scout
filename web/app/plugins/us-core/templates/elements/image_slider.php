@@ -10,12 +10,19 @@
  * @var   $content        string Shortcode's inner content
  */
 
-$classes = isset( $classes ) ? $classes : '';
-$classes .= ' style_' . $style;
-$classes .= ' fit_' . $img_fit;
-
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
+$_atts['class'] = 'w-slider';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+$_atts['class'] .= ' style_' . $style;
+$_atts['class'] .= ' fit_' . $img_fit;
+if ( us_design_options_has_property( $css, 'border-radius' ) ) {
+	$_atts['class'] .= ' has_border_radius';
+}
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
 
 // Royal Slider options
 $js_options = array(
@@ -82,10 +89,7 @@ if ( ! is_array( $attachments ) OR empty( $attachments ) ) {
 }
 
 $i = 1;
-$first_image = array( '0' => '' );
-$data_ratio = NULL;
 $images_html = '';
-$images_alts = array();
 foreach ( $attachments as $index => $attachment ) {
 
 	// Set fallback placeholders
@@ -107,7 +111,7 @@ foreach ( $attachments as $index => $attachment ) {
 	// Correct width and height for SVG files
 	if ( preg_match( '~\.svg$~', $image[0] ) ) {
 
-		$size_array = us_get_intermediate_image_size( $img_size );
+		$size_array = us_get_image_size_params( $img_size );
 		if ( $size_array['width'] ) {
 			$image[1] = $image[2] = $size_array['width'];
 		} elseif ( $size_array['height'] ) {
@@ -156,8 +160,12 @@ foreach ( $attachments as $index => $attachment ) {
 
 	$images_html .= '<div class="rsContent">';
 	if ( $i == 1 ) {
-		$first_image = $image;
-		$first_image_alt = ' alt="' . $img_alt . '"';
+		$first_image_atts = array(
+			'src' => $image[0],
+			'width' => $image[1],
+			'height' => $image[2],
+			'alt' => $img_alt,
+		);
 	}
 	$images_html .= '<a class="rsImg" data-rsw="' . $image[1] . '" data-rsh="' . $image[2] . '"' . $full_image_attr . ' href="' . $image[0] . '"><span data-alt="' . $img_alt . '"></span></a>';
 
@@ -190,10 +198,14 @@ if ( us_get_option( 'ajax_load_js', 0 ) == 0 ) {
 	wp_enqueue_script( 'us-royalslider' );
 }
 
-$output = '<div class="w-slider' . $classes . '"' . $el_id . '>';
+$output = '<div ' . us_implode_atts( $_atts ) . '>';
 $output .= '<div class="w-slider-h">';
 $output .= '<div class="royalSlider">' . $images_html . '</div>';
-$output .= '<img src="' . $first_image[0] . '"' . $first_image_alt . '></div>';
+
+// Output first image as fallback on page load
+if ( ! empty( $first_image_atts ) ) {
+	$output .= '<img ' . us_implode_atts( $first_image_atts ) . '></div>';
+}
 $output .= '<div class="w-slider-json"' . us_pass_data_to_js( $js_options ) . '></div>';
 $output .= '</div>';
 

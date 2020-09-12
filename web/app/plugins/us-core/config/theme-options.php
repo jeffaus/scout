@@ -20,17 +20,23 @@ if ( ! empty( $usof_options['portfolio_rename'] ) ) {
 	$renamed_portfolio_label = '';
 }
 
+global $pagenow;
+$posts_titles = array();
+if ( ! wp_doing_ajax() AND $pagenow == 'admin.php' AND $_GET['page'] == 'us-theme-options' ) {
+	$posts_titles = ( array ) us_get_all_posts_titles_for( array( 'page', 'us_header', 'us_page_block', 'us_content_template' ) );
+}
+
 // Get Pages and order alphabetically
-$us_page_list = us_get_posts_titles_for( 'page' );
+$us_page_list = us_filter_posts_by_language( us_arr_path( $posts_titles, 'page', array() ) );
 
 // Get Headers
-$us_headers_list = us_get_posts_titles_for( 'us_header' );
+$us_headers_list = us_filter_posts_by_language( us_arr_path( $posts_titles, 'us_header', array() ) );
 
 // Get Page Blocks
-$us_page_blocks_list = us_get_posts_titles_for( 'us_page_block' );
+$us_page_blocks_list = us_filter_posts_by_language( us_arr_path( $posts_titles, 'us_page_block', array() ) );
 
 // Get Content templates
-$us_content_templates_list = us_get_posts_titles_for( 'us_content_template' );
+$us_content_templates_list = us_filter_posts_by_language( us_arr_path( $posts_titles, 'us_content_template', array() ) );
 
 // Use Page Blocks as Sidebars, if set in Theme Options
 if ( ! empty( $usof_options['enable_page_blocks_for_sidebars'] ) ) {
@@ -49,7 +55,7 @@ $misc['content_description'] .= '<br><img src="' . US_CORE_URI . '/admin/img/l-c
 $misc['footers_description'] .= '<br><img src="' . US_CORE_URI . '/admin/img/l-footer.png">';
 
 // Get CSS & JS assets
-$usof_assets = array();
+$usof_assets = $usof_assets_std = array();
 $assets_config = us_config( 'assets', array() );
 foreach ( $assets_config as $component => $component_atts ) {
 	if ( isset( $component_atts['hidden'] ) AND $component_atts['hidden'] ) {
@@ -62,13 +68,18 @@ foreach ( $assets_config as $component => $component_atts ) {
 	if ( isset( $component_atts['apply_if'] ) ) {
 		$usof_assets[ $component ]['apply_if'] = $component_atts['apply_if'];
 	}
-	if ( isset( $component_atts['css'] ) ) {
-		$usof_assets[ $component ]['css_size'] = file_exists( $us_template_directory . $component_atts['css'] ) ? number_format( ( filesize( $us_template_directory . $component_atts['css'] ) / 1024 ) * 0.8, 1 ) : NULL;
+	$usof_assets_std[ $component ] = 1;
+	// Count files sizes for admin area only
+	if ( is_admin() ) {
+		if ( isset( $component_atts['css'] ) ) {
+			$usof_assets[ $component ]['css_size'] = file_exists( $us_template_directory . $component_atts['css'] ) ? number_format( ( filesize( $us_template_directory . $component_atts['css'] ) / 1024 ) * 0.8, 1 ) : NULL;
+		}
+		if ( isset( $component_atts['js'] ) ) {
+			$js_filename = str_replace( '.js', '.min.js', $us_template_directory . $component_atts['js'] );
+			$usof_assets[ $component ]['js_size'] = file_exists( $js_filename ) ? number_format( filesize( $js_filename ) / 1024, 1 ) : NULL;
+		}
 	}
-	if ( isset( $component_atts['js'] ) ) {
-		$js_filename = str_replace( '.js', '.min.js', $us_template_directory . $component_atts['js'] );
-		$usof_assets[ $component ]['js_size'] = file_exists( $js_filename ) ? number_format( filesize( $js_filename ) / 1024, 1 ) : NULL;
-	}
+
 }
 
 // Check if "uploads" directory is writable
@@ -366,11 +377,21 @@ if ( class_exists( 'woocommerce' ) ) {
 	}
 }
 
-// Custom Images Sizes description
-$img_size_info = sprintf( __( 'To change the default image sizes, go to %s.', 'us' ), '<a target="_blank" rel="noopener" href="' . admin_url( 'options-media.php' ) . '">' . us_translate( 'Media Settings' ) . '</a>' );
+// Generate Images Sizes description
+$img_size_info = '<span class="usof-tooltip"><strong>';
+$img_size_info .= sprintf( __( '%s different images sizes are registered.', 'us' ), count( us_get_image_sizes_list( FALSE ) ) );
+$img_size_info .= '</strong><span class="usof-tooltip-text">';
+foreach ( us_get_image_sizes_list( FALSE ) as $size_name => $size_title ) {
+	$img_size_info .= $size_title . '<br>';
+}
+$img_size_info .= '</span></span><br>';
+
+// Add link to Media Settings admin page
+$img_size_info .= sprintf( __( 'To change the default image sizes, go to %s.', 'us' ), '<a target="_blank" rel="noopener" href="' . admin_url( 'options-media.php' ) . '">' . us_translate( 'Media Settings' ) . '</a>' );
+
 // Add link to Customizing > WooCommerce > Product Images
 if ( class_exists( 'woocommerce' ) ) {
-	$img_size_info .= ' ' . sprintf(
+	$img_size_info .= '<br>' . sprintf(
 			__( 'To change the Product image sizes, go to %s.', 'us' ), '<a target="_blank" rel="noopener" href="' . esc_url(
 				add_query_arg(
 					array(
@@ -384,8 +405,6 @@ if ( class_exists( 'woocommerce' ) ) {
 			) . '">' . us_translate( 'WooCommerce settings', 'woocommerce' ) . '</a>'
 		);
 }
-$img_size_info .= ' ' . sprintf( __( 'Read about %simage sizes and how to use them%s.', 'us' ), '<a target="_blank" rel="noopener" href="'. $help_portal_url .'/' . $us_portal_link_theme_name . '/general/images/">', '</a>' );
-$img_size_description = '<a href="#image_sizes">' . __( 'Edit image sizes', 'us' ) . '</a>.';
 
 // Specify "Background Position" control values
 $usof_bg_pos_values = array(
@@ -554,9 +573,19 @@ for ( $i = 1; $i <= 6; $i ++ ) {
 			),
 			'h' . $i . '_color' => array(
 				'type' => 'color',
+				'clear_pos' => 'left',
 				'text' => us_translate( 'Color' ),
 				'std' => '',
-				'classes' => 'inline clear_left',
+				'classes' => 'inline',
+			),
+			'h' . $i . '_color_override' => array(
+				'type' => 'checkboxes',
+				'options' => array(
+					'1' => __( 'Override color globally', 'us' ),
+				),
+				'std' => array(),
+				'classes' => 'inline',
+				'show_if' => array( 'h' . $i . '_color', '!=', '' ),
 			),
 			'h' . $i . '_right_end' => array(
 				'type' => 'wrapper_end',
@@ -674,6 +703,18 @@ return array(
 				'classes' => 'force_right',
 				'show_if' => array( 'back_to_top', '=', TRUE ),
 			),
+			'back_to_top_style' => array(
+				'title' => __( 'Button Style', 'us' ),
+				'description' => '<a href="' . admin_url() . 'admin.php?page=us-theme-options#buttons">' . __( 'Edit Button Styles', 'us' ) . '</a>',
+				'type' => 'select',
+				'options' => us_array_merge(
+					array(
+						'' => '&ndash; ' . us_translate( 'Default' ) . ' &ndash;',
+					), us_get_btn_styles()
+				),
+				'std' => '',
+				'classes' => 'width_full',
+			),
 			'back_to_top_pos' => array(
 				'title' => __( 'Button Position', 'us' ),
 				'type' => 'radio',
@@ -689,6 +730,7 @@ return array(
 				'title' => __( 'Button Color', 'us' ),
 				'std' => 'rgba(0,0,0,0.3)',
 				'classes' => 'width_full cols_2',
+				'show_if' => array( 'back_to_top_style', '=', '' ),
 			),
 			'back_to_top_display' => array(
 				'title' => __( 'Show Button after page is scrolled to', 'us' ),
@@ -722,7 +764,6 @@ return array(
 			),
 			'cookie_message' => array(
 				'title' => us_translate( 'Message' ),
-				'description' => __( 'HTML tags, line-breaks and shortcodes will be stripped.', 'us' ),
 				'type' => 'textarea',
 				'std' => 'This website uses cookies to improve your experience. If you continue to use this site, you agree with it.',
 				'classes' => 'width_full desc_3',
@@ -782,8 +823,15 @@ return array(
 				'std' => '',
 				'classes' => 'desc_3',
 			),
+			'grid_filter_url_prefix' => array(
+				'title' => __( 'Grid Filter URL prefix', 'us' ),
+				'type' => 'text',
+				'placeholder' => 'filter',
+				'std' => '',
+			),
 		),
 	),
+
 	'layout' => array(
 		'title' => __( 'Site Layout', 'us' ),
 		'fields' => array(
@@ -799,7 +847,7 @@ return array(
 			'color_body_bg' => array(
 				'type' => 'color',
 				'title' => __( 'Body Background Color', 'us' ),
-				'std' => '#eeeeee',
+				'std' => '_content_bg_alt',
 				'show_if' => array( 'canvas_layout', '=', 'boxed' ),
 			),
 			'body_bg_image' => array(
@@ -1324,150 +1372,98 @@ return array(
 				'type' => 'heading',
 				'classes' => 'with_separator sticky',
 			),
-			'color_header_top_bg' => array(
-				'type' => 'color',
-				'text' => __( 'Top Area', 'us' ) . ': ' . us_translate( 'Background' ),
-			),
-			'color_header_top_text' => array(
-				'type' => 'color',
-				'with_gradient' => FALSE,
-				'text' => __( 'Top Area', 'us' ) . ': ' . us_translate( 'Text' ),
-			),
-			'color_header_top_text_hover' => array(
-				'type' => 'color',
-				'with_gradient' => FALSE,
-				'text' => __( 'Top Area', 'us' ) . ': ' . __( 'Link on hover', 'us' ),
-			),
 			'color_header_middle_bg' => array(
 				'type' => 'color',
-				'text' => __( 'Main Area', 'us' ) . ': ' . us_translate( 'Background' ),
+				'text' => us_translate( 'Background' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_header_middle_text' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
-				'text' => __( 'Main Area', 'us' ) . ': ' . us_translate( 'Text' ),
+				'text' => us_translate( 'Text' ) . ' / ' . us_translate( 'Link' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_header_middle_text_hover' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
-				'text' => __( 'Main Area', 'us' ) . ': ' . __( 'Link on hover', 'us' ),
+				'text' => __( 'Link on hover', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
-			'color_header_bottom_bg' => array(
+			'color_header_transparent_bg' => array(
 				'type' => 'color',
-				'text' => __( 'Bottom Area', 'us' ) . ': ' . us_translate( 'Background' ),
-			),
-			'color_header_bottom_text' => array(
-				'type' => 'color',
-				'with_gradient' => FALSE,
-				'text' => __( 'Bottom Area', 'us' ) . ': ' . us_translate( 'Text' ),
-			),
-			'color_header_bottom_text_hover' => array(
-				'type' => 'color',
-				'with_gradient' => FALSE,
-				'text' => __( 'Bottom Area', 'us' ) . ': ' . __( 'Link on hover', 'us' ),
+				'std' => 'transparent',
+				'text' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Background' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_header_transparent_text' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
-				'text' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Text' ),
+				'text' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Text' ) . ' / ' . us_translate( 'Link' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_header_transparent_text_hover' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => __( 'Transparent Header', 'us' ) . ': ' . __( 'Link on hover', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_chrome_toolbar' => array(
 				'type' => 'color',
 				'text' => __( 'Toolbar in Chrome for Android', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'change_header_colors_end' => array(
 				'type' => 'wrapper_end',
 			),
 
-			// Header Menu colors
-			'change_menu_colors_start' => array(
+			// Alternate Header colors
+			'change_header_alt_colors_start' => array(
 				'type' => 'wrapper_start',
 				'classes' => 'for_colors',
 			),
 			'h_colors_2' => array(
-				'title' => __( 'Header Menu colors', 'us' ),
+				'title' => __( 'Alternate Header colors', 'us' ),
 				'type' => 'heading',
 				'classes' => 'with_separator sticky',
 			),
-			'color_menu_active_bg' => array(
+			'color_header_top_bg' => array(
 				'type' => 'color',
-				'text' => __( 'Active Menu Item Background', 'us' ),
+				'text' => us_translate( 'Background' ),
+				'disable_dynamic_vars' => TRUE,
 			),
-			'color_menu_active_text' => array(
-				'type' => 'color',
-				'with_gradient' => FALSE,
-				'text' => __( 'Active Menu Item Text', 'us' ),
-			),
-			'color_menu_transparent_active_bg' => array(
-				'type' => 'color',
-				'text' => __( 'Transparent Header', 'us' ) . ': ' . __( 'Active Menu Item Background', 'us' ),
-			),
-			'color_menu_transparent_active_text' => array(
+			'color_header_top_text' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
-				'text' => __( 'Transparent Header', 'us' ) . ': ' . __( 'Active Menu Item Text', 'us' ),
+				'text' => us_translate( 'Text' ) . ' / ' . us_translate( 'Link' ),
+				'disable_dynamic_vars' => TRUE,
 			),
-			'color_menu_hover_bg' => array(
-				'type' => 'color',
-				'text' => __( 'Menu Item Background on hover', 'us' ),
-			),
-			'color_menu_hover_text' => array(
+			'color_header_top_text_hover' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
-				'text' => __( 'Menu Item Text on hover', 'us' ),
+				'text' => __( 'Link on hover', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
-			'color_drop_bg' => array(
+			'color_header_top_transparent_bg' => array(
 				'type' => 'color',
-				'text' => __( 'Dropdown Background', 'us' ),
+				'std' => 'rgba(0,0,0,0.2)',
+				'text' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Background' ),
+				'disable_dynamic_vars' => TRUE,
 			),
-			'color_drop_text' => array(
-				'type' => 'color',
-				'with_gradient' => FALSE,
-				'text' => __( 'Dropdown Text', 'us' ),
-			),
-			'color_drop_hover_bg' => array(
-				'type' => 'color',
-				'text' => __( 'Dropdown Item Background on hover', 'us' ),
-			),
-			'color_drop_hover_text' => array(
+			'color_header_top_transparent_text' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
-				'text' => __( 'Dropdown Item Text on hover', 'us' ),
+				'std' => 'rgba(255,255,255,0.66)',
+				'text' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Text' ) . ' / ' . us_translate( 'Link' ),
+				'disable_dynamic_vars' => TRUE,
 			),
-			'color_drop_active_bg' => array(
-				'type' => 'color',
-				'text' => __( 'Dropdown Active Item Background', 'us' ),
-			),
-			'color_drop_active_text' => array(
+			'color_header_top_transparent_text_hover' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
-				'text' => __( 'Dropdown Active Item Text', 'us' ),
+				'std' => '#fff',
+				'text' => __( 'Transparent Header', 'us' ) . ': ' . __( 'Link on hover', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
-			// TODO: remove if nobody uses after release 7.4
-			// 'color_menu_button_bg' => array(
-				// 'type' => 'color',
-				// 'text' => __( 'Menu Button Background', 'us' ),
-			// ),
-			// 'color_menu_button_text' => array(
-				// 'type' => 'color',
-				// 'with_gradient' => FALSE,
-				// 'text' => __( 'Menu Button Text', 'us' ),
-			// ),
-			// 'color_menu_button_hover_bg' => array(
-				// 'type' => 'color',
-				// 'text' => __( 'Menu Button Hover Background', 'us' ),
-			// ),
-			// 'color_menu_button_hover_text' => array(
-				// 'type' => 'color',
-				// 'with_gradient' => FALSE,
-				// 'text' => __( 'Menu Button Hover Text', 'us' ),
-			// ),
-			'change_menu_colors_end' => array(
+			'change_header_alt_colors_end' => array(
 				'type' => 'wrapper_end',
 			),
 
@@ -1484,46 +1480,63 @@ return array(
 			'color_content_bg' => array(
 				'type' => 'color',
 				'text' => us_translate( 'Background' ),
+				'disable_dynamic_vars' => TRUE
 			),
 			'color_content_bg_alt' => array(
 				'type' => 'color',
 				'text' => __( 'Alternate Background', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_content_border' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => us_translate( 'Border' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_content_heading' => array(
 				'type' => 'color',
 				'text' => __( 'Headings', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_content_text' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => us_translate( 'Text' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_content_link' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => us_translate( 'Link' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_content_link_hover' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => __( 'Link on hover', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_content_primary' => array(
 				'type' => 'color',
 				'text' => __( 'Primary Color', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_content_secondary' => array(
 				'type' => 'color',
 				'text' => __( 'Secondary Color', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_content_faded' => array(
 				'type' => 'color',
+				'with_gradient' => FALSE,
 				'text' => __( 'Faded Text', 'us' ),
+				'disable_dynamic_vars' => TRUE,
+			),
+			'color_content_overlay' => array(
+				'type' => 'color',
+				'std' => 'rgba(0,0,0,0.75)',
+				'text' => __( 'Background Overlay', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'change_content_colors_end' => array(
 				'type' => 'wrapper_end',
@@ -1542,132 +1555,161 @@ return array(
 			'color_alt_content_bg' => array(
 				'type' => 'color',
 				'text' => us_translate( 'Background' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_alt_content_bg_alt' => array(
 				'type' => 'color',
 				'text' => __( 'Alternate Background', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_alt_content_border' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => us_translate( 'Border' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_alt_content_heading' => array(
 				'type' => 'color',
 				'text' => __( 'Headings', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_alt_content_text' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => us_translate( 'Text' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_alt_content_link' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => us_translate( 'Link' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_alt_content_link_hover' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => __( 'Link on hover', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_alt_content_primary' => array(
 				'type' => 'color',
 				'text' => __( 'Primary Color', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_alt_content_secondary' => array(
 				'type' => 'color',
 				'text' => __( 'Secondary Color', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_alt_content_faded' => array(
 				'type' => 'color',
+				'with_gradient' => FALSE,
 				'text' => __( 'Faded Text', 'us' ),
+				'disable_dynamic_vars' => TRUE,
+			),
+			'color_alt_content_overlay' => array(
+				'type' => 'color',
+				'std' => 'rgba(0,0,0,0.75)',
+				'text' => __( 'Background Overlay', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'change_alt_content_colors_end' => array(
 				'type' => 'wrapper_end',
 			),
 
-			// Top Footer colors
-			'change_subfooter_colors_start' => array(
-				'type' => 'wrapper_start',
-				'classes' => 'for_colors',
-			),
-			'h_colors_5' => array(
-				'title' => __( 'Top Footer colors', 'us' ),
-				'type' => 'heading',
-				'classes' => 'with_separator sticky',
-			),
-			'color_subfooter_bg' => array(
-				'type' => 'color',
-				'text' => us_translate( 'Background' ),
-			),
-			'color_subfooter_bg_alt' => array(
-				'type' => 'color',
-				'text' => __( 'Alternate Background', 'us' ),
-			),
-			'color_subfooter_border' => array(
-				'type' => 'color',
-				'with_gradient' => FALSE,
-				'text' => us_translate( 'Border' ),
-			),
-			'color_subfooter_text' => array(
-				'type' => 'color',
-				'with_gradient' => FALSE,
-				'text' => us_translate( 'Text' ),
-			),
-			'color_subfooter_link' => array(
-				'type' => 'color',
-				'with_gradient' => FALSE,
-				'text' => us_translate( 'Link' ),
-			),
-			'color_subfooter_link_hover' => array(
-				'type' => 'color',
-				'with_gradient' => FALSE,
-				'text' => __( 'Link on hover', 'us' ),
-			),
-			'change_subfooter_colors_end' => array(
-				'type' => 'wrapper_end',
-			),
-
-			// Bottom Footer colors
+			// Footer colors
 			'change_footer_colors_start' => array(
 				'type' => 'wrapper_start',
 				'classes' => 'for_colors',
 			),
 			'h_colors_6' => array(
-				'title' => __( 'Bottom Footer colors', 'us' ),
+				'title' => __( 'Footer colors', 'us' ),
 				'type' => 'heading',
 				'classes' => 'with_separator sticky',
 			),
 			'color_footer_bg' => array(
 				'type' => 'color',
 				'text' => us_translate( 'Background' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_footer_bg_alt' => array(
 				'type' => 'color',
 				'text' => __( 'Alternate Background', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_footer_border' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => us_translate( 'Border' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_footer_text' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => us_translate( 'Text' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_footer_link' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => us_translate( 'Link' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'color_footer_link_hover' => array(
 				'type' => 'color',
 				'with_gradient' => FALSE,
 				'text' => __( 'Link on hover', 'us' ),
+				'disable_dynamic_vars' => TRUE,
 			),
 			'change_footer_colors_end' => array(
+				'type' => 'wrapper_end',
+			),
+
+			// Alternate Footer colors
+			'change_subfooter_colors_start' => array(
+				'type' => 'wrapper_start',
+				'classes' => 'for_colors',
+			),
+			'h_colors_5' => array(
+				'title' => __( 'Alternate Footer colors', 'us' ),
+				'type' => 'heading',
+				'classes' => 'with_separator sticky',
+			),
+			'color_subfooter_bg' => array(
+				'type' => 'color',
+				'text' => us_translate( 'Background' ),
+				'disable_dynamic_vars' => TRUE,
+			),
+			'color_subfooter_bg_alt' => array(
+				'type' => 'color',
+				'text' => __( 'Alternate Background', 'us' ),
+				'disable_dynamic_vars' => TRUE,
+			),
+			'color_subfooter_border' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'text' => us_translate( 'Border' ),
+				'disable_dynamic_vars' => TRUE,
+			),
+			'color_subfooter_text' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'text' => us_translate( 'Text' ),
+				'disable_dynamic_vars' => TRUE,
+			),
+			'color_subfooter_link' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'text' => us_translate( 'Link' ),
+				'disable_dynamic_vars' => TRUE,
+			),
+			'color_subfooter_link_hover' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'text' => __( 'Link on hover', 'us' ),
+				'disable_dynamic_vars' => TRUE,
+			),
+			'change_subfooter_colors_end' => array(
 				'type' => 'wrapper_end',
 			),
 
@@ -1898,31 +1940,36 @@ return array(
 					'color_bg' => array(
 						'title' => us_translate( 'Colors' ),
 						'type' => 'color',
-						'std' => '#0073aa',
+						'clear_pos' => 'left',
+						'std' => '_content_secondary',
 						'text' => us_translate( 'Background' ),
 						'cols' => 2,
 					),
 					'color_bg_hover' => array(
 						'title' => __( 'Colors on hover', 'us' ),
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'std' => '',
 						'text' => us_translate( 'Background' ),
 						'cols' => 2,
 					),
 					'color_border' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'std' => '',
 						'text' => us_translate( 'Border' ),
 						'cols' => 2,
 					),
 					'color_border_hover' => array(
 						'type' => 'color',
-						'std' => '#0073aa',
+						'clear_pos' => 'left',
+						'std' => '_content_secondary',
 						'text' => us_translate( 'Border' ),
 						'cols' => 2,
 					),
 					'color_text' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'with_gradient' => FALSE,
 						'std' => '#fff',
 						'text' => us_translate( 'Text' ),
@@ -1930,13 +1977,15 @@ return array(
 					),
 					'color_text_hover' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'with_gradient' => FALSE,
-						'std' => '#0073aa',
+						'std' => '_content_secondary',
 						'text' => us_translate( 'Text' ),
 						'cols' => 2,
 					),
 					'color_shadow' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'with_gradient' => FALSE,
 						'std' => 'rgba(0,0,0,0.2)',
 						'text' => __( 'Shadow', 'us' ),
@@ -1944,6 +1993,7 @@ return array(
 					),
 					'color_shadow_hover' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'with_gradient' => FALSE,
 						'std' => 'rgba(0,0,0,0.2)',
 						'text' => __( 'Shadow', 'us' ),
@@ -2054,7 +2104,16 @@ return array(
 						'type' => 'slider',
 						'std' => '0.3em',
 						'options' => array(
+							'px' => array(
+								'min' => 0,
+								'max' => 30,
+							),
 							'em' => array(
+								'min' => 0.0,
+								'max' => 4.0,
+								'step' => 0.1,
+							),
+							'rem' => array(
 								'min' => 0.0,
 								'max' => 4.0,
 								'step' => 0.1,
@@ -2117,8 +2176,8 @@ return array(
 						'name' => __( 'Default Button', 'us' ),
 						'hover' => 'fade',
 						// predefined colors after options reset
-						'color_bg' => '#e95095',
-						'color_bg_hover' => '#7049ba',
+						'color_bg' => '_content_primary',
+						'color_bg_hover' => '_content_secondary',
 						'color_border' => '',
 						'color_border_hover' => '',
 						'color_text' => '#fff',
@@ -2141,12 +2200,12 @@ return array(
 						'name' => __( 'Button', 'us' ) . ' 2',
 						'hover' => 'fade',
 						// predefined colors after options reset
-						'color_bg' => '#e8e8e8',
-						'color_bg_hover' => '#333',
+						'color_bg' => '_content_border',
+						'color_bg_hover' => '_content_text',
 						'color_border' => '',
 						'color_border_hover' => '',
-						'color_text' => '#333',
-						'color_text_hover' => '#fff',
+						'color_text' => '_content_text',
+						'color_text_hover' => '_content_bg',
 						'shadow' => 0,
 						'shadow_hover' => 0,
 						'font' => 'body',
@@ -2183,6 +2242,7 @@ return array(
 					'color_bg' => array(
 						'title' => us_translate( 'Colors' ),
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'std' => '',
 						'text' => us_translate( 'Background' ),
 						'cols' => 2,
@@ -2190,12 +2250,14 @@ return array(
 					'color_bg_focus' => array(
 						'title' => __( 'Colors on focus', 'us' ),
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'std' => '',
 						'text' => us_translate( 'Background' ),
 						'cols' => 2,
 					),
 					'color_border' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'with_gradient' => FALSE,
 						'std' => '',
 						'text' => us_translate( 'Border' ),
@@ -2203,6 +2265,7 @@ return array(
 					),
 					'color_border_focus' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'with_gradient' => FALSE,
 						'std' => '',
 						'text' => us_translate( 'Border' ),
@@ -2210,6 +2273,7 @@ return array(
 					),
 					'color_text' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'with_gradient' => FALSE,
 						'std' => '',
 						'text' => us_translate( 'Text' ),
@@ -2217,6 +2281,7 @@ return array(
 					),
 					'color_text_focus' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'with_gradient' => FALSE,
 						'std' => '',
 						'text' => us_translate( 'Text' ),
@@ -2224,6 +2289,7 @@ return array(
 					),
 					'color_shadow' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'with_gradient' => FALSE,
 						'std' => 'rgba(0,0,0,0.2)',
 						'text' => __( 'Shadow', 'us' ),
@@ -2231,6 +2297,7 @@ return array(
 					),
 					'color_shadow_focus' => array(
 						'type' => 'color',
+						'clear_pos' => 'left',
 						'with_gradient' => FALSE,
 						'std' => '',
 						'text' => __( 'Shadow', 'us' ),
@@ -2507,14 +2574,14 @@ return array(
 				),
 				'std' => array(
 					array(
-						'color_bg' => isset( $usof_options['color_content_bg_alt'] ) ? $usof_options['color_content_bg_alt'] : '#f5f5f5',
+						'color_bg' => '_content_bg_alt',
 						'color_bg_focus' => '',
-						'color_border' => isset( $usof_options['color_content_border'] ) ? $usof_options['color_content_border'] : '#e8e8e8',
+						'color_border' => '_content_border',
 						'color_border_focus' => '',
-						'color_text' => isset( $usof_options['color_content_text'] ) ? $usof_options['color_content_text'] : '#333',
+						'color_text' => '_content_text',
 						'color_text_focus' => '',
 						'color_shadow' => 'rgba(0,0,0,0.08)',
-						'color_shadow_focus' => isset( $usof_options['color_content_primary'] ) ? us_gradient2hex( $usof_options['color_content_primary'] ) : '#e95095',
+						'color_shadow_focus' => '_content_primary',
 						'shadow_offset_h' => '0px',
 						'shadow_offset_v' => '1px',
 						'shadow_blur' => '0px',
@@ -2976,6 +3043,12 @@ return array(
 				'type' => 'message',
 				'classes' => 'width_full color_blue for_above',
 			),
+
+			'h_image_sizes' => array(
+				'title' => __( 'Additional Image Sizes', 'us' ),
+				'type' => 'heading',
+				'classes' => 'with_separator',
+			),
 			'img_size' => array(
 				'type' => 'group',
 				'is_accordion' => FALSE,
@@ -2984,7 +3057,7 @@ return array(
 				'classes' => 'for_inline',
 				'params' => array(
 					'width' => array(
-						'title' => us_translate( 'Width' ),
+						'title' => us_translate( 'Max Width' ),
 						'type' => 'slider',
 						'std' => '600px',
 						'options' => array(
@@ -2996,7 +3069,7 @@ return array(
 						'classes' => 'inline slider_below',
 					),
 					'height' => array(
-						'title' => us_translate( 'Height' ),
+						'title' => us_translate( 'Max Height' ),
 						'type' => 'slider',
 						'std' => '400px',
 						'options' => array(
@@ -3012,11 +3085,39 @@ return array(
 						'options' => array(
 							'crop' => __( 'Crop to exact dimensions', 'us' ),
 						),
-						'std' => array( '0' => 'crop' ),
+						'std' => array(),
 						'classes' => 'inline',
 					),
 				),
 				'std' => array(),
+			),
+
+			'h_more_options' => array(
+				'title' => __( 'More Options', 'us' ),
+				'type' => 'heading',
+				'classes' => 'with_separator',
+			),
+			'big_image_size_threshold' => array(
+				'title' => __( 'Big Image Size Threshold', 'us' ),
+				'description' => sprintf( __( 'If an image height or width is above this threshold, it will be scaled down and used as the "%s".', 'us' ), us_translate( 'Full Size' ) ) . '<br><br><strong>' . __( 'Set "0px" to disable threshold.', 'us' ) . '</strong><br><br>' . sprintf( __( 'This is built-in WordPress feature, described in %sthe article%s.', 'us' ), '<a target="blank" href="https://make.wordpress.org/core/2019/10/09/introducing-handling-of-big-images-in-wordpress-5-3/">', '</a>' ),
+				'type' => 'slider',
+				'options' => array(
+					'px' => array(
+						'min' => 0,
+						'max' => 4000,
+						'step' => 20,
+					),
+				),
+				'std' => '2560px',
+				'classes' => 'desc_3',
+			),
+			'delete_unused_images' => array(
+				'title' => __( 'Unused Thumbnails', 'us' ),
+				'description' => __( 'When this option is ON, all image files that do not match the registered image sizes will be deleted.', 'us' ) . ' ' . __( 'This is helpful for increasing free space in your storage.', 'us' ),
+				'type' => 'switch',
+				'switch_text' => __( 'Delete unused image thumbnails', 'us' ),
+				'std' => 0,
+				'classes' => 'desc_3',
 			),
 		),
 	),
@@ -3030,11 +3131,24 @@ return array(
 				'type' => 'heading',
 				'classes' => 'with_separator',
 			),
+			'enable_sidebar_titlebar' => array(
+				'type' => 'switch',
+				'switch_text' => __( 'Titlebars & Sidebars', 'us' ),
+				'std' => 0,
+				'classes' => 'width_full',
+			),
+			'enable_page_blocks_for_sidebars' => array(
+				'type' => 'switch',
+				'switch_text' => __( 'Use Page Blocks for Sidebars', 'us' ),
+				'std' => 0,
+				'classes' => 'width_full for_above',
+				'show_if' => array( 'enable_sidebar_titlebar', '=', TRUE ),
+			),
 			'enable_portfolio' => array(
 				'type' => 'switch',
 				'switch_text' => __( 'Portfolio', 'us' ) . $renamed_portfolio_label,
 				'std' => 1,
-				'classes' => 'width_full',
+				'classes' => 'width_full for_above',
 			),
 			'enable_testimonials' => array(
 				'type' => 'switch',
@@ -3060,18 +3174,18 @@ return array(
 				'std' => 1,
 				'classes' => 'width_full for_above',
 			),
-			'enable_sidebar_titlebar' => array(
-				'type' => 'switch',
-				'switch_text' => __( 'Titlebars & Sidebars', 'us' ),
-				'std' => 0,
-				'classes' => 'width_full for_above',
-			),
-			'enable_page_blocks_for_sidebars' => array(
-				'type' => 'switch',
-				'switch_text' => __( 'Use Page Blocks for Sidebars', 'us' ),
-				'std' => 0,
-				'classes' => 'width_full for_above',
-				'show_if' => array( 'enable_sidebar_titlebar', '=', TRUE ),
+			'schema_faqs_page' => array(
+				'title' => __( 'FAQs page', 'us' ),
+				'description' => sprintf( __( 'Selected page must contain "%s" element.', 'us' ), us_translate( 'Accordion', 'js_composer' ) ) . ' <a href="https://developers.google.com/search/docs/data-types/faqpage" target="_blank">' . __( 'Read why it may be useful', 'us' ) . '</a>',
+				'type' => 'select',
+				'options' => us_array_merge(
+					array( '' => sprintf( '&ndash; %s &ndash;', us_translate( 'None' ) ) ),
+					$us_page_list
+				),
+				'std' => '',
+				'hints_for' => 'page',
+				'show_if' => array( 'schema_markup', '=', '1' ),
+				'classes' => 'width_full for_above desc_4',
 			),
 
 			'h_advanced_2' => array(
@@ -3093,12 +3207,20 @@ return array(
 				'std' => TRUE,
 				'classes' => 'width_full desc_2 for_above',
 			),
+			'use_modern_jquery' => array(
+				'type' => 'switch',
+				'switch_text' => __( 'Use modern jQuery library', 'us' ),
+				'description' => __( 'When this option is ON, the latest version of jQuery will be used instead of the one that comes with WordPress.', 'us' ) . ' ' . __( 'This will improve pages loading speed.', 'us' ),
+				'std' => FALSE,
+				'classes' => 'width_full desc_2 for_above',
+			),
 			'disable_jquery_migrate' => array(
 				'type' => 'switch',
 				'switch_text' => __( 'Disable jQuery migrate script', 'us' ),
 				'description' => __( 'When this option is ON, "jquery-migrate.min.js" file won\'t be loaded in front-end.', 'us' ) . ' ' . __( 'This will improve pages loading speed.', 'us' ),
 				'std' => TRUE,
 				'classes' => 'width_full desc_2 for_above',
+				'show_if' => array( 'use_modern_jquery', '=', FALSE ),
 			),
 			'jquery_footer' => array(
 				'type' => 'switch',
@@ -3129,6 +3251,7 @@ return array(
 				'std' => FALSE,
 				'classes' => 'width_full desc_2 for_above',
 			),
+
 			'optimize_assets' => array(
 				'type' => 'switch',
 				'switch_text' => __( 'Optimize JS and CSS size', 'us' ),
@@ -3149,9 +3272,10 @@ return array(
 			),
 			'assets' => array(
 				'type' => 'check_table',
+				'show_auto_optimize_button' => TRUE,
 				'options' => $usof_assets,
-				'std' => array_keys( $usof_assets ),
-				'classes' => 'width_full',
+				'std' => $usof_assets_std,
+				'classes' => 'width_full desc_4',
 			),
 			'optimize_assets_end' => array(
 				'type' => 'wrapper_end',
@@ -3159,7 +3283,7 @@ return array(
 			'include_gfonts_css' => array(
 				'type' => 'switch',
 				'switch_text' => __( 'Merge Google Fonts styles into single CSS file', 'us' ),
-				'description' => __( 'When this option is ON, Google Fonts CSS file won\'t be loaded separately.', 'us' ) . ' ' . __( 'This will improve pages loading speed.', 'us' ),
+				'description' => __( 'When this option is ON, Google Fonts CSS file won\'t be loaded separately.', 'us' ) . ' ' . __( 'This will improve pages loading speed.', 'us' ), // TODO: describe better
 				'std' => FALSE,
 				'classes' => 'width_full desc_2',
 				'show_if' => array( 'optimize_assets', '=', TRUE ),

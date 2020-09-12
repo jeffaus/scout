@@ -120,10 +120,25 @@ function us_custom_styles() {
 	}
 }
 
-// Disable jQuery migrate script
-if ( us_get_option( 'disable_jquery_migrate', 1 ) ) {
+// Replace jQuery script with modern version
+if ( us_get_option( 'use_modern_jquery', 0 ) ) {
+	add_action( 'wp_default_scripts', 'us_modern_jquery' );
+
+	// Disable jQuery migrate script
+} elseif ( us_get_option( 'disable_jquery_migrate', 1 ) ) {
 	add_action( 'wp_default_scripts', 'us_dequeue_jquery_migrate' );
 }
+
+function us_modern_jquery( $wp_scripts ) {
+	global $us_template_directory_uri;
+	$jquery_core_version = '3.5.1';
+
+	$wp_scripts->remove( 'jquery' );
+	$wp_scripts->remove( 'jquery-core' );
+	$wp_scripts->add( 'jquery-core', $us_template_directory_uri . '/common/js/jquery/jquery-3.5.1.min.js', array(), $jquery_core_version );
+	$wp_scripts->add( 'jquery', FALSE, array( 'jquery-core' ), $jquery_core_version );
+}
+
 function us_dequeue_jquery_migrate( &$wp_scripts ) {
 	if ( is_admin() ) {
 		return;

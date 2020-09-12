@@ -12,7 +12,6 @@ if ( ! class_exists( 'woocommerce' ) OR ! $product ) {
 }
 
 $classes = isset( $classes ) ? $classes : '';
-
 $classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
 $el_id = ( ! empty( $el_id ) AND $us_elm_context == 'shortcode' ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
 

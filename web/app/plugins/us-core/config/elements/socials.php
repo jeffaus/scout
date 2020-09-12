@@ -53,7 +53,7 @@ return array(
 				'color' => array(
 					'shortcode_title' => us_translate( 'Color' ),
 					'type' => 'color',
-					'std' => '#999',
+					'std' => '_content_faded',
 					'cols' => 2,
 					'show_if' => array( 'type', '=', 'custom' ),
 				),
@@ -74,6 +74,31 @@ return array(
 		),
 
 		// Appearance
+		'icons_color' => array(
+			'title' => __( 'Icons Color', 'us' ),
+			'type' => 'select',
+			'options' => array(
+				'brand' => __( 'Default brands colors', 'us' ),
+				'text' => __( 'Text (theme color)', 'us' ),
+				'link' => __( 'Link (theme color)', 'us' ),
+			),
+			'std' => 'brand',
+			'admin_label' => TRUE,
+			'group' => us_translate( 'Appearance' ),
+		),
+		'shape' => array(
+			'title' => __( 'Icons Shape', 'us' ),
+			'type' => 'select',
+			'options' => array(
+				'none' => us_translate( 'None' ),
+				'square' => __( 'Square', 'us' ),
+				'rounded' => __( 'Rounded Square', 'us' ),
+				'circle' => __( 'Circle', 'us' ),
+			),
+			'std' => 'square',
+			'admin_label' => TRUE,
+			'group' => us_translate( 'Appearance' ),
+		),
 		'style' => array(
 			'title' => __( 'Icons Style', 'us' ),
 			'type' => 'select',
@@ -85,31 +110,7 @@ return array(
 			),
 			'std' => 'default',
 			'cols' => 2,
-			'admin_label' => TRUE,
-			'group' => us_translate( 'Appearance' ),
-		),
-		'shape' => array(
-			'title' => __( 'Icons Shape', 'us' ),
-			'type' => 'select',
-			'options' => array(
-				'square' => __( 'Square', 'us' ),
-				'rounded' => __( 'Rounded Square', 'us' ),
-				'circle' => __( 'Circle', 'us' ),
-			),
-			'std' => 'square',
-			'cols' => 2,
-			'group' => us_translate( 'Appearance' ),
-		),
-		'icons_color' => array(
-			'title' => __( 'Icons Color', 'us' ),
-			'type' => 'select',
-			'options' => array(
-				'brand' => __( 'Default brands colors', 'us' ),
-				'text' => __( 'Text (theme color)', 'us' ),
-				'link' => __( 'Link (theme color)', 'us' ),
-			),
-			'std' => 'brand',
-			'cols' => 2,
+			'show_if' => array( 'shape', '!=', 'none' ),
 			'group' => us_translate( 'Appearance' ),
 		),
 		'hover' => array(
@@ -122,6 +123,7 @@ return array(
 			),
 			'std' => 'fade',
 			'cols' => 2,
+			'show_if' => array( 'shape', '!=', 'none' ),
 			'group' => us_translate( 'Appearance' ),
 		),
 		'gap' => array(

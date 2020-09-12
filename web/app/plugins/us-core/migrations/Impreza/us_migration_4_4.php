@@ -280,7 +280,18 @@ class us_migration_4_4 extends US_Migration_Translator {
 		if ( isset( $options['shop_titlebar_content'] ) AND $options['shop_titlebar_content'] == 'caption' ) {
 			$options['titlebar_shop'] = 1;
 		}
-		if ( isset( $options['titlebar_archive_content'] ) AND $options['titlebar_archive_content'] != $options['titlebar_content'] OR $options['titlebar_archive_size'] != $options['titlebar_size'] OR $options['titlebar_archive_color'] != $options['titlebar_color'] ) {
+		if (
+			isset( $options['titlebar_archive_content'] )
+			AND $options['titlebar_archive_content'] != $options['titlebar_content']
+			OR (
+				isset( $options['titlebar_archive_size'] )
+				AND $options['titlebar_archive_size'] != $options['titlebar_size']
+			)
+			OR (
+				isset( $options['titlebar_archive_color'] )
+				AND $options['titlebar_archive_color'] != $options['titlebar_color']
+			)
+		) {
 			$options['titlebar_archive_defaults'] = 0;
 		}
 		if ( isset( $options['titlebar_post_content'] ) AND $options['titlebar_post_content'] != $options['titlebar_content'] OR $options['titlebar_post_size'] != $options['titlebar_size'] OR $options['titlebar_post_color'] != $options['titlebar_color'] ) {

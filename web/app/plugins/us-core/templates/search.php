@@ -8,14 +8,18 @@ $search_page = get_post( us_get_option( 'search_page' ) );
 
 // Output specific page
 if ( $search_page ) {
-	$search_page = get_post( apply_filters( 'wpml_object_id', $search_page->ID, 'page', TRUE ) );
+	if ( has_filter( 'us_tr_object_id' ) ) {
+		$search_page = get_post( (int) apply_filters( 'us_tr_object_id', $search_page->ID, 'page', TRUE ) );
+	}
 
+	us_register_context_layout( 'header' );
 	get_header();
 	// If set custom page load its css
 	if ( is_object( $search_page ) ) {
 		us_output_design_css( [ $search_page ] );
 	}
 
+	us_register_context_layout( 'main' );
 	?>
 	<main id="page-content" class="l-main"<?php echo ( us_get_option( 'schema_markup' ) ) ? ' itemprop="mainContentOfPage"' : ''; ?>>
 
@@ -63,6 +67,7 @@ if ( $search_page ) {
 	</main>
 	<?php
 
+	us_register_context_layout( 'footer' );
 	get_footer();
 
 	// Output default archive layout

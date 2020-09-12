@@ -28,6 +28,19 @@
 		margin: 6px 0 0 16px;
 		}
 
+/* Media modal window and toolbar */
+.media-modal-content .media-toolbar-secondary {
+	white-space: nowrap;
+	}
+.media-modal-content select.attachment-filters {
+	width: auto !important;
+	}
+@media( max-width: 1100px ) {
+.media-modal-content select.attachment-filters.for_us_media {
+	display: none;
+	}
+}
+
 /* Show SVG as Featured Image */
 #postimagediv .inside img[width="1"] {
 	width: 254px;
@@ -149,12 +162,6 @@
 		flex-wrap: wrap;
 		}
 
-/* Fixed USOF controls */
-#TB_window .usof-color-clear {
-	left: auto;
-	right: -30px;
-	}
-
 
 
 /* USOF META BOXES
@@ -180,15 +187,12 @@
 	}
 
 /* Disable meta boxes for WPML translating pages */
-.us_wpml_non_default .for_meta .usof-form-row.type_select,
-.us_wpml_non_default .for_meta .usof-form-row.type_slider,
-.us_wpml_non_default .for_meta .usof-form-row.type_checkboxes,
-.us_wpml_non_default .for_meta .usof-form-row.type_switch,
-.us_wpml_non_default .for_meta .usof-form-row.type_radio,
-.us_wpml_non_default .for_meta .usof-form-row.type_color {
+.us_lang_non_default .for_meta .usof-form-row.type_select,
+.us_lang_non_default .for_meta .usof-form-row.type_slider,
+.us_lang_non_default .for_meta .usof-form-row.type_checkboxes,
+.us_lang_non_default .for_meta .usof-form-row.type_switch,
+.us_lang_non_default .for_meta .usof-form-row.type_radio,
+.us_lang_non_default .for_meta .usof-form-row.type_color {
 	opacity: 0.33;
 	pointer-events: none;
-	}
-.us_wpml_non_default .for_meta .usof-form-row.us_wpml_non_default_hidden {
-	display: none !important;
 	}

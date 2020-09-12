@@ -72,6 +72,7 @@ class US_Migration {
 		}
 
 		if ( empty( $this->translators ) ) {
+
 			// Regenerate theme CSS file on update
 			if ( $db_version != $this->core_version ) {
 				us_generate_asset_files();
@@ -728,7 +729,11 @@ class US_Migration {
 	}
 
 	public function migrate_header_and_grid_layout( $post ) {
-		if ( ! empty( $post->post_content ) AND substr( strval( $post->post_content ), 0, 1 ) === '{' ) {
+		if (
+			$post instanceof WP_Post
+			AND ! empty( $post->post_content )
+			AND substr( strval( $post->post_content ), 0, 1 ) === '{'
+		) {
 			try {
 				$settings = json_decode( $post->post_content, TRUE );
 				$settings_changed = FALSE;

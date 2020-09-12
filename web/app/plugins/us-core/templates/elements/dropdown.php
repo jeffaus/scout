@@ -32,7 +32,7 @@ $data = array(
 	'list' => array(),
 );
 
-if ( $source == 'wpml' AND ! function_exists( 'icl_get_languages' ) ) {
+if ( $source == 'wpml' AND ! has_filter( 'us_tr_current_language' ) ) {
 	return;
 }
 if ( $source == 'polylang' AND ! function_exists( 'pll_the_languages' ) ) {
@@ -56,7 +56,7 @@ if ( $source == 'own' AND is_array( $links ) ) {
 	}
 // WPML Language Switcher
 } elseif ( $source == 'wpml' AND function_exists( 'icl_get_languages' ) ) {
-	$languages = apply_filters( 'wpml_active_languages', NULL, array( 'skip_missing' => 0 ) );
+	$languages = apply_filters( 'wpml_active_languages', NULL );
 	foreach ( $languages as $language ) {
 		$data_language = array();
 		$data_language['title'] = $data_language['icon'] = '';

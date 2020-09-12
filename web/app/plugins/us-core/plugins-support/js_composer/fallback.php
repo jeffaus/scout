@@ -156,3 +156,32 @@ function us_vc_edit_form_fields_attributes_us_socials( $atts ) {
 
 	return $atts;
 }
+
+// US Grid
+if ( ! function_exists( 'us_vc_edit_form_fields_attributes_us_grid' ) ) {
+	/**
+	 * @param array $atts
+	 * @return array
+	 */
+	function us_vc_edit_form_fields_attributes_us_grid( $atts ) {
+		foreach ( $atts as $key => $values ) {
+			// Replacing taxonomy identifiers with slug
+			if ( strpos( $key, 'taxonomy_' ) === 0 AND ! empty( $values ) ) {
+
+				$values = explode( ',', $values );
+				$taxonomy = substr( $key, strlen( 'taxonomy_' ) );
+
+				foreach ( $values as &$value ) {
+					if ( is_numeric( $value ) AND $term = get_term( (int) $value, $taxonomy ) ) {
+						$value = $term->slug;
+					}
+				}
+				unset( $value );
+
+				$atts[ $key ] = implode( ',', $values );
+			}
+		}
+		return $atts;
+	}
+	add_filter( 'vc_edit_form_fields_attributes_us_grid', 'us_vc_edit_form_fields_attributes_us_grid', 710 );
+}

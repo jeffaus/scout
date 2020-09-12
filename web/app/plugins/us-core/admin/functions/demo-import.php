@@ -223,6 +223,9 @@ function us_demo_import() {
 					if ( $checkboxes.filter('input[name=content_woocommerce]').is( ':checked' ) ) {
 						importQueue.push('us_demo_import_woocommerce');
 					}
+					if ( $checkboxes.filter('input[name=content_acf_fields]').is( ':checked' ) ) {
+						importQueue.push('us_demo_import_acf_fields');
+					}
 					if ( ! importQueue.length ) {
 						return;
 					}
@@ -353,6 +356,21 @@ if ( ! function_exists( 'us_render_for_importer' ) ) {
 								<?php if ( ! class_exists( 'woocommerce' ) ) { ?>
 									<span class="usof-checkbox-note"> &mdash;
 										<a href="<?php echo admin_url( 'admin.php?page=us-addons' ) ?>"><?php echo sprintf( us_translate( 'Install %s' ), 'WooCommerce' ) ?></a>
+										</span>
+								<?php } ?>
+							</label>
+						<?php } ?>
+
+						<?php if ( in_array( 'acf_fields', $import['content'] ) ) { ?>
+							<label class="usof-checkbox acf_fields">
+								<input type="checkbox" value="ON"
+									   name="content_acf_fields"<?php if ( ! function_exists( 'get_field_object' ) ) {
+									echo ' disabled="disabled"';
+								} ?>>
+								<span class="usof-checkbox-text"><?php echo us_translate( 'Custom Fields' ) ?></span>
+								<?php if ( ! function_exists( 'get_field_object' ) ) { ?>
+									<span class="usof-checkbox-note"> &mdash;
+										<a href="<?php echo admin_url( 'admin.php?page=us-addons' ) ?>"><?php echo sprintf( us_translate( 'Install %s' ), 'Advanced Custom Fields' ) ?></a>
 										</span>
 								<?php } ?>
 							</label>
@@ -720,6 +738,12 @@ function us_demo_import_content_page_blocks() {
 add_action( 'wp_ajax_us_demo_import_content_content_templates', 'us_demo_import_content_content_templates' );
 function us_demo_import_content_content_templates() {
 	us_action_for_demo_import( 'content_templates', __( 'Content templates', 'us' ) );
+}
+
+// ACF fields
+add_action( 'wp_ajax_us_demo_import_acf_fields', 'us_demo_import_acf_fields' );
+function us_demo_import_acf_fields() {
+	us_action_for_demo_import( 'acf_fields', us_translate( 'Custom Fields' ) );
 }
 
 // WooCommerce Import

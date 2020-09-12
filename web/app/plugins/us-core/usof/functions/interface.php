@@ -167,6 +167,7 @@ function usof_print_scripts() {
 	if ( ! did_action( 'wp_enqueue_media' ) ) {
 		wp_enqueue_media();
 	}
+
 	wp_enqueue_script( 'usof-colorpicker', US_CORE_URI . '/usof/js/usof-colpick.js', array( 'jquery' ), US_CORE_VERSION, TRUE );
 	wp_enqueue_script( 'usof-scripts', US_CORE_URI . '/usof/js/usof.js', array( 'jquery' ), US_CORE_VERSION, TRUE );
 	do_action( 'usof_print_scripts' );

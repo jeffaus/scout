@@ -483,11 +483,11 @@ class us_migration_5_2 extends US_Migration_Translator {
 		}
 
 		// Change tablets & mobiles breakpoints plus one
-		if ( isset( $settings['tablets'] ) and is_array( $settings['tablets'] ) ) {
+		if ( isset( $settings['tablets']['options']['breakpoint'] ) and is_array( $settings['tablets'] ) ) {
 			$settings['tablets']['options']['breakpoint'] = $settings['tablets']['options']['breakpoint'] + 1;
 			$settings_changed = TRUE;
 		}
-		if ( isset( $settings['mobiles'] ) and is_array( $settings['mobiles'] ) ) {
+		if ( isset( $settings['mobiles']['options']['breakpoint'] ) and is_array( $settings['mobiles'] ) ) {
 			$settings['mobiles']['options']['breakpoint'] = $settings['mobiles']['options']['breakpoint'] + 1;
 			$settings_changed = TRUE;
 		}

@@ -5,13 +5,13 @@
  *
  * Multiple selector as table
  *
- * @var   $id    string Field ID
- * @var   $name  string Field name
- * @var   $field array Field options
- *
  * @param $field ['title'] string Field title
  * @param $field ['description'] string Field title
  * @param $field ['options'] array List of key => title pairs
+ *
+ * @var   $id    string Field ID
+ * @var   $name  string Field name
+ * @var   $field array Field options
  *
  * @var   $value array List of checked keys
  */
@@ -23,18 +23,56 @@ if ( isset( $is_metabox ) AND $is_metabox ) {
 	$name .= '[]';
 }
 
-$output = '<ul class="usof-checkbox-list">';
-foreach ( $field['options'] as $key => $option ) {
+$output = '';
 
-	if ( $option['group'] != NULL ) {
-		$output .= '</ul><ul class="usof-checkbox-list"><li class="usof-checkbox-list-title">' . $option['group'] . '</li>';
-	}
+// Auto Optimize feature
+if ( ! empty( $field['show_auto_optimize_button'] ) ) {
+
+	// Data to be exported to the AutoOptimizeAssets class
+	$auto_optimize_data = array(
+		'_nonce' => wp_create_nonce( 'us_ajax_auto_optimize_assets' ),
+	);
+
+	// Output button
+	$output .= '<div class="usof-button type_auto_optimize" ' . us_pass_data_to_js( $auto_optimize_data ) . '>';
+	$output .= '<span class="usof-button-text">' . __( 'Auto Optimize', 'us' ) . '</span>';
+	$output .= '<span class="usof-preloader"></span>';
+	$output .= '</div>';
+	$output .= '<div class="usof-form-row-desc">';
+	$output .= '<div class="usof-form-row-desc-icon"></div>';
+	$output .= '<div class="usof-form-row-desc-text">';
+	$output .= __( 'The checkboxes will be checked / unchecked depending on the components and settings used on the website.', 'us' );
+	$output .= '</div></div>';
+	$output .= '<div class="usof-message type_auto_optimize hidden"></div>';
+}
+
+foreach ( $field['options'] as $key => &$option ) {
+	$option['key'] = $key;
+}
+unset( $option );
+
+// Sort parameters by the `title` field before output
+usort( $field['options'], function( $a, $b ) {
+	return strcmp( $a['title'], $b['title'] );
+} );
+
+// Output Table
+$output .= '<ul class="usof-checkbox-list">';
+$i = 1;
+foreach ( $field['options'] as $option ) {
 	if ( isset( $option['apply_if'] ) AND ! $option['apply_if'] ) {
 		continue;
 	}
-	$output .= '<li class="usof-checkbox for_' . $key . '"><label>';
-	$output .= '<input type="checkbox" name="' . $name . '" value="' . esc_attr( $key ) . '"';
-	if ( in_array( $key, $value ) ) {
+	$output .= '<li class="usof-checkbox for_' . $option['key'] . '">';
+	$output .= '<label>';
+
+	// Show helper label in the first checkbox only
+	if ( $i === 1 ) {
+		$output .= '<span>' . strip_tags( __( 'All sizes in kilobytes', 'us' ) ) . '</span>';
+	}
+
+	$output .= '<input type="checkbox" name="' . esc_attr( $name ) . '" value="' . esc_attr( $option['key'] ) . '"';
+	if ( ! isset( $value[ $option['key'] ] ) OR $value[ $option['key'] ] == 1 ) {
 		$output .= ' checked';
 	}
 	$output .= '>';
@@ -54,10 +92,10 @@ foreach ( $field['options'] as $key => $option ) {
 	}
 	$output .= '</span>';
 	$output .= '</label>';
-	$output .= '<div class="usof-checkbox-description"></div>';
 	$output .= '</li>';
+
+	$i ++;
 }
 $output .= '</ul>';
-$output .= '<div class="usof-checkbox-list-desc">' . __( 'All sizes in kilobytes', 'us' ) . '</div>';
 
 echo $output;

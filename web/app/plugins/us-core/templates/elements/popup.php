@@ -4,15 +4,19 @@
  * Popup
  */
 
-$popup_classes = ' animation_' . $animation;
+$_atts['class'] = 'w-popup';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+$_atts['class'] .= ' align_' . $align;
 
-$classes = isset( $classes ) ? $classes : '';
-$classes .= ' align_' . $align;
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
 
 // Output the trigger
-$output = '<div class="w-popup' . $classes . '" ' . $el_id . '>';
+$output = '<div ' . us_implode_atts( $_atts ) . '>';
 
 // Trigger
 if ( $show_on == 'image' ) {
@@ -20,33 +24,42 @@ if ( $show_on == 'image' ) {
 	if ( empty( $image_html ) ) {
 		$image_html = us_get_img_placeholder( $image_size );
 	}
-	$output .= '<a href="javascript:void(0)" class="w-popup-trigger type_image">' . $image_html . '</a>';
+	$image_atts = array(
+		'class' => 'w-popup-trigger type_image',
+		'aria-label' => __( 'Popup', 'us' ),
+		'href' => 'javascript:void(0)',
+	);
+	$output .= '<a ' . us_implode_atts( $image_atts ) . '>' . $image_html . '</a>';
+
 } elseif ( $show_on == 'load' ) {
 	$output .= '<span class="w-popup-trigger type_load" data-delay="' . intval( $show_delay ) . '"></span>';
+
 } elseif ( $show_on == 'selector' ) {
 	$output .= '<span class="w-popup-trigger type_selector" data-selector="' . esc_attr( $trigger_selector ) . '"></span>';
+
 } else/*if ( $show_on == 'btn' )*/ {
-
-	$btn_inline_css = us_prepare_inline_css(
-		array(
-			'font-size' => $btn_size,
-		)
-	);
-
-	// Icon
-	$icon_html = $btn_classes = '';
-	if ( ! empty( $btn_icon ) ) {
-		$icon_html = us_prepare_icon_tag( $btn_icon );
-		$btn_classes = ' icon_at' . $btn_iconpos;
-	}
-	$output .= '<div class="w-btn-wrapper">';
 
 	// Check existence of Button Style, if not, set the default
 	$btn_styles = us_get_btn_styles();
 	if ( ! array_key_exists( $btn_style, $btn_styles ) ) {
 		$btn_style = '1';
 	}
-	$output .= '<a href="javascript:void(0)" class="w-popup-trigger type_btn w-btn us-btn-style_' . $btn_style . $btn_classes . '"' . $btn_inline_css . '>';
+
+	$btn_atts = array(
+		'class' => 'w-popup-trigger type_btn w-btn us-btn-style_' . $btn_style,
+		'style' => 'font-size:' . $btn_size,
+		'href' => 'javascript:void(0)',
+	);
+
+	// Icon
+	$icon_html = '';
+	if ( ! empty( $btn_icon ) ) {
+		$icon_html = us_prepare_icon_tag( $btn_icon );
+		$btn_atts['class'] .= ' icon_at' . $btn_iconpos;
+	}
+
+	$output .= '<div class="w-btn-wrapper">';
+	$output .= '<a ' . us_implode_atts( $btn_atts ) . '>';
 	if ( is_rtl() ) {
 		$btn_iconpos = ( $btn_iconpos == 'left' ) ? 'right' : 'left';
 	}
@@ -65,10 +78,12 @@ if ( $show_on == 'image' ) {
 $output .= '<div class="w-popup-overlay"';
 $output .= us_prepare_inline_css(
 	array(
-		'background' => $overlay_bgcolor,
+		'background' => us_get_color( $overlay_bgcolor, /* Gradient */ TRUE ),
 	)
 );
 $output .= '></div>';
+
+$popup_classes = ' animation_' . $animation;
 
 // Popup title
 $output_title = '';
@@ -78,8 +93,8 @@ if ( ! empty( $title ) ) {
 	$output_title .= '<div class="w-popup-box-title"';
 	$output_title .= us_prepare_inline_css(
 		array(
-			'color' => $title_textcolor,
-			'background' => $title_bgcolor,
+			'color' => us_get_color( $title_textcolor ),
+			'background' => us_get_color( $title_bgcolor, /* Gradient */ TRUE ),
 		)
 	);
 	$output_title .= '>' . esc_html( $title ) . '</div>';
@@ -104,8 +119,8 @@ $output .= '<div class="w-popup-box-content"';
 $output .= us_prepare_inline_css(
 	array(
 		'padding' => $popup_padding,
-		'background' => $content_bgcolor,
-		'color' => $content_textcolor,
+		'background' => us_get_color( $content_bgcolor, /* Gradient */ TRUE ),
+		'color' => us_get_color( $content_textcolor ),
 	)
 );
 $output .= '>';
@@ -117,8 +132,8 @@ $output .= '</div></div>'; // .w-popup-box
 $output .= '<div class="w-popup-closer"';
 $output .= us_prepare_inline_css(
 	array(
-		'background' => $content_bgcolor,
-		'color' => $content_textcolor,
+		'background' => us_get_color( $content_bgcolor, /* Gradient */ TRUE ),
+		'color' => us_get_color( $content_textcolor ),
 	)
 );
 $output .= '></div>';

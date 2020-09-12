@@ -87,6 +87,23 @@ function ajax_usgb_save() {
 		);
 	}
 
+	// Fix: Save translations for Polylang
+	if ( function_exists( 'pll_set_post_language' ) ) {
+		if ( ! empty( $_POST['post_lang_choice'] ) ) {
+			pll_set_post_language( $post['ID'], sanitize_text_field( $_POST['post_lang_choice'] ) );
+		}
+		if ( ! empty( $_POST['post_tr_lang'] ) AND is_array( $_POST['post_tr_lang'] ) ) {
+			$translations = array();
+			foreach ( (array) us_arr_path( $_POST, 'post_tr_lang', array() ) as $lang_code => $post_id ) {
+				$translations[ $lang_code ] = (int) $post_id;
+			}
+			// Save translations for post
+			if ( ! empty( $translations ) AND function_exists( 'PLL' )) {
+				PLL()->model->post->save_translations( $post['ID'], array_map( 'absint', $translations ) );
+			}
+		}
+	}
+
 	wp_send_json_success(
 		array(
 			'message' => us_translate( 'Changes saved.' ),

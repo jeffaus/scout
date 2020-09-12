@@ -14,12 +14,22 @@ return array(
 		'type' => 'video',
 		'regex' => '~^(?:https?://)?(?:www\.|m\.)?(?:youtu\.be/|youtube\.com(?:/embed/|/v/|/watch\?v=|/watch\?.+&v=))([\w-]{11})(?:.+)?$~x',
 		'match_index' => 1,
-		'html' => '<iframe src="//www.youtube.com/embed/<id><video-title>" allowfullscreen="1"></iframe>',
+		'url_params' => array(
+			'autoplay' => 0,
+			'controls' => 1
+		),
+		'html' => '<iframe src="//www.youtube.com/embed/<id><url_params>" allowfullscreen="1"></iframe>',
 	),
 	'vimeo' => array(
 		'type' => 'video',
 		'regex' => '/^http(?:s)?:\/\/(?:.*?)\.?vimeo\.com\/(\d+).*$/i',
 		'match_index' => 1,
-		'html' => '<iframe src="//player.vimeo.com/video/<id>?portrait=0&amp;color=00adef<video-title>" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>',
+		'url_params' => array(
+			'autopause' => 0,
+			'autoplay' => 0,
+			'color' => '00adef',
+			'portrait' => 0
+		),
+		'html' => '<iframe src="//player.vimeo.com/video/<id><url_params>" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>',
 	),
 );

@@ -18,17 +18,22 @@
  * @var $classes string Extend class names
  */
 
-$classes = isset( $classes ) ? $classes : '';
-$classes .= ' animation_' . $animation;
-$classes .= ' ratio_' . $ratio;
-$classes .= ' easing_' . $easing;
+$_atts['class'] = 'w-ibanner';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+$_atts['class'] .= ' animation_' . $animation;
+$_atts['class'] .= ' ratio_' . $ratio;
+$_atts['class'] .= ' easing_' . $easing;
 
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
 
 // Fallback since version 7.1
 if ( ! empty( $align ) ) {
-	$classes .= ' align_' . $align;
+	$_atts['class'] .= ' align_' . $align;
 }
 
 $title_inline_css = us_prepare_inline_css(
@@ -46,9 +51,7 @@ if ( empty( $image_url ) ) {
 }
 
 // Output the element
-$output = '<div class="w-ibanner' . $classes . '"';
-$output .= $el_id;
-$output .= '>';
+$output = '<div ' . us_implode_atts( $_atts ) . '>';
 $output .= '<div class="w-ibanner-h">';
 
 // Banner Image
@@ -68,7 +71,7 @@ $output .= '</div></div></div>';
 
 // Banner link
 if ( $link_atts = us_generate_link_atts( $link ) ) {
-	$output .= '<a' . $link_atts . '></a>';
+	$output .= '<a' . $link_atts . ' aria-label="' . esc_attr( strip_tags( $title ) ) . '"></a>';
 }
 
 $output .= '</div>';

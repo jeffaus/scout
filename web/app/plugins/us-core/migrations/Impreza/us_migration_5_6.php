@@ -595,28 +595,40 @@ class us_migration_5_6 extends US_Migration_Translator {
 
 			// Image
 			if ( substr( $name, 0, 5 ) == 'image' ) {
-				$settings['data'][ $name ]['height'] = intval( $data['height'] ) . 'px';
-				$settings['data'][ $name ]['height_tablets'] = intval( $data['height_tablets'] ) . 'px';
-				$settings['data'][ $name ]['height_mobiles'] = intval( $data['height_mobiles'] ) . 'px';
-				$settings['data'][ $name ]['height_sticky'] = intval( $data['height_sticky'] ) . 'px';
-				$settings['data'][ $name ]['height_sticky_tablets'] = intval( $data['height_sticky_tablets'] ) . 'px';
-				$settings['data'][ $name ]['height_sticky_mobiles'] = intval( $data['height_sticky_mobiles'] ) . 'px';
+				$settings['data'][ $name ]['height'] = ( ! empty( $data['height'] ) AND intval( $data['height'] ) > 0 )
+					? intval( $data['height'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['height_tablets'] = ( ! empty( $data['height_tablets'] ) AND intval( $data['height_tablets'] ) > 0 )
+					? intval( $data['height_tablets'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['height_mobiles'] = ( ! empty( $data['height_mobiles'] ) AND intval( $data['height_mobiles'] ) > 0 )
+					? intval( $data['height_mobiles'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['height_sticky'] = ( ! empty( $data['height_sticky'] ) AND intval( $data['height_sticky'] ) > 0 )
+					? intval( $data['height_sticky'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['height_sticky_tablets'] = ( ! empty( $data['height_sticky_tablets'] ) AND intval( $data['height_sticky_tablets'] ) > 0 )
+					? intval( $data['height_sticky_tablets'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['height_sticky_mobiles'] = ( ! empty( $data['height_sticky_mobiles'] ) AND intval( $data['height_sticky_mobiles'] ) > 0 )
+					? intval( $data['height_sticky_mobiles'] ) . 'px'
+					: '';
 
 				$settings_changed = TRUE;
 			}
 
 			// Text
 			if ( substr( $name, 0, 4 ) == 'text' OR substr( $name, 0, 3 ) == 'btn' ) {
-				$settings['data'][ $name ]['font_size'] = ! empty( $data['size'] )
+				$settings['data'][ $name ]['font_size'] = ( ! empty( $data['size'] ) AND intval( $data['size'] ) > 0 )
 					? $data['size'] . 'px'
 					: '';
-				$settings['data'][ $name ]['font_size_tablets'] = ! empty( $data['size_tablets'] )
+				$settings['data'][ $name ]['font_size_tablets'] = ( ! empty( $data['size_tablets'] ) AND intval( $data['size_tablets'] ) > 0 )
 					? $data['size_tablets'] . 'px'
 					: '';
-				$settings['data'][ $name ]['font_size_mobiles'] = ! empty( $data['size_mobiles'] )
+				$settings['data'][ $name ]['font_size_mobiles'] = ( ! empty( $data['size_mobiles'] ) AND intval( $data['size_mobiles'] ) > 0 )
 					? $data['size_mobiles'] . 'px'
 					: '';
-				$settings['data'][ $name ]['text_styles'] = isset( $data['text_style'] )
+				$settings['data'][ $name ]['text_styles'] = ( ! empty( $data['text_style'] ) AND intval( $data['text_style'] ) > 0 )
 					? $data['text_style']
 					: array();
 
@@ -625,13 +637,21 @@ class us_migration_5_6 extends US_Migration_Translator {
 
 			// Menu
 			if ( substr( $name, 0, 4 ) == 'menu' ) {
-				$settings['data'][ $name ]['font_size'] = intval( $data['font_size'] ) . 'px';
+				$settings['data'][ $name ]['font_size'] = ( ! empty( $data['font_size'] ) AND intval( $data['font_size'] ) > 0 )
+					? intval( $data['font_size'] ) . 'px'
+					: '';
 				$settings['data'][ $name ]['indents'] = ( substr( $data['indents'], - 2 ) != 'px' )
 					? ( intval( $data['indents'] ) / 2 ) . 'px'
 					: $data['indents'];
-				$settings['data'][ $name ]['dropdown_font_size'] = intval( $data['dropdown_font_size'] ) . 'px';
-				$settings['data'][ $name ]['mobile_font_size'] = intval( $data['mobile_font_size'] ) . 'px';
-				$settings['data'][ $name ]['mobile_dropdown_font_size'] = intval( $data['mobile_dropdown_font_size'] ) . 'px';
+				$settings['data'][ $name ]['dropdown_font_size'] = ( ! empty( $data['dropdown_font_size'] ) AND intval( $data['dropdown_font_size'] ) > 0 )
+					? intval( $data['dropdown_font_size'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['mobile_font_size'] = ( ! empty( $data['mobile_font_size'] ) AND intval( $data['mobile_font_size'] ) > 0 )
+					? intval( $data['mobile_font_size'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['mobile_dropdown_font_size'] = ( ! empty( $data['mobile_dropdown_font_size'] ) AND intval( $data['mobile_dropdown_font_size'] ) > 0 )
+					? intval( $data['mobile_dropdown_font_size'] ) . 'px'
+					: '';
 				$settings['data'][ $name ]['mobile_icon_size'] = ( ! empty( $data['mobile_icon_size'] ) AND intval( $data['mobile_icon_size'] ) > 0 )
 					? intval( $data['mobile_icon_size'] ) . 'px'
 					: '';
@@ -647,9 +667,15 @@ class us_migration_5_6 extends US_Migration_Translator {
 
 			// Links Menu
 			if ( substr( $name, 0, 15 ) == 'additional_menu' ) {
-				$settings['data'][ $name ]['size'] = intval( $data['size'] ) . 'px';
-				$settings['data'][ $name ]['size_tablets'] = intval( $data['size_tablets'] ) . 'px';
-				$settings['data'][ $name ]['size_mobiles'] = intval( $data['size_mobiles'] ) . 'px';
+				$settings['data'][ $name ]['size'] = ( ! empty( $data['size'] ) AND intval( $data['size'] ) > 0 )
+					? intval( $data['size'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['size_tablets'] = ( ! empty( $data['size_tablets'] ) AND intval( $data['size_tablets'] ) > 0 )
+					? intval( $data['size_tablets'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['size_mobiles'] = ( ! empty( $data['size_mobiles'] ) AND intval( $data['size_mobiles'] ) > 0 )
+					? intval( $data['size_mobiles'] ) . 'px'
+					: '';
 				$settings['data'][ $name ]['indents'] = ( substr( $data['indents'], - 2 ) != 'px' )
 					? ( intval( $data['indents'] ) / 2 ) . 'px'
 					: $data['indents'];
@@ -674,8 +700,10 @@ class us_migration_5_6 extends US_Migration_Translator {
 				$settings['data'][ $name ]['icon_size_mobiles'] = ( ! empty( $data['icon_size_mobiles'] ) AND intval( $data['icon_size_mobiles'] ) > 0 )
 					? intval( $data['icon_size_mobiles'] ) . 'px'
 					: '';
-				$settings['data'][ $name ]['field_width'] = intval( $data['width'] ) . 'px';
-				$settings['data'][ $name ]['field_width_tablets'] = isset( $data['width_tablets'] )
+				$settings['data'][ $name ]['field_width'] = ( ! empty( $data['width'] ) AND intval( $data['width'] ) > 0 )
+					? intval( $data['width'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['field_width_tablets'] = ( ! empty( $data['width_tablets'] ) AND intval( $data['width_tablets'] ) > 0 )
 					? intval( $data['width_tablets'] ) . 'px'
 					: '';
 
@@ -684,9 +712,15 @@ class us_migration_5_6 extends US_Migration_Translator {
 
 			// Dropdown, Social Links, Cart
 			if ( substr( $name, 0, 8 ) == 'dropdown' OR substr( $name, 0, 7 ) == 'socials' OR substr( $name, 0, 4 ) == 'cart' ) {
-				$settings['data'][ $name ]['size'] = intval( $data['size'] ) . 'px';
-				$settings['data'][ $name ]['size_tablets'] = intval( $data['size_tablets'] ) . 'px';
-				$settings['data'][ $name ]['size_mobiles'] = intval( $data['size_mobiles'] ) . 'px';
+				$settings['data'][ $name ]['size'] = ( ! empty( $data['size'] ) AND intval( $data['size'] ) > 0 )
+					? intval( $data['size'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['size_tablets'] = ( ! empty( $data['size'] ) AND intval( $data['size'] ) > 0 )
+					? intval( $data['size_tablets'] ) . 'px'
+					: '';
+				$settings['data'][ $name ]['size_mobiles'] = ( ! empty( $data['size_mobiles'] ) AND intval( $data['size_mobiles'] ) > 0 )
+					? intval( $data['size_mobiles'] ) . 'px'
+					: '';
 
 				$settings_changed = TRUE;
 			}
@@ -697,13 +731,27 @@ class us_migration_5_6 extends US_Migration_Translator {
 		$states = array( 'default', 'tablets', 'mobiles' );
 		foreach ( $states as $state ) {
 			if ( isset( $settings[ $state ] ) ) {
-				$settings[ $state ]['options']['width'] = intval( $settings[ $state ]['options']['width'] ) . 'px';
-				$settings[ $state ]['options']['top_height'] = intval( $settings[ $state ]['options']['top_height'] ) . 'px';
-				$settings[ $state ]['options']['top_sticky_height'] = intval( $settings[ $state ]['options']['top_sticky_height'] ) . 'px';
-				$settings[ $state ]['options']['middle_height'] = intval( $settings[ $state ]['options']['middle_height'] ) . 'px';
-				$settings[ $state ]['options']['middle_sticky_height'] = intval( $settings[ $state ]['options']['middle_sticky_height'] ) . 'px';
-				$settings[ $state ]['options']['bottom_height'] = intval( $settings[ $state ]['options']['bottom_height'] ) . 'px';
-				$settings[ $state ]['options']['bottom_sticky_height'] = intval( $settings[ $state ]['options']['bottom_sticky_height'] ) . 'px';
+				$settings[ $state ]['options']['width'] = ( ! empty( $settings[ $state ]['options']['width'] ) AND intval( $settings[ $state ]['options']['width'] ) > 0 )
+					? intval( $settings[ $state ]['options']['width'] ) . 'px'
+					: '';
+				$settings[ $state ]['options']['top_height'] = ( ! empty( $settings[ $state ]['options']['top_height'] ) AND intval( $settings[ $state ]['options']['top_height'] ) > 0 )
+					? intval( $settings[ $state ]['options']['top_height'] ) . 'px'
+					: '';
+				$settings[ $state ]['options']['top_sticky_height'] = ( ! empty( $settings[ $state ]['options']['top_sticky_height'] ) AND intval( $settings[ $state ]['options']['top_sticky_height'] ) > 0 )
+					? intval( $settings[ $state ]['options']['top_sticky_height'] ) . 'px'
+					: '';
+				$settings[ $state ]['options']['middle_height'] = ( ! empty( $settings[ $state ]['options']['middle_height'] ) AND intval( $settings[ $state ]['options']['middle_height'] ) > 0 )
+					? intval( $settings[ $state ]['options']['middle_height'] ) . 'px'
+					: '';
+				$settings[ $state ]['options']['middle_sticky_height'] = ( ! empty( $settings[ $state ]['options']['middle_sticky_height'] ) AND intval( $settings[ $state ]['options']['middle_sticky_height'] ) > 0 )
+					? intval( $settings[ $state ]['options']['middle_sticky_height'] ) . 'px'
+					: '';
+				$settings[ $state ]['options']['bottom_height'] = ( ! empty( $settings[ $state ]['options']['bottom_height'] ) AND intval( $settings[ $state ]['options']['bottom_height'] ) > 0 )
+					? intval( $settings[ $state ]['options']['bottom_height'] ) . 'px'
+					: '';
+				$settings[ $state ]['options']['bottom_sticky_height'] = ( ! empty( $settings[ $state ]['options']['bottom_sticky_height'] ) AND intval( $settings[ $state ]['options']['bottom_sticky_height'] ) > 0 )
+					? intval( $settings[ $state ]['options']['bottom_sticky_height'] ) . 'px'
+					: '';
 
 				$settings_changed = TRUE;
 			}

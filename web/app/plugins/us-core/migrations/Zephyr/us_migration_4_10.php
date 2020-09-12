@@ -163,7 +163,7 @@ class us_migration_4_10 extends US_Migration_Translator {
 
 		return $changed;
 	}
-	
+
 	public function translate_us_gallery( &$name, &$params, &$content ) {
 		$changed = FALSE;
 
@@ -267,19 +267,19 @@ class us_migration_4_10 extends US_Migration_Translator {
 		}
 
 		foreach ( $img_sizes as $old_name => $new_name ) {
-			if ( $options['post_related_img_size'] == $old_name ) {
+			if ( isset( $options['post_related_img_size'] ) AND $options['post_related_img_size'] == $old_name ) {
 				$options['post_related_img_size'] = $new_name;
 			}
 
-			if ( $options['blog_img_size'] == $old_name ) {
+			if ( isset( $options['blog_img_size'] ) AND $options['blog_img_size'] == $old_name ) {
 				$options['blog_img_size'] = $new_name;
 			}
 
-			if ( $options['archive_img_size'] == $old_name ) {
+			if ( isset( $options['archive_img_size'] ) AND $options['archive_img_size'] == $old_name ) {
 				$options['archive_img_size'] = $new_name;
 			}
 
-			if ( $options['search_img_size'] == $old_name ) {
+			if ( isset( $options['search_img_size'] ) AND $options['search_img_size'] == $old_name ) {
 				$options['search_img_size'] = $new_name;
 			}
 		}

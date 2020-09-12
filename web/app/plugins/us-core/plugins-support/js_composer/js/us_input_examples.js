@@ -1,5 +1,5 @@
 ! function( $ ) {
-	$( '.usof-example' ).live( 'click', function( ev ) {
+	$( document ).on( 'click', '.usof-example', function( ev ) {
 		ev.preventDefault();
 		ev.stopPropagation();
 

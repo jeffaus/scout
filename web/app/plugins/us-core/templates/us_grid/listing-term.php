@@ -19,10 +19,29 @@ if ( us_arr_path( $grid_layout_settings, 'default.options.ratio' ) ) {
 $background_value = '';
 $bg_img_source = us_arr_path( $grid_layout_settings, 'default.options.bg_img_source' );
 
-if ( $bg_img_source == 'featured' AND class_exists( 'woocommerce' ) AND $us_grid_term->taxonomy == 'product_cat' ) {
+if (
+	(
+		$bg_img_source == 'featured'
+		AND class_exists( 'woocommerce' )
+		AND $us_grid_term->taxonomy == 'product_cat'
+	)
+	OR (
+		function_exists( 'acf_get_field' )
+		AND $acf_field = acf_get_field( $bg_img_source )
+	)
+) {
 
 	if ( $term_thumbnail_id = get_term_meta( $us_grid_term->term_id, 'thumbnail_id', TRUE ) ) {
 		$bg_image = wp_get_attachment_image_url( $term_thumbnail_id, 'full' );
+	}
+
+	// Image types from ACF
+	if (
+		empty( $bg_image )
+		AND ! empty( $acf_field )
+		AND $term_meta = get_term_meta( $us_grid_term->term_id, $bg_img_source, TRUE )
+	) {
+		$bg_image = wp_get_attachment_image_url( $term_meta, 'full' );
 	}
 
 	if ( ! empty( $bg_image ) ) {
@@ -34,6 +53,7 @@ if ( $bg_img_source == 'featured' AND class_exists( 'woocommerce' ) AND $us_grid
 		$background_value .= us_arr_path( $grid_layout_settings, 'default.options.bg_img_repeat' );
 
 		$bg_color = us_arr_path( $grid_layout_settings, 'default.options.color_bg' );
+		$bg_color = us_get_color( $bg_color, /* Gradient */ TRUE );
 
 		// If the color value contains gradient, add comma for correct appearance
 		if ( strpos( $bg_color, 'gradient' ) !== FALSE ) {
@@ -90,7 +110,7 @@ if ( ! $link_title ) {
 		<?php if ( $link_url ): ?>
 			<a class="w-grid-item-anchor" href="<?= esc_url( $link_url ) ?>"<?= $link_atts ?>></a>
 		<?php endif; ?>
-		<?php us_output_builder_elms( $grid_layout_settings, 'default', 'middle_center', 'grid_term' ); ?>
+		<?php us_output_builder_elms( $grid_layout_settings, 'default', 'middle_center', 'grid', 'term' ); ?>
 	</div>
 </div>
 <?php

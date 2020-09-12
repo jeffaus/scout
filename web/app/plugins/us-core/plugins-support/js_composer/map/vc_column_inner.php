@@ -104,4 +104,12 @@ vc_add_params( 'vc_column_inner', array(
 		'admin_label' => TRUE,
 		'weight' => 10,
 	),
+	array(
+		'param_name' => 'us_bg_overlay_color',
+		'heading' => __( 'Background Overlay', 'us' ),
+		'type' => 'us_color',
+		'clear_pos' => 'right',
+		'std' => us_arr_path( $config, 'atts.us_bg_overlay_color', '' ),
+		'weight' => 7,
+	),
 ));

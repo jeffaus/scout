@@ -28,8 +28,8 @@ if ( $vstretch ) {
 
 $quantity_inline_css = us_prepare_inline_css(
 	array(
-		'background' => $quantity_color_bg,
-		'color' => $quantity_color_text,
+		'background' => us_get_color( $quantity_color_bg, /* Gradient */ TRUE ),
+		'color' => us_get_color( $quantity_color_text ),
 	)
 );
 

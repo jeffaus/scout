@@ -27,8 +27,24 @@ if ( is_admin() AND is_plugin_active( 'us-header-builder/us-header-builder.php' 
 	deactivate_plugins( 'us-header-builder/us-header-builder.php' );
 }
 
+if ( ! function_exists( 'us_builder_admin_body_class' ) ) {
+	/**
+	 * Add helper class to <body> on admin pages with builder
+	 *
+	 * @return string
+	 */
+	function us_builder_admin_body_class( $class ) {
+		return $class . ' us_builder';
+	}
+}
+
 if ( ! function_exists( 'us_hb_load_header_settings' ) ) {
-	add_filter( 'us_load_header_settings', 'us_hb_load_header_settings', 9 );
+	/**
+	 * Load header settings
+	 *
+	 * @param array $header_settings
+	 * @return array
+	 */
 	function us_hb_load_header_settings( $header_settings ) {
 		global $us_header_id;
 
@@ -58,23 +74,15 @@ if ( ! function_exists( 'us_hb_load_header_settings' ) ) {
 		if ( ! empty( $postID ) AND $postID != 'default' ) {
 			if ( usof_meta( 'us_header_id', $postID ) != '__defaults__' OR $is_shop ) {
 				// Do not try to translate header ID for shop pages - it is set at Theme Options now
-				if ( ! $is_shop ) {
-					if ( class_exists( 'SitePress' ) AND defined( 'ICL_LANGUAGE_CODE' ) ) {
-						global $sitepress;
-						if ( $sitepress->get_default_language() != ICL_LANGUAGE_CODE ) {
-							$original_postID = apply_filters( 'wpml_object_id', $postID, get_post_type( $postID ), TRUE, $sitepress->get_default_language() );
-							if ( $original_postID != $postID ) {
-								$us_header_id = usof_meta( 'us_header_id', $original_postID );
-								$us_header_id = apply_filters( 'wpml_object_id', $us_header_id, 'us_header', TRUE, ICL_LANGUAGE_CODE );
-							}
-						}
-					} elseif ( function_exists( 'pll_default_language' ) AND pll_get_post( $postID ) ) {
-						if ( pll_current_language() != pll_default_language() ) {
-							$original_postID = pll_get_post( $postID, pll_default_language() );
-							if ( $original_postID != $postID ) {
-								$us_header_id = usof_meta( 'us_header_id', $original_postID );
-								$us_header_id = pll_get_post( $us_header_id );
-							}
+				if ( ! $is_shop AND has_filter( 'us_tr_default_language' ) ) {
+
+					$default_language = apply_filters( 'us_tr_default_language', NULL );
+					$current_language = apply_filters( 'us_tr_current_language', NULL );
+					if ( $default_language != $current_language ) {
+						$orig_postID = apply_filters( 'us_tr_object_id', $postID, get_post_type( $postID ), TRUE, $default_language );
+						if ( $orig_postID != $postID ) {
+							$us_header_id = usof_meta( 'us_header_id', $orig_postID );
+							$us_header_id = apply_filters( 'us_tr_object_id', $us_header_id,'us_header', TRUE, $current_language );
 						}
 					}
 				}
@@ -111,11 +119,13 @@ if ( ! function_exists( 'us_hb_load_header_settings' ) ) {
 
 		// Generate header settings from Header post content
 		if ( $us_header_id != '' ) {
-			if ( class_exists( 'SitePress' ) AND defined( 'ICL_LANGUAGE_CODE' ) ) {
-				$us_header_id = apply_filters( 'wpml_object_id', $us_header_id, 'us_header', TRUE );
-			} elseif ( function_exists( 'pll_default_language' ) AND pll_get_post( $us_header_id ) ) {
-				$us_header_id = pll_get_post( $us_header_id );
+			if (
+				has_filter( 'us_tr_object_id' )
+				AND $_header_id = apply_filters( 'us_tr_object_id', $us_header_id, 'us_header', TRUE )
+			) {
+				$us_header_id = $_header_id;
 			}
+
 			$header = get_post( (int) $us_header_id );
 			if ( $header instanceof WP_Post AND $header->post_type === 'us_header' ) {
 				if ( ! empty( $header->post_content ) AND substr( strval( $header->post_content ), 0, 1 ) === '{' ) {
@@ -129,6 +139,9 @@ if ( ! function_exists( 'us_hb_load_header_settings' ) ) {
 			// Add Header ID to settings
 			$header_settings['header_id'] = $us_header_id;
 
+			// Fallback
+			$header_settings = us_hb_settings_fallback( $header_settings );
+
 		} else {
 			$header_settings['is_hidden'] = TRUE;
 		}
@@ -138,6 +151,7 @@ if ( ! function_exists( 'us_hb_load_header_settings' ) ) {
 
 		return $header_settings;
 	}
+	add_filter( 'us_load_header_settings', 'us_hb_load_header_settings', 9 );
 }
 
 if ( ! function_exists( 'us_hb_enqueue_scripts' ) ) {
@@ -229,6 +243,11 @@ if ( ! function_exists( 'us_hb_post_row_actions' ) ) {
 
 			// Removing duplicate post plugin affection
 			unset( $actions['duplicate'], $actions['edit_as_new_draft'] );
+
+			if ( empty( $actions ) ) {
+				$actions = array();
+			}
+
 			$actions = us_array_merge_insert(
 				$actions, array(
 				'duplicate' => '<a href="' . admin_url( 'post-new.php?post_type=us_header&duplicate_from=' . $post->ID ) . '" aria-label="' . esc_attr__( 'Duplicate', 'us' ) . '">' . esc_html__( 'Duplicate', 'us' ) . '</a>',

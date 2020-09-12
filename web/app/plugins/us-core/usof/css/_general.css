@@ -6,47 +6,38 @@
 
 /* Customize WordPress admin pages
    ========================================================================== */
-body.post-php.post-type-us_grid_layout,
-body.post-php.post-type-us_header,
+body.us_builder,
 body.toplevel_page_us-theme-options {
 	overflow-y: scroll;
 	background-color: #fff;
 	}
-body.post-type-us_grid_layout.us-popup,
-body.post-type-us_header.us-popup,
+body.us_builder.us-popup,
 body.toplevel_page_us-theme-options.us-popup {
 	overflow: hidden;
 	}
-.post-php.post-type-us_grid_layout #wpcontent,
-.post-php.post-type-us_grid_layout #wpbody-content,
-.post-php.post-type-us_header #wpcontent,
-.post-php.post-type-us_header #wpbody-content,
+body.us_builder #wpcontent,
+body.us_builder #wpbody-content,
 .toplevel_page_us-theme-options #wpcontent,
 .toplevel_page_us-theme-options #wpbody-content {
 	padding: 0 !important;
 	}
-.post-php.post-type-us_grid_layout #wpbody-content .wrap,
-.post-php.post-type-us_header #wpbody-content .wrap,
+body.us_builder #wpbody-content .wrap,
 .toplevel_page_us-theme-options #wpbody-content .wrap {
 	margin: 0;
 	}
-.post-php.post-type-us_grid_layout .wrap > *:not(form),
-.post-php.post-type-us_grid_layout #screen-meta-links,
-.post-php.post-type-us_grid_layout #post-body-content,
-.post-php.post-type-us_grid_layout #poststuff,
-.post-php.post-type-us_grid_layout #wpfooter,
-.post-php.post-type-us_header .wrap > *:not(form),
-.post-php.post-type-us_header #screen-meta-links,
-.post-php.post-type-us_header #post-body-content,
-.post-php.post-type-us_header #postbox-container-2,
-.post-php.post-type-us_header .postbox,
-.post-php.post-type-us_header #wpfooter,
+body.us_builder .wrap > *:not(form),
+body.us_builder #screen-meta-links,
+body.us_builder #post-body-content,
+body.us_builder #postbox-container-2,
+body.us_builder .postbox:not(#ml_box),
+body.us_builder #wpfooter,
 .toplevel_page_us-theme-options #wpfooter,
 .toplevel_page_us-theme-options .wrap > *:not(.usof-container),
 .usof-container.theme_activated .us-screenlock,
 .usof-container .hidden {
 	display: none !important;
 	}
+
 .toplevel_page_us-theme-options .us-migration {
 	position: fixed;
 	left: 160px;
@@ -98,7 +89,12 @@ body.toplevel_page_us-theme-options.us-popup {
 .usof-container select {
 	max-width: none;
 	line-height: 38px;
-	color: #333;
+	}
+.usof-container select:focus {
+	color: inherit;
+	}
+.usof-form-row select option {
+	font-weight: normal;
 	}
 .usof-container textarea {
 	padding: 6px 10px;
@@ -629,6 +625,7 @@ button::-moz-focus-inner {
 			.usof-form-row.desc_4 .usof-form-row-desc-icon:before {
 				content: '\f059';
 				}
+		.usof-tooltip-text,
 		.usof-form-row.desc_2 .usof-form-row-desc-text,
 		.usof-form-row.desc_3 .usof-form-row-desc-text,
 		.usof-form-row.desc_4 .usof-form-row-desc-text {
@@ -646,12 +643,14 @@ button::-moz-focus-inner {
 			visibility: hidden;
 			transition: opacity 0.2s ease 0.2s;
 			}
+		.usof-tooltip:hover .usof-tooltip-text,
 		.usof-form-row.desc_2 .usof-form-row-desc:hover .usof-form-row-desc-text,
 		.usof-form-row.desc_3 .usof-form-row-desc:hover .usof-form-row-desc-text,
 		.usof-form-row.desc_4 .usof-form-row-desc:hover .usof-form-row-desc-text {
 			opacity: 1;
 			visibility: visible;
 			}
+			.usof-tooltip-text:before,
 			.usof-form-row.desc_2 .usof-form-row-desc-text:before,
 			.usof-form-row.desc_3 .usof-form-row-desc-text:before,
 			.usof-form-row.desc_4 .usof-form-row-desc-text:before {
@@ -664,6 +663,7 @@ button::-moz-focus-inner {
 				background-color: #333;
 				transform: rotate(45deg);
 				}
+			.usof-tooltip-text:after,
 			.usof-form-row.desc_2 .usof-form-row-desc-text:after,
 			.usof-form-row.desc_3 .usof-form-row-desc-text:after,
 			.usof-form-row.desc_4 .usof-form-row-desc-text:after {
@@ -689,6 +689,24 @@ button::-moz-focus-inner {
 			.usof-form-row.desc_4 .usof-form-row-desc-text a {
 				color: #00b9eb;
 				}
+
+.usof-tooltip {
+	position: relative;
+	border-bottom: 1px dotted;
+	cursor: help;
+	}
+	.usof-tooltip-text {
+		width: 150px;
+		}
+
+/* Message */
+.usof-message {
+	display: inline-block;
+	vertical-align: top;
+	font-weight: 600;
+	padding: 8px;
+	color: #70cc70;
+	}
 
 /* Clickable examples */
 .usof-example {
@@ -723,8 +741,6 @@ button::-moz-focus-inner {
 		display: block;
 		color: red;
 		}
-
-
 
 /* Form Row Modifications
    ========================================================================== */
@@ -838,7 +854,7 @@ button::-moz-focus-inner {
 		}
 
 /* Improvements for Layouts selection */
-.usof-form-row[data-id*="_id"] select {
+.usof-form-row[data-name*="_id"] select {
 	font-weight: 700;
 	}
 .usof-form-row[selected-value="__defaults__"] select {

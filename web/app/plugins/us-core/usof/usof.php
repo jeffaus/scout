@@ -1,5 +1,7 @@
 <?php defined( 'ABSPATH' ) OR die( 'This script cannot be accessed directly.' );
 
+require US_CORE_DIR . 'usof/functions/fallback.php';
+
 if ( is_admin() ) {
 	if ( ! defined( 'DOING_AJAX' ) OR ! DOING_AJAX ) {
 		// Front-end interface
@@ -163,12 +165,15 @@ function usof_save_options( $updated_options ) {
 	usof_load_options_once();
 
 	do_action( 'usof_before_save', $updated_options );
-	$usof_options = $updated_options;
+
+	$usof_options = has_filter( 'usof_updated_options' )
+		? apply_filters( 'usof_updated_options', $updated_options )
+		: $updated_options;
+
 	update_option( 'usof_options_' . US_THEMENAME, $usof_options, TRUE );
 
 	do_action( 'usof_after_save', $updated_options );
 }
-
 
 /**
  * Save a backup with current usof options values
@@ -312,16 +317,8 @@ function usof_execute_show_if( $condition, &$values = NULL ) {
 }
 
 function usof_get_lang() {
-	if ( function_exists( 'wpml_get_current_language' ) ) {
-		// WPML
-		global $sitepress;
-		$default_language = $sitepress->get_default_language();
-		if ( $default_language != ICL_LANGUAGE_CODE ) {
-			return wpml_get_current_language();
-		}
-	} elseif ( function_exists( 'pll_current_language' ) ) {
-		// Polylang
-		return pll_current_language();
+	if ( $supported_plugins_default_lang = apply_filters( 'us_tr_current_language', NULL ) ) {
+		return $supported_plugins_default_lang;
 	} elseif ( function_exists( 'qtrans_getLanguage' ) ) {
 		// qTranslate
 		return qtrans_getLanguage();
@@ -342,24 +339,27 @@ function usof_color_scheme_preview( $scheme ) {
 	if ( empty( $scheme ) ) {
 		return '';
 	}
+
+	$values = us_arr_path( $scheme, 'values', array() );
+
 	$preview = '<div class="usof-scheme-preview">';
 	// Header
-	$preview .= '<div class="preview_header" style="background:' . $scheme['values']['color_header_middle_bg'] . ';"></div>';
+	$preview .= '<div class="preview_header" style="background:' . us_get_color( $values['color_header_middle_bg'], /* Gradient */ TRUE ) . ';"></div>';
 	// Content
-	$preview .= '<div class="preview_content" style="background:' . $scheme['values']['color_content_bg'] . ';">';
+	$preview .= '<div class="preview_content" style="background:' . us_get_color( $values['color_content_bg'], /* Gradient */ TRUE ) . ';">';
 	// Heading
-	$preview .= '<div class="preview_heading" style="color:' . us_gradient2hex( $scheme['values']['color_content_heading'] ) . ';">' . trim( esc_html( $scheme['title'] ) ) . '</div>';
+	$preview .= '<div class="preview_heading" style="color:' . us_get_color( $values['color_content_heading'] ) . ';">' . trim( esc_html( $scheme['title'] ) ) . '</div>';
 	// Text
-	$preview .= '<div class="preview_text" style="color:' . us_gradient2hex( $scheme['values']['color_content_text'] ) . ';">';
-	$preview .= 'Lorem ipsum dolor sit amet, <span style="color:' . us_gradient2hex( $scheme['values']['color_content_link'] ) . ';">consectetur</span> adipiscing elit. Maecenas arcu lectus, sollicitudin dictum dapibus sit amet.';
+	$preview .= '<div class="preview_text" style="color:' . us_get_color( $values['color_content_text'] ) . ';">';
+	$preview .= 'Lorem ipsum dolor sit amet, <span style="color:' . us_get_color( $values['color_content_link'] ) . ';">consectetur</span> adipiscing elit. Maecenas arcu lectus, sollicitudin dictum dapibus sit amet.';
 	$preview .= '</div>';
 	// Primary
-	$preview .= '<div class="preview_primary" style="background:' . $scheme['values']['color_content_primary'] . ';"></div>';
+	$preview .= '<div class="preview_primary" style="background:' . us_get_color( $values['color_content_primary'], /* Gradient */ TRUE ) . ';"></div>';
 	// Secondary
-	$preview .= '<div class="preview_secondary" style="background:' . $scheme['values']['color_content_secondary'] . ';"></div>';
+	$preview .= '<div class="preview_secondary" style="background:' . us_get_color( $values['color_content_secondary'], /* Gradient */ TRUE ) . ';"></div>';
 	$preview .= '</div>';
 	// Footer
-	$preview .= '<div class="preview_footer" style="background:' . $scheme['values']['color_footer_bg'] . ';"></div>';
+	$preview .= '<div class="preview_footer" style="background:' . us_get_color( $values['color_footer_bg'], /* Gradient */ TRUE ) . ';"></div>';
 	$preview .= '</div>';
 
 	return $preview;

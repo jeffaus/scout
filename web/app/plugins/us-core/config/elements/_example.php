@@ -142,7 +142,10 @@ return array(
 		// COLOR: color picker, based on custom controls
 		'option_name' => array(
 			'type' => 'color',
-			'std' => '#fff', // string: HEX or RGBA value
+			'std' => '#fff', // string: HEX, RGBA or "_content_text" value
+			'clear_pos' => 'left', // enables "clear" button at the "left" or "right". If not set, clearing is disabled
+			'with_gradient' => FALSE, // disables Gradients, TRUE by daefault
+			'disable_dynamic_vars' => TRUE // disables list of variables from Theme Options > Colors
 		),
 
 		// UPLOAD: shows button with selection files from WordPress Media Library
@@ -169,14 +172,6 @@ return array(
 			'type' => 'html',
 			'encoded' => TRUE, // encodes the value to the base64
 			'std' => '', // string
-		),
-
-		// USOF Design Options: adds special control for box properties: position, margin, border, padding
-		'option_name' => array(
-			'type' => 'design_options',
-			'states' => array( 'default', 'tablets', 'mobiles' ), // separates box properties for every responsive state
-			'with_position' => TRUE, // enables "position" property with "Position: absolute" switcher
-			'std' => array(), // array
 		),
 
 		// WPB Design Options: adds special control for box properties: margin, border, padding and some additional options
@@ -206,7 +201,8 @@ return array(
 
 		// AUTOCOMPLETE: select value(s) with filtering and ajax loading
 		'option_name' => array(
-			'type' => 'autocomplete',
+			'type' => 'us_autocomplete',
+			'options_prepared_for_wpb' => TRUE, // needed for work in WPBakery Page Builder
 			'options' => array(
 				'Option 1' => 'option1',
 				'Option 2' => 'option2',
@@ -215,16 +211,14 @@ return array(
 					'Group option 2' => 'group_option1',
 				),
 			),
-			'ajax_query_args' => array(
+			'settings' => array(
 				'action' => 'action_name',
-				'_nonce' => wp_create_nonce( 'some text' )
-				// Other query args...
+				'_nonce' => wp_create_nonce( 'some text' ),
+				'multiple' => TRUE,
+				'sortable' => FALSE,
+				'slug' => 'items_slug',
 			),
-			'multiple' => TRUE,
-			'params_separator' => ',', // Default: `,`
-			// Example: value or value,value1,value2 for multiple
-			'std' => '',
-			'show_if' => array(),
+			'params_separator' => ',', // Default: ','
 		),
 
 		// CSS The group of parameters that will be converted to inline css

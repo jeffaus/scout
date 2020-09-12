@@ -17,19 +17,6 @@ return array(
 			'std' => 'We create great design' . "\n" . 'We create great websites' . "\n" . 'We create great code',
 			'holder' => 'div',
 		),
-		'dynamic_bold' => array(
-			'type' => 'switch',
-			'switch_text' => __( 'Make the dynamic part bold', 'us' ),
-			'std' => FALSE,
-		),
-		'dynamic_color' => array(
-			'title' => __( 'Dynamic Part Color', 'us' ),
-			'type' => 'color',
-			'with_gradient' => FALSE,
-			'std' => '',
-		),
-
-		// More Options
 		'align' => array(
 			'title' => us_translate( 'Alignment' ),
 			'type' => 'select',
@@ -40,7 +27,6 @@ return array(
 			),
 			'std' => 'center',
 			'cols' => 2,
-			'group' => us_translate( 'Appearance' ),
 		),
 		'tag' => array(
 			'title' => __( 'HTML tag', 'us' ),
@@ -48,6 +34,37 @@ return array(
 			'options' => $misc['html_tag_values'],
 			'std' => 'h2',
 			'cols' => 2,
+		),
+
+		// More Options
+		'disable_part_animation' => array(
+			'type' => 'switch',
+			'switch_text' => __( 'Disable Part Animation', 'us' ),
+			'description' => __( 'When enabled, lines of text will be animated without using the dynamic part.', 'us' ),
+			'std' => FALSE,
+			'group' => us_translate( 'Appearance' ),
+		),
+		'html_spaces' => array(
+			'type' => 'switch',
+			'switch_text' => __( 'Use non-breaking spaces', 'us' ),
+			'std' => '1',
+			'show_if' => array( 'disable_part_animation', '=', FALSE ),
+			'group' => us_translate( 'Appearance' ),
+		),
+		'dynamic_bold' => array(
+			'type' => 'switch',
+			'switch_text' => __( 'Make the dynamic part bold', 'us' ),
+			'std' => FALSE,
+			'show_if' => array( 'disable_part_animation', '=', FALSE ),
+			'group' => us_translate( 'Appearance' ),
+		),
+		'dynamic_color' => array(
+			'title' => __( 'Dynamic Part Color', 'us' ),
+			'type' => 'color',
+			'clear_pos' => 'left',
+			'with_gradient' => FALSE,
+			'std' => '',
+			'show_if' => array( 'disable_part_animation', '=', FALSE ),
 			'group' => us_translate( 'Appearance' ),
 		),
 		'animation_type' => array(
@@ -60,6 +77,7 @@ return array(
 				'typingChars' => __( 'Typing', 'us' ),
 			),
 			'std' => 'fadeIn',
+			'show_if' => array( 'disable_part_animation', '=', FALSE ),
 			'group' => us_translate( 'Appearance' ),
 		),
 		'duration' => array(

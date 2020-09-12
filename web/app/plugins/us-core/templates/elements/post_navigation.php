@@ -4,8 +4,10 @@
  * Output Post Prev/Next navigation
  */
 
+global $us_grid_object_type;
+
 // Cases when the element shouldn't be shown
-if ( $us_elm_context == 'grid_term' ) {
+if ( $us_elm_context == 'grid' AND $us_grid_object_type == 'term' ) {
 	return;
 } elseif ( $us_elm_context == 'shortcode' AND is_archive() ) {
 	return;

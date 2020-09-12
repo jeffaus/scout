@@ -76,7 +76,10 @@ if ( ! function_exists( 'us_ultimate_front_scripts_post_content' ) ) {
 	 */
 	function us_ultimate_front_scripts_post_content( $content ) {
 		global $post;
-		if ( function_exists( 'us_get_recursive_parse_page_block' ) ) {
+		if (
+			$post instanceof WP_Post
+			AND function_exists( 'us_get_recursive_parse_page_block' )
+		) {
 			// Add content from content template, this will get all the nesting for Ultimate VC
 			foreach ( array( 'content', 'titlebar', 'sidebar', 'footer' ) as $area ) {
 				if (

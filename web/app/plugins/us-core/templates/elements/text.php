@@ -12,25 +12,33 @@
  * @var $font           string Font Source
  * @var $color          string Custom text color
  * @var $design_options array
- * @var $classes        string
+ * @var $_atts['class'] string
  * @var $id             string
  */
 
-$classes = isset( $classes ) ? $classes : '';
+global $us_grid_object_type;
+
+$_atts['class'] = 'w-text';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+
 if ( ! empty( $wrap ) ) {
-	$classes .= ' wrap';
+	$_atts['class'] .= ' wrap';
 }
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
 
 // When text color is set in Design Options, add the specific class
 if ( us_design_options_has_property( $css, 'color' ) ) {
-	$classes .= ' has_text_color';
+	$_atts['class'] .= ' has_text_color';
 }
 
 // Fallback since version 7.1
 if ( ! empty( $align ) ) {
-	$classes .= ' align_' . $align;
+	$_atts['class'] .= ' align_' . $align;
 }
 
 // Link
@@ -39,7 +47,7 @@ if ( $link_type === 'none' ) {
 } elseif ( $link_type === 'post' ) {
 
 	// Terms of selected taxonomy in Grid
-	if ( $us_elm_context == 'grid_term' ) {
+	if ( $us_elm_context == 'grid' AND $us_grid_object_type == 'term' ) {
 		global $us_grid_term;
 		$link_atts = ' href="' . get_term_link( $us_grid_term ) . '"';
 	} else {
@@ -59,15 +67,22 @@ if ( $link_type === 'none' ) {
 }
 
 // Force "Open in a new tab" attributes
-if ( $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
+if ( ! empty( $link_atts ) AND $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
 	$link_atts .= ' target="_blank" rel="noopener nofollow"';
 }
 
+// Apply filters to text
+$text = us_replace_dynamic_value( $text, $us_elm_context, $us_grid_object_type );
 $text = wptexturize( $text );
 $text = strip_tags( $text, '<br>' );
 
+// Add placeholder aria-label for Accessibility
+if ( $text === '' AND ! empty( $icon ) ) {
+	$link_atts .= ' aria-label="' . esc_attr( $icon ) . '"';
+}
+
 // Output the element
-$output = '<' . $tag . ' class="w-text' . $classes . '"' . $el_id . '>';
+$output = '<' . $tag . ' ' . us_implode_atts( $_atts ) . '>';
 if ( ! empty( $link_atts ) ) {
 	$output .= '<a class="w-text-h"' . $link_atts . '>';
 } else {

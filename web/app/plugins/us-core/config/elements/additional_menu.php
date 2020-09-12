@@ -87,6 +87,7 @@ return array(
 		'main_color_bg' => array(
 			'title' => __( 'Menu Item Background', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'std' => 'rgba(0,0,0,0.1)',
 			'cols' => 2,
 			'context' => array( 'shortcode' ),
@@ -96,6 +97,7 @@ return array(
 		'main_color_text' => array(
 			'title' => __( 'Menu Item Text', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'with_gradient' => FALSE,
 			'std' => 'inherit',
 			'cols' => 2,
@@ -105,6 +107,7 @@ return array(
 		'main_color_bg_hover' => array(
 			'title' => __( 'Menu Item Background on hover', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'std' => '',
 			'cols' => 2,
 			'context' => array( 'shortcode' ),
@@ -114,6 +117,7 @@ return array(
 		'main_color_text_hover' => array(
 			'title' => __( 'Menu Item Text on hover', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'with_gradient' => FALSE,
 			'std' => '',
 			'cols' => 2,
@@ -123,6 +127,7 @@ return array(
 		'main_color_bg_active' => array(
 			'title' => __( 'Active Menu Item Background', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'std' => '',
 			'cols' => 2,
 			'context' => array( 'shortcode' ),
@@ -132,6 +137,7 @@ return array(
 		'main_color_text_active' => array(
 			'title' => __( 'Active Menu Item Text', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'with_gradient' => FALSE,
 			'std' => '',
 			'cols' => 2,

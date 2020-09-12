@@ -20,7 +20,6 @@ $classes = isset( $classes ) ? $classes : '';
 if ( us_design_options_has_property( $css, 'color' ) ) {
 	$classes .= ' has_text_color';
 }
-
 if ( ! empty( $el_class ) ) {
 	$classes .= ' ' . $el_class;
 }

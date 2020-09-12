@@ -16,8 +16,7 @@ if ( is_numeric( $sidebar_id ) ) {
 	}
 }
 
-$is_page_blocks_enabled = us_get_option( 'enable_page_blocks_for_sidebars', 0 );
-if ( $is_page_blocks_enabled ) {
+if ( $is_page_blocks_enabled = us_get_option( 'enable_page_blocks_for_sidebars', 0 ) ) {
 	$page_block_id = us_get_page_area_id( 'sidebar' );
 	$page_block = get_post( $page_block_id );
 	us_open_wp_query_context();
@@ -103,7 +102,11 @@ if ( $is_display_sidebar ) {
 		} elseif ( is_singular( 'us_portfolio' ) ) {
 			$post_type = 'portfolio'; // force "portfolio" suffix to avoid migration from old theme options
 		} elseif ( is_singular( 'tribe_events' ) ) {
-			$post_type = 'tribe_events'; // force "tribe_events" suffix cause The Events Calendar returns incorrect type
+			$post_type = 'tribe_events'; // force "tribe_*" suffix cause The Events Calendar always returns "page" type
+		} elseif ( is_singular( 'tribe_venue' ) ) {
+			$post_type = 'tribe_venue';
+		} elseif ( is_singular( 'tribe_organizer' ) ) {
+			$post_type = 'tribe_organizer';
 		} else {
 			$post_type = get_post_type();
 		}
@@ -160,7 +163,8 @@ if ( $is_display_sidebar ) {
 
 	// Specific page
 	if ( is_singular() ) {
-		$postID = get_the_ID();
+		$postID = get_queried_object_id();
+
 		if ( $postID AND metadata_exists( 'post', $postID, 'us_sidebar_pos' ) AND usof_meta( 'us_sidebar_id', $postID ) !== '__defaults__' ) {
 			$position = usof_meta( 'us_sidebar_pos', $postID );
 		}

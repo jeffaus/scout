@@ -80,22 +80,15 @@ if ( $items_quantity < 1 ) {
 if ( in_array( $post_type, array_keys( us_grid_available_post_types( TRUE ) ) ) ) {
 	$query_args['post_type'] = explode( ',', $post_type );
 
-	// Posts from selected taxonomies
-	$known_post_type_taxonomies = us_grid_available_taxonomies();
-	if ( ! empty( $known_post_type_taxonomies[ $post_type ] ) ) {
-		foreach ( $known_post_type_taxonomies[ $post_type ] as $taxonomy ) {
-			$_taxonomy = str_replace( '-', '_', $taxonomy );
-			if ( ! empty( ${'taxonomy_' . $_taxonomy} ) ) {
-				if ( ! isset( $query_args['tax_query'] ) ) {
-					$query_args['tax_query'] = array();
-				}
-				$query_args['tax_query'][] = array(
-					'taxonomy' => $taxonomy,
-					'field' => 'slug',
-					'terms' => explode( ',', ${'taxonomy_' . $_taxonomy} ),
-				);
-			}
-		}
+	$atts = ! empty( $atts ) ? $atts : array();
+	if ( empty( $atts[ 'post_type' ] ) ) {
+		$atts[ 'post_type' ] = $post_type;
+	}
+
+	// Get selected taxonomies for $query_args
+	$selected_taxonomies = us_grid_get_selected_taxonomies( $atts );
+	if ( is_array( $selected_taxonomies ) AND ! empty( $selected_taxonomies ) ) {
+		$query_args = array_merge( $query_args, $selected_taxonomies );
 	}
 
 	// Media attachments should have some differ arguments
@@ -132,14 +125,17 @@ if ( in_array( $post_type, array_keys( us_grid_available_post_types( TRUE ) ) ) 
 			'taxonomy' => $filter_taxonomy_name,
 			'number' => 100,
 		);
-		if ( ! empty( ${'taxonomy_' . $filter_taxonomy_name} ) ) {
-			$terms_args['slug'] = explode( ',', ${'taxonomy_' . $filter_taxonomy_name} );
+
+		// When choosing taxonomies in the settings, we display only the selected
+		if ( ! empty( $atts[ 'taxonomy_' . $filter_taxonomy_name ] ) ) {
+			$terms_args['slug'] = explode( ',', $atts[ 'taxonomy_' . $filter_taxonomy_name ] );
 			if ( is_user_logged_in() ) {
 				// for logged in users, need to show private posts
 				$terms_args['hide_empty'] = FALSE;
 			}
-			$filter_default_taxonomies = ${'taxonomy_' . $filter_taxonomy_name};
+			$filter_default_taxonomies = $atts[ 'taxonomy_' . $filter_taxonomy_name ];
 		}
+
 		$filter_taxonomies = get_terms( $terms_args );
 		if ( is_user_logged_in() ) {
 			// show private posts, but exclude empty posts
@@ -163,12 +159,17 @@ if ( in_array( $post_type, array_keys( us_grid_available_post_types( TRUE ) ) ) 
 				}
 			}
 		}
-		if ( isset( $filter_show_all ) AND ! $filter_show_all AND ! empty( $filter_taxonomies[0] ) ) {
+		if (
+			isset( $filter_show_all )
+			AND ! $filter_show_all
+			AND ! empty( $filter_taxonomies[0] )
+			AND $filter_taxonomies[0] instanceof WP_Term
+		) {
 			$query_args['tax_query'] = array(
 				array(
 					'taxonomy' => $filter_taxonomy_name,
 					'field' => 'slug',
-					'terms' => $filter_taxonomies[0],
+					'terms' => $filter_taxonomies[0]->slug,
 				),
 			);
 		}
@@ -215,7 +216,7 @@ if ( in_array( $post_type, array_keys( us_grid_available_post_types( TRUE ) ) ) 
 	$upsell_ids = get_post_meta( $current_post_id, '_upsell_ids', TRUE );
 	if ( empty( $upsell_ids ) ) {
 		// We will pass a negative number to reject random goods
-		$upsell_ids = array( -1 );
+		$upsell_ids = array( - 1 );
 	}
 	$query_args['post_type'] = array( 'product', 'product_variation' );
 	$query_args['post__in'] = (array) $upsell_ids;
@@ -257,6 +258,7 @@ if ( in_array( $post_type, array_keys( us_grid_available_post_types( TRUE ) ) ) 
 	if ( $post_type == 'current_child_terms' ) {
 		if ( ! is_tag() AND ! is_category() AND ! is_tax() ) {
 			us_grid_stop_loop( FALSE );
+
 			return;
 		}
 		$current_term = get_queried_object();
@@ -267,6 +269,7 @@ if ( in_array( $post_type, array_keys( us_grid_available_post_types( TRUE ) ) ) 
 			$parent = $current_term->term_id;
 		}
 	}
+
 	if ( $terms_orderby != 'rand' ) {
 		$terms_args_query = array(
 			'taxonomy' => $related_taxonomy,
@@ -282,6 +285,7 @@ if ( in_array( $post_type, array_keys( us_grid_available_post_types( TRUE ) ) ) 
 		if ( $post_type == 'ids_terms' ) {
 			if ( empty( $ids_terms ) ) {
 				us_grid_stop_loop();
+
 				return;
 			} else {
 				if ( $terms_orderby == 'menu_order' ) {
@@ -302,6 +306,7 @@ if ( in_array( $post_type, array_keys( us_grid_available_post_types( TRUE ) ) ) 
 		if ( $post_type == 'ids_terms' ) {
 			if ( empty( $ids_terms ) ) {
 				us_grid_stop_loop();
+
 				return;
 			} else {
 				$ids_terms = array_map( 'intval', explode( ',', $ids_terms ) );
@@ -317,8 +322,8 @@ if ( in_array( $post_type, array_keys( us_grid_available_post_types( TRUE ) ) ) 
 		$terms_query = "
 			SELECT
 				t.*, tt.*
-			FROM $wpdb->terms AS t
-			LEFT JOIN $wpdb->term_taxonomy AS tt
+			FROM {$wpdb->terms} AS t
+			INNER JOIN {$wpdb->term_taxonomy} AS tt
 				ON t.term_id = tt.term_id
 			WHERE
 				tt.taxonomy = %s
@@ -334,15 +339,28 @@ if ( in_array( $post_type, array_keys( us_grid_available_post_types( TRUE ) ) ) 
 
 	// When taxonomy doesn't exist, it returns WP_Error object, so we need to use empty array for further work
 	if ( ! is_wp_error( $terms_raw ) ) {
+
+		$ids_terms_map = ( $post_type == 'ids_terms' AND ! empty( $ids_terms ) )
+			? array_flip( array_map( 'trim', explode( ',', $ids_terms ) ) )
+			: array();
+
 		$available_taxonomy = us_get_taxonomies( TRUE, FALSE );
 		foreach ( $terms_raw as $key => $term_item ) {
-
 			// if taxonomy of this term is not available, remove it
 			if ( is_object( $term_item ) ) {
 				if ( in_array( $term_item->taxonomy, array_keys( $available_taxonomy ) ) ) {
-					$terms[] = $term_item;
+					if ( isset( $ids_terms_map[ $term_item->term_id ] ) ) {
+						$terms[ $ids_terms_map[ $term_item->term_id ] ] = $term_item;
+					} else {
+						$terms[] = $term_item;
+					}
 				}
 			}
+		}
+
+		// Apply sorting if it is not by title (name)
+		if ( $terms_orderby !== 'name' ) {
+			ksort( $terms );
 		}
 	}
 
@@ -410,7 +428,12 @@ switch ( $orderby ) {
 		$query_args['orderby'] = array( 'post__in' => ( $order_invert ) ? 'DESC' : 'ASC' );
 		break;
 	case 'menu_order':
-		$query_args['orderby'] = array( 'menu_order' => ( $order_invert ) ? 'DESC' : 'ASC' );
+		// Sort posts order for ids
+		if ( $post_type === 'ids' AND ! empty( $query_args[ 'post__in' ] ) ) {
+			$query_args[ 'orderby' ] = 'post__in';
+		} else {
+			$query_args['orderby'] = array( 'menu_order' => ( $order_invert ) ? 'DESC' : 'ASC' );
+		}
 		break;
 	case 'rand':
 		$query_args['orderby'] = 'RAND(' . rand() . ')';
@@ -446,14 +469,14 @@ switch ( $orderby ) {
 		if ( class_exists( 'Post_Views_Counter' ) ) {
 			$query_args = array_merge(
 				$query_args, array(
-				// required by PVC
-				'suppress_filters' => FALSE,
-				'orderby' => 'post_views',
-				'fields' => '',
-				'views_query' => array(
-					'hide_empty' => FALSE,
-				),
-			)
+					// required by PVC
+					'suppress_filters' => FALSE,
+					'orderby' => 'post_views',
+					'fields' => '',
+					'views_query' => array(
+						'hide_empty' => FALSE,
+					),
+				)
 			);
 		} else {
 			$query_args['orderby'] = array( $orderby => $order );
@@ -478,20 +501,20 @@ if (
 
 		// Views for last day
 		case 'post_views_counter_day':
-			unset( $views_query[ 'week' ] );
+			unset( $views_query['week'] );
 			break;
 
 		// Views for last week
 		case 'post_views_counter_week':
-			unset( $views_query[ 'day' ] );
+			unset( $views_query['day'] );
 			break;
 
 		// Views for last month
 		case 'post_views_counter_month':
-			unset( $views_query[ 'day' ], $views_query[ 'week' ] );
+			unset( $views_query['day'], $views_query['week'] );
 			break;
 	}
-	$query_args[ 'views_query' ] = array_merge( $query_args[ 'views_query' ], $views_query );
+	$query_args['views_query'] = array_merge( $query_args['views_query'], $views_query );
 
 	unset( $views_query );
 }
@@ -505,17 +528,22 @@ if ( $pagination == 'regular' ) {
 }
 
 // Extra arguments for WooCommerce products
-if ( class_exists( 'woocommerce' ) AND in_array(
-		$post_type, array(
+if (
+	class_exists( 'woocommerce' )
+	AND us_is_available_post_type( $post_type, array(
 		'product',
 		'product_upsells',
 		'product_crosssell',
-	)
-	) ) {
+	) )
+) {
+
 	$query_args['meta_query'] = array();
 
 	// Exclude out of stock products
-	if ( $exclude_items == 'out_of_stock' ) {
+	if (
+		$exclude_items == 'out_of_stock'
+		OR get_option( 'woocommerce_hide_out_of_stock_items', 'none' ) === 'yes'
+	) {
 		$query_args['meta_query'][] = array(
 			'key' => '_stock_status',
 			'value' => 'outofstock',
@@ -537,14 +565,33 @@ if ( class_exists( 'woocommerce' ) AND in_array(
 
 	// Show Featured products
 	if ( strpos( $products_include, 'featured' ) !== FALSE ) {
-		$tax_query_featured = array(
+		$query_args['tax_query'][] = array(
 			'taxonomy' => 'product_visibility',
 			'field' => 'name',
 			'terms' => 'featured',
 			'operator' => 'IN',
 		);
-		$query_args['tax_query'][] = $tax_query_featured;
 	}
+}
+
+// Exclude "Hidden" products
+if (
+	class_exists( 'woocommerce' )
+	AND (
+		$post_type == 'ids'
+		OR us_is_available_post_type( $post_type, array(
+			'product',
+			'product_upsells',
+			'product_crosssell',
+		) )
+	)
+) {
+	$query_args['tax_query'][] = array(
+		'taxonomy' => 'product_visibility',
+		'field' => 'slug',
+		'terms' => array( 'exclude-from-catalog' ),
+		'operator' => 'NOT IN',
+	);
 }
 
 // Exclude posts of previous grids on the same page
@@ -560,8 +607,9 @@ if ( $exclude_items == 'prev' ) {
 
 $query_args['posts_per_page'] = $items_quantity;
 
+
 // Reset query for using on archives
-if ( $post_type == 'current_query' ) {
+if ( us_is_available_post_type( $post_type, array( 'current_query' ) ) ) {
 	if ( is_tax( 'tribe_events_cat' ) OR is_post_type_archive( 'tribe_events' ) ) {
 		$the_content = apply_filters( 'the_content', get_the_content() );
 
@@ -581,18 +629,46 @@ if ( $post_type == 'current_query' ) {
 	}
 }
 
+// Default query_args created from grid settings
+$_default_query_args = array();
+if ( ! empty( $query_args ) ) {
+	foreach ( array( 'tax_query', 'meta_query' ) as $key ) {
+		if ( ! empty( $query_args[ $key ] ) ) {
+			$_default_query_args[ $key ] = $query_args[ $key ];
+		}
+	}
+}
+
 // Load Grid Listing template with given params
 $template_vars = array(
-	'query_args' => $query_args,
-	'terms' => $terms,
-	'us_grid_index' => $us_grid_index,
-	'us_grid_ajax_indexes' => $us_grid_ajax_indexes,
+	'_default_query_args' => $_default_query_args,
+	'_us_grid_post_type' => $post_type,
 	'classes' => $classes,
-	'post_id' => $post_id,
-	'filter_taxonomy_name' => $filter_taxonomy_name,
 	'filter_default_taxonomies' => $filter_default_taxonomies,
 	'filter_taxonomies' => $filter_taxonomies,
+	'filter_taxonomy_name' => $filter_taxonomy_name,
+	'post_id' => $post_id,
+	'terms' => $terms,
+	'us_grid_ajax_indexes' => $us_grid_ajax_indexes,
+	'us_grid_index' => $us_grid_index,
 );
+
+// Apply Grid Filter params
+global $us_context_layout, $_us_applied_filter_to_first_grid;
+if (
+	! is_archive() // For archives, the us_inject_grid_filter_to_archive_page() function will be used
+	AND $post_type != 'current_query'
+	AND $us_context_layout === 'main'
+	AND $shortcode_base != 'us_carousel'
+	AND empty( $filter_post )
+	AND is_null( $_us_applied_filter_to_first_grid )
+) {
+	// Use for all but archive pages
+	$_us_applied_filter_to_first_grid = TRUE;
+	us_apply_grid_filters( $post_id, $query_args );
+}
+
+$template_vars['query_args'] = $query_args;
 
 // Add default values for unset variables from Grid config
 $default_grid_params = us_shortcode_atts( array(), 'us_grid' );

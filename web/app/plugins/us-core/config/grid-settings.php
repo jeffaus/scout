@@ -105,12 +105,14 @@ return array(
 			'color_bg' => array(
 				'title' => __( 'Background Color', 'us' ),
 				'type' => 'color',
+				'clear_pos' => 'left',
 				'std' => '',
 				'classes' => 'clear_right',
 			),
 			'color_text' => array(
 				'title' => __( 'Text Color', 'us' ),
 				'type' => 'color',
+				'clear_pos' => 'left',
 				'with_gradient' => FALSE,
 				'std' => '',
 				'classes' => 'clear_right',

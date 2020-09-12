@@ -6,6 +6,8 @@
  * @filter us_config_widgets
  */
 
+global $pagenow;
+$us_is_widget_page = ( wp_doing_ajax() OR $pagenow == 'widgets.php' );
 $grid_templates_config = us_config( 'grid-templates', array(), TRUE );
 $us_grid_layout_list = us_array_merge(
 	array(
@@ -14,7 +16,7 @@ $us_grid_layout_list = us_array_merge(
 			'title' => __( 'Grid Layouts', 'us' ),
 		),
 	),
-	us_get_posts_titles_for( 'us_grid_layout' )
+	( $us_is_widget_page ? us_get_posts_titles_for( 'us_grid_layout' ) : array() )
 );
 
 $current_tmpl_group = '';
@@ -318,7 +320,7 @@ return array(
 				'custom_color' => array(
 					'type' => 'textfield',
 					'heading' => __( 'Custom Link Color', 'us' ),
-					'std' => '#1abc9c',
+					'std' => '#999',
 				),
 			)
 		),

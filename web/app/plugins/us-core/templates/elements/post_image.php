@@ -40,9 +40,10 @@ if ( us_design_options_has_property( $css, 'height' ) ) {
 }
 
 // Set Aspect Ratio values
+$ratio_helper = '';
 if ( $has_ratio ) {
 	$ratio_array = us_get_aspect_ratio_values( $ratio, $ratio_width, $ratio_height );
-	$_atts['style'] = 'padding-bottom:' . number_format( $ratio_array[1] / $ratio_array[0] * 100, 4 ) . '%';
+	$ratio_helper = '<div style="padding-bottom:' . number_format( $ratio_array[1] / $ratio_array[0] * 100, 4 ) . '%"></div>';
 	$_atts['class'] .= ' has_ratio';
 }
 
@@ -63,7 +64,9 @@ if ( isset( $_wp_additional_image_sizes[ $thumbnail_size ] ) AND $_wp_additional
 	$us_post_img_ratio = number_format( $_wp_additional_image_sizes[ $thumbnail_size ]['height'] / $_wp_additional_image_sizes[ $thumbnail_size ]['width'] * 100, 4 );
 }
 
-if ( $us_elm_context == 'grid_term' ) {
+global $us_grid_object_type;
+
+if ( $us_elm_context == 'grid' AND $us_grid_object_type == 'term' ) {
 	global $us_grid_term;
 } elseif ( $us_elm_context == 'shortcode' AND ( is_tax() OR is_tag() OR is_category() ) ) {
 	$us_grid_term = get_queried_object();
@@ -108,7 +111,7 @@ if ( $link === 'none' ) {
 }
 
 // Force "Open in a new tab" attributes
-if ( $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
+if ( ! empty( $link_atts ) AND $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
 	$link_atts .= ' target="_blank" rel="noopener nofollow"';
 }
 
@@ -141,6 +144,9 @@ if ( $_post_preview == '' AND $media_preview AND ! post_password_required() AND 
 		$postID = get_the_ID();
 		if ( $product_images = get_post_meta( $postID, '_product_image_gallery', TRUE ) ) {
 			$img_ids = explode( ',', get_post_thumbnail_id() . ',' . $product_images );
+
+			// Remove empty ids to avoid duplications in output
+			$img_ids = array_diff( $img_ids, array( '' ) );
 
 			foreach ( $img_ids as $key => $img_id ) {
 				$img_width = number_format( 100 / count( $img_ids ), 2 );
@@ -211,6 +217,7 @@ if ( $_post_preview == '' ) {
 }
 
 $output = '<div ' . us_implode_atts( $_atts ) . '>';
+$output .= $ratio_helper;
 if ( ! empty( $link_atts ) ) {
 	$output .= '<a' . $link_atts . ' aria-label="' . esc_attr( get_the_title() ) . '">';
 }

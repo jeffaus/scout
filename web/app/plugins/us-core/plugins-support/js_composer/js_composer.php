@@ -181,11 +181,13 @@ function us_vc_after_set_mode() {
 	do_action( 'us_after_js_composer_mappings' );
 }
 
-add_action( 'init', 'us_vc_init_shortcodes', 11 );
+add_action( 'wp_loaded', 'us_vc_init_shortcodes', 11 );
 function us_vc_init_shortcodes() {
 	if ( ! function_exists( 'vc_mode' ) OR ! function_exists( 'vc_map' ) OR ! function_exists( 'vc_remove_element' ) ) {
 		return;
 	}
+
+	global $pagenow;
 
 	$shortcodes_config = us_config( 'shortcodes', array(), TRUE );
 
@@ -213,7 +215,6 @@ function us_vc_init_shortcodes() {
 				'wrapper_end' => 'param_to_delete',
 				'heading' => 'param_to_delete',
 				'ult_param_heading' => 'ult_param_heading',
-				'autocomplete' => 'autocomplete',
 				'us_autocomplete' => 'us_autocomplete',
 				'us_grid_layout' => 'us_grid_layout',
 				'us_grouped_select' => 'us_grouped_select',
@@ -354,60 +355,82 @@ function us_vc_init_shortcodes() {
 				}
 			}
 
-			// Pass gradient option to deactivate it in certain inputs
-			if ( $param['type'] == 'color' AND isset( $param['with_gradient'] ) ) {
-				$vc_param['with_gradient'] = FALSE;
+			// US Color additional params
+			if ( $param['type'] == 'color' ) {
+				if ( isset( $param['clear_pos'] ) ) {
+					$vc_param['clear_pos'] = $param['clear_pos'];
+				}
+				if ( isset( $param['with_gradient'] ) ) {
+					$vc_param['with_gradient'] = FALSE;
+				}
+				if ( ! empty( $param['disable_dynamic_vars'] ) ) {
+					$vc_param['disable_dynamic_vars'] = TRUE;
+				}
 			}
 
 			return $vc_param;
 		}
 
-		// Adding theme elements maps
-		foreach ( $shortcodes_config['theme_elements'] as $elm_name ) {
-			$shortcode = 'us_' . $elm_name;
-			$elm = us_config( 'elements/' . $elm_name );
+		// Receive data only on the edit page or create a record
+		if (
+			wp_doing_ajax()
+			OR in_array( $pagenow, array( 'post.php', 'post-new.php' ) )
+			OR vc_is_page_editable()
+		) {
+			foreach ( $shortcodes_config['theme_elements'] as $elm_name ) {
+				$shortcode = 'us_' . $elm_name;
+				$elm = us_config( 'elements/' . $elm_name );
 
-			$vc_elm = array(
-				'name' => isset( $elm['title'] ) ? $elm['title'] : $shortcode,
-				'base' => $shortcode,
-				'description' => isset( $elm['description'] ) ? $elm['description'] : '',
-				'class' => 'elm-' . $shortcode,
-				'category' => isset( $elm['category'] ) ? $elm['category'] : us_translate( 'Content', 'js_composer' ),
-				'icon' => isset( $elm['icon'] ) ? $elm['icon'] : '',
-				'weight' => 370, // all elements go after "Text Block" element
-				'admin_enqueue_js' => isset( $elm['admin_enqueue_js'] ) ? $elm['admin_enqueue_js'] : NULL,
-				'js_view' => isset( $elm['js_view'] ) ? $elm['js_view'] : NULL,
-				'as_parent' => isset( $elm['as_parent'] ) ? $elm['as_parent'] : NULL,
-				'show_settings_on_create' => isset( $elm['show_settings_on_create'] ) ? $elm['show_settings_on_create'] : NULL,
-				'params' => array(),
-			);
+				$vc_elm = array(
+					'name' => isset( $elm['title'] ) ? $elm['title'] : $shortcode,
+					'base' => $shortcode,
+					'description' => isset( $elm['description'] ) ? $elm['description'] : '',
+					'class' => 'elm-' . $shortcode,
+					'category' => isset( $elm['category'] ) ? $elm['category'] : us_translate( 'Content', 'js_composer' ),
+					'icon' => isset( $elm['icon'] ) ? $elm['icon'] : '',
+					'weight' => 370, // all elements go after "Text Block" element
+					'admin_enqueue_js' => isset( $elm['admin_enqueue_js'] ) ? $elm['admin_enqueue_js'] : NULL,
+					'js_view' => isset( $elm['js_view'] ) ? $elm['js_view'] : NULL,
+					'as_parent' => isset( $elm['as_parent'] ) ? $elm['as_parent'] : NULL,
+					'show_settings_on_create' => isset( $elm['show_settings_on_create'] ) ? $elm['show_settings_on_create'] : NULL,
+					'params' => array(),
+				);
 
-			if ( isset( $elm['params'] ) AND is_array( $elm['params'] ) ) {
-				foreach ( $elm['params'] as $param_name => &$param ) {
-					if ( isset( $param['context'] ) AND is_array( $param['context'] ) AND ! in_array( 'shortcode', $param['context'] ) ) {
-						continue;
+				if ( isset( $elm['params'] ) AND is_array( $elm['params'] ) ) {
+					foreach ( $elm['params'] as $param_name => &$param ) {
+						if (
+							isset( $param['context'] )
+							AND is_array( $param['context'] )
+							AND ! in_array( 'shortcode', $param['context'] )
+							OR (
+								isset( $param['place_if'] )
+								AND $param['place_if'] === FALSE
+							)
+						) {
+							continue;
+						}
+						$vc_param = us_vc_param( $param_name, $param );
+						if ( $vc_param != NULL ) {
+							$vc_elm['params'][] = $vc_param;
+						}
 					}
-					$vc_param = us_vc_param( $param_name, $param );
-					if ( $vc_param != NULL ) {
-						$vc_elm['params'][] = $vc_param;
+					unset( $param );
+				}
+
+				if ( isset( $elm['deprecated_params'] ) AND is_array( $elm['deprecated_params'] ) ) {
+					foreach ( $elm['deprecated_params'] as $param_name ) {
+						$vc_elm['params'][] = array(
+							'type' => 'textfield',
+							'param_name' => $param_name,
+							'std' => '',
+							'edit_field_class' => 'hidden',
+						);
 					}
 				}
-				unset( $param );
+
+				vc_map( $vc_elm );
+
 			}
-
-			if ( isset( $elm['deprecated_params'] ) AND is_array( $elm['deprecated_params'] ) ) {
-				foreach ( $elm['deprecated_params'] as $param_name ) {
-					$vc_elm['params'][] = array(
-						'type' => 'textfield',
-						'param_name' => $param_name,
-						'std' => '',
-						'edit_field_class' => 'hidden',
-					);
-				}
-			}
-
-			vc_map( $vc_elm );
-
 		}
 
 		// Include custom map files based on shortcodes name. Only for vc_ shortcodes
@@ -461,14 +484,17 @@ if ( ! function_exists( 'us_vc_shortcodes_custom_css_class' ) ) {
 	 *
 	 * @return string
 	 */
-	function us_vc_shortcodes_custom_css_class( $class, $shortcode_base, $atts ) {
-
+	function us_vc_shortcodes_custom_css_class( $class, $shortcode_base, $atts = array() ) {
 		$shortcodes_config = us_config( 'shortcodes', array(), TRUE );
 		$shortcodes_with_design_options = $shortcodes_config['added_design_options'];
 		if ( in_array( $shortcode_base, $shortcodes_with_design_options )
 			AND function_exists( 'us_get_design_css_class' )
 			AND ( ! empty( $atts['css'] ) ) ) {
 			$class .= ' ' . us_get_design_css_class( $atts['css'] );
+		}
+
+		if ( ! empty( $atts['css'] ) AND us_design_options_has_property( $atts['css'], 'border-radius' ) ) {
+			$class .= ' has_border_radius';
 		}
 
 		return $class;
@@ -478,6 +504,12 @@ if ( ! function_exists( 'us_vc_shortcodes_custom_css_class' ) ) {
 add_action( 'current_screen', 'us_disable_post_type_specific_elements' );
 function us_disable_post_type_specific_elements() {
 	if ( function_exists( 'get_current_screen' ) ) {
+		global $pagenow;
+		// Receive data only on the edit page or create a record
+		if ( wp_doing_ajax() OR ! in_array( $pagenow, array( 'post.php', 'post-new.php' ) ) ) {
+			return;
+		}
+
 		$screen = get_current_screen();
 		$shortcodes_config = us_config( 'shortcodes', array(), TRUE );
 
@@ -525,144 +557,139 @@ function us_vc_init_vendor_woocommerce() {
 	remove_action( 'wp_enqueue_scripts', 'vc_woocommerce_add_to_cart_script' );
 }
 
-// Add autocomplete for us_grid
-add_action( 'vc_after_mapping', 'us_grid_map_shortcodes' );
-function us_grid_map_shortcodes() {
-	add_filter( 'vc_autocomplete_us_carousel_ids_callback', 'us_grid_ids_autocomplete_suggester', 10, 1 );
-	add_filter( 'vc_autocomplete_us_grid_ids_callback', 'us_grid_ids_autocomplete_suggester', 10, 1 );
-	function us_grid_ids_autocomplete_suggester( $query ) {
-		global $wpdb;
-		$item_id = (int) $query;
+if ( ! function_exists( 'us_get_post_ids_for_autocomplete' ) ) {
+	/**
+	 * Get a list of records for an us_autocomplete WPB
+	 *
+	 * @param integer $limit The limit
+	 * @return array
+	 */
+	function us_get_post_ids_for_autocomplete( $limit = 50 ) {
 
-		// Fetching the available post types to choose from
-		$available_posts_types = us_grid_available_post_types();
-		if ( count( $available_posts_types ) > 0 ) {
-			$available_posts_types = array_keys( $available_posts_types );
-			$where_post_type = " a.post_type IN ('" . implode( "','", $available_posts_types ) . "') AND ";
-		} else {
-			$where_post_type = "";
+		// US Autocomplete options
+		$search = isset( $_GET['search'] ) ? $_GET['search'] : '';
+		$offset = (int) isset( $_GET['offset'] ) ? intval( $_GET['offset'] ) : 0;
+
+		// Remove media from post_type
+		$post_type = array_keys( us_grid_available_post_types() );
+		if ( ( $index = array_search( 'attachment', $post_type ) ) !== FALSE ) {
+			unset( $post_type[ $index ] );
 		}
 
-		$post_meta_infos = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT a.ID AS id, a.post_title AS title, a.post_type AS post_type
-					FROM {$wpdb->posts} AS a
-					WHERE post_status in ( 'publish', 'private' ) AND {$where_post_type} ( a.ID = '%d' OR a.post_title LIKE '%%%s%%' )", $item_id > 0 ? $item_id : - 1, stripslashes( $query )
-			), ARRAY_A
+		$query_args = array(
+			'post_type' => $post_type,
+			'posts_per_page' => $limit,
+			'post_status' => 'any',
+			'suppress_filters' => 0,
+			'offset' => $offset,
 		);
 
-		$results = array();
-		if ( ! empty( $post_meta_infos ) AND is_array( $post_meta_infos ) ) {
-			foreach ( $post_meta_infos as $value ) {
-				$data = array();
-				$data['value'] = $value['id'];
-				$post_type = get_post_type_object( $value['post_type'] );
+		// Get selected params
+		if ( strpos( $search, 'params:' ) === 0 ) {
+			$params = explode( ',', substr( $search, strlen( 'params:' ) ) );
+			$query_args['post__in'] = array_map( 'intval', $params );
+			$search = '';
+		}
 
-				if ( strlen( $value['title'] ) > 0 ) {
-					$post_title = esc_attr( $value['title'] );
-				} else {
-					$post_title = us_translate( '(no title)' );
-				}
-				$post_title .= ' <i>' . $post_type->labels->singular_name . '</i>';
-				$data['label'] = $post_title;
-				$results[] = $data;
+		if ( ! empty( $search ) ) {
+			$query_args['s'] = $search;
+		}
+
+		$results = array();
+		foreach ( get_posts( $query_args ) as $post ) {
+			$results[ $post->ID ] = strlen( $post->post_title ) > 0
+				? esc_attr( $post->post_title )
+				: us_translate( '(no title)' );
+
+			if ( $post_type = get_post_type_object( $post->post_type ) ) {
+				$results[ $post->ID ] .= sprintf( ' <i>%s</i>', $post_type->labels->singular_name );
 			}
 		}
 
 		return $results;
 	}
 
-	add_filter( 'vc_autocomplete_us_carousel_ids_render', 'us_grid_ids_render', 10, 1 );
-	add_filter( 'vc_autocomplete_us_grid_ids_render', 'us_grid_ids_render', 10, 1 );
-	function us_grid_ids_render( $query ) {
-		$query = trim( $query['value'] ); // get value from requested
-		if ( ! empty( $query ) ) {
-			// get post
-			$post_object = get_post( (int) $query );
-			if ( is_object( $post_object ) ) {
-				$post_type = get_post_type_object( $post_object->post_type );
-
-				if ( strlen( $post_object->post_title ) > 0 ) {
-					$post_title = esc_attr( $post_object->post_title );
-				} else {
-					$post_title = us_translate( '(no title)' );
-				}
-				$post_title = esc_attr( $post_title );
-				$post_title .= ' <i>' . $post_type->labels->singular_name . '</i>';
-
-				$post_id = $post_object->ID;
-				$data = array();
-				$data['value'] = $post_id;
-				$data['label'] = $post_title;
-
-				return ! empty( $data ) ? $data : FALSE;
-			}
-
-			return FALSE;
+	/**
+	 * AJAX Request Handler
+	 */
+	function us_ajax_get_post_ids_for_autocomplete() {
+		if ( ! check_ajax_referer( 'us_ajax_get_post_ids_for_autocomplete', '_nonce', FALSE ) ) {
+			wp_send_json_error(
+				array(
+					'message' => us_translate( 'An error has occurred. Please reload the page and try again.' ),
+				)
+			);
+			wp_die();
 		}
-
-		return FALSE;
+		wp_send_json_success( array( 'items' => us_get_post_ids_for_autocomplete() ) );
+		wp_die();
 	}
+	add_action( 'wp_ajax_us_get_post_ids_for_autocomplete', 'us_ajax_get_post_ids_for_autocomplete', 1 );
+}
 
-	// Autocomplete for Grid Manually terms
-	add_filter( 'vc_autocomplete_us_carousel_ids_terms_callback', 'us_grid_ids_terms_autocomplete_suggester', 10, 3 );
-	add_filter( 'vc_autocomplete_us_grid_ids_terms_callback', 'us_grid_ids_terms_autocomplete_suggester', 10, 3 );
-	function us_grid_ids_terms_autocomplete_suggester( $query ) {
-		global $wpdb;
-		$item_id = (int) $query;
+if ( ! function_exists( 'us_get_term_ids_for_autocomplete' ) ) {
+	/**
+	 * Get a list of records for an a us_autocomplete WPB
+	 *
+	 * @param integer $limit The limit
+	 * @return array
+	 */
+	function us_get_term_ids_for_autocomplete( $limit = 50 ) {
+
+		// US Autocomplete options
+		$search = isset( $_GET['search'] ) ? $_GET['search'] : '';
+		$offset = isset( $_GET['offset'] ) ? intval( $_GET['offset'] ) : 0;
+
 		$taxonomies = us_get_taxonomies( TRUE, FALSE );
-		$taxonomies_str = "'" . implode( "','", array_keys( $taxonomies ) ) . "'";
 
-		$terms_infos = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT a.name AS name,a.slug AS slug, a.term_id as term_id, b.taxonomy as taxonomy
-					FROM {$wpdb->terms} AS a
-					LEFT JOIN {$wpdb->term_taxonomy} b on (a.term_id = b.term_id )
-					WHERE  ( a.term_id = '%d' OR a.name LIKE '%%%s%%' ) AND b.taxonomy in ( {$taxonomies_str} )", $item_id > 0 ? $item_id : - 1, stripslashes( $query )
-			), ARRAY_A
+		$query_args = array(
+			'taxonomy' => array_keys( $taxonomies ),
+			'hide_empty' => FALSE,
+			'number' => $limit,
+			'offset' => $offset,
 		);
 
+		// Get selected params
+		if ( strpos( $search, 'params:' ) === 0 ) {
+			$params = explode( ',', substr( $search, strlen( 'params:' ) ) );
+			$query_args['include'] = array_map( 'intval', $params );
+			$search = '';
+		}
+
+		if ( ! empty( $search ) ) {
+			$query_args['name__like'] = $search;
+		}
+
 		$results = array();
-		if ( ! empty( $terms_infos ) AND is_array( $terms_infos ) ) {
-			foreach ( $terms_infos as $value ) {
-				$data = array();
-				$data['value'] = $value['term_id'];
+		foreach ( get_terms( $query_args ) as $term ) {
+			$results[ $term->term_id ] = strlen( $term->name ) > 0
+				? esc_attr( $term->name )
+				: us_translate( '(no title)' );
 
-				if ( strlen( $value['name'] ) > 0 ) {
-					$term_name = esc_attr( $value['name'] ) . ' <i>' . $taxonomies [ $value['taxonomy'] ] . '</i>';
-				} else {
-					$term_name = us_translate( '(no title)' );
-				}
-
-				$data['label'] = $term_name;
-				$results[] = $data;
+			if ( ! empty( $taxonomies [ $term->taxonomy ] ) ) {
+				$results[ $term->term_id ] .= sprintf( ' <i>%s</i>', $taxonomies [ $term->taxonomy ] );
 			}
 		}
 
 		return $results;
 	}
 
-	add_filter( 'vc_autocomplete_us_carousel_ids_terms_render', 'us_grid_ids_terms_render', 10, 2 );
-	add_filter( 'vc_autocomplete_us_grid_ids_terms_render', 'us_grid_ids_terms_render', 10, 2 );
-	function us_grid_ids_terms_render( $query ) {
-		$query = trim( $query['value'] ); // get value from requested
-		if ( ! empty( $query ) ) {
-			$taxonomies = us_get_taxonomies( TRUE, FALSE );
-			$term_object = get_term( (int) $query );
-			if ( $term_object ) {
-
-				$data['value'] = $term_object->term_id;
-				$data['label'] = esc_attr( $term_object->name ). ' <i>' . $taxonomies [ $term_object->taxonomy ] . '</i>';
-
-				return ! empty( $data ) ? $data : FALSE;
-			}
-
-			return FALSE;
+	/**
+	 * AJAX Request Handler
+	 */
+	function us_ajax_get_term_ids_for_autocomplete() {
+		if ( ! check_ajax_referer( 'us_ajax_get_term_ids_for_autocomplete', '_nonce', FALSE ) ) {
+			wp_send_json_error(
+				array(
+					'message' => us_translate( 'An error has occurred. Please reload the page and try again.' ),
+				)
+			);
+			wp_die();
 		}
-
-		return FALSE;
+		wp_send_json_success( array( 'items' => us_get_term_ids_for_autocomplete() ) );
+		wp_die();
 	}
-
+	add_action( 'wp_ajax_us_get_term_ids_for_autocomplete', 'us_ajax_get_term_ids_for_autocomplete', 1 );
 }
 
 if ( ! function_exists( 'us_VC_fixPContent' ) ) {
@@ -794,6 +821,7 @@ if ( ! function_exists( 'us_vc_field_autocomplete' ) ) {
 			),
 			'classes' => 'wpb_vc_param_value',
 			'multiple' => (bool) us_arr_path( $settings, 'settings.multiple', FALSE ),
+			'sortable' => (bool) us_arr_path( $settings, 'settings.sortable', FALSE ),
 			'options' => array_map( 'trim', array_flip( $settings['value'] ) ),
 			'value' => $values,
 		) );
@@ -839,7 +867,6 @@ if ( wp_doing_ajax() AND ! function_exists( 'us_get_taxonomies_autocomplete' ) )
 		$response['items'] = us_get_terms_by_slug( $slug, $offset, 15, $search_text );
 
 		wp_send_json_success( $response );
-		wp_die();
 	}
 }
 
@@ -960,6 +987,7 @@ if ( ! function_exists( 'us_vc_field_color' ) ) {
 						'value' => $value,
 						'field' => array(
 							'std' => $settings['std'],
+							'clear_pos' => isset( $settings['clear_pos'] ) ? $settings['clear_pos'] : NULL,
 							'with_gradient' => isset( $settings['with_gradient'] ) ? FALSE : NULL,
 						),
 					)
@@ -1059,8 +1087,8 @@ if ( ! function_exists( 'us_vc_field_grid_layout' ) ) {
 
 	function us_vc_field_grid_layout( $settings, $value ) {
 		$templates_config = us_config( 'grid-templates', array(), TRUE );
-
 		$custom_layouts = array_flip( us_get_posts_titles_for( 'us_grid_layout' ) );
+
 		ob_start();
 		?>
 		<div class="us-grid-layout">
@@ -1234,7 +1262,6 @@ if ( wp_doing_ajax() ) {
 			}
 
 			wp_send_json_success( $response );
-			wp_die();
 		}
 	}
 }
@@ -1287,7 +1314,7 @@ function us_add_page_shortcodes_custom_css( $id ) {
 
 if ( ! function_exists( 'us_get_post_metadata_for_custom_css' ) ) {
 	/**
-	 * Filter for checking custom css code in WPB page settings
+	 * Filter for preventing double output of Page's Custom CSS
 	 *
 	 * @param null $value
 	 * @param int $object_id
@@ -1296,52 +1323,61 @@ if ( ! function_exists( 'us_get_post_metadata_for_custom_css' ) ) {
 	 * @return mixed
 	 */
 	function us_get_post_metadata_for_custom_css( $value, $object_id, $meta_key, $single ) {
-		if ( $meta_key === '_wpb_post_custom_css' ) {
-			global $us_page_custom_css_ids, $wpdb;
-			if ( ! isset( $us_page_custom_css_ids ) ) {
-				$us_page_custom_css_ids = array();
-			}
-			if ( array_key_exists( $object_id, $us_page_custom_css_ids ) ) {
-				if ( $single ) {
-					return '';
-				} else {
-					return array( '' );
-				}
-			}
-			$meta_cache = wp_cache_get( $object_id, 'post_meta' );
-			if ( ! empty( $meta_cache[ $meta_key ] ) ) {
-				$value = $meta_cache[ $meta_key ];
-			} else {
-				// We take the value from the base to prevent looping
-				$value = $wpdb->get_col(
-					"
-					SELECT meta_value
-					FROM {$wpdb->postmeta}
-					WHERE
-						post_id = {$object_id}
-						AND meta_key = '{$meta_key}'
-					LIMIT 1;
-				"
-				);
-			}
-			$value = ! empty( $value[0] )
-				? $value[0]
-				: '';
-			$hash = hash( 'crc32', $value );
-			if ( in_array( $hash, $us_page_custom_css_ids ) ) {
-				if ( $single ) {
-					return '';
-				} else {
-					return array( '' );
-				}
-			}
-			$us_page_custom_css_ids[ $object_id ] = $hash;
+		// Returning unchanged value for all meta except _wpb_post_custom_css
+		if ( $meta_key !== '_wpb_post_custom_css' ) {
+			return $value;
+		}
+
+		global $us_page_custom_css_ids, $wpdb;
+		if ( ! isset( $us_page_custom_css_ids ) ) {
+			$us_page_custom_css_ids = array();
+		}
+		// Checking if we have already received Custom CSS for this Page by it's ID...
+		// and returning empty value in such case
+		if ( array_key_exists( $object_id, $us_page_custom_css_ids ) ) {
 			if ( $single ) {
-				return $value;
+				return '';
 			} else {
-				return array( $value );
+				return array( '' );
 			}
 		}
+		$meta_cache = wp_cache_get( $object_id, 'post_meta' );
+		if ( ! empty( $meta_cache[ $meta_key ] ) ) {
+			$value = $meta_cache[ $meta_key ];
+		} else {
+			// Taking the value of meta directly from database to prevent looping
+			$value = $wpdb->get_col(
+				"
+				SELECT meta_value
+				FROM {$wpdb->postmeta}
+				WHERE
+					post_id = {$object_id}
+					AND meta_key = '{$meta_key}'
+				LIMIT 1;
+			"
+			);
+		}
+		$value = ! empty( $value[0] )
+			? $value[0]
+			: '';
+		// Checking if we have already received same Custom CSS for any other page by hash based on CSS value...
+		// and returning empty value in such case
+		$hash = hash( 'crc32', $value );
+		if ( in_array( $hash, $us_page_custom_css_ids ) ) {
+			if ( $single ) {
+				return '';
+			} else {
+				return array( '' );
+			}
+		}
+		// Adding Page's ID and CSS value hash to our stash
+		$us_page_custom_css_ids[ $object_id ] = $hash;
+		if ( $single ) {
+			return $value;
+		} else {
+			return array( $value );
+		}
+
 	}
 
 	add_filter( 'get_post_metadata', 'us_get_post_metadata_for_custom_css', 1001, 4 );

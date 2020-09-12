@@ -163,7 +163,7 @@ class us_migration_4_10 extends US_Migration_Translator {
 
 		return $changed;
 	}
-	
+
 	public function translate_us_gallery( &$name, &$params, &$content ) {
 		$changed = FALSE;
 
@@ -284,7 +284,7 @@ class us_migration_4_10 extends US_Migration_Translator {
 			}
 		}
 
-		$old_img_sizes = $options['img_size'];
+		$old_img_sizes = us_arr_path( $options, 'img_size', '' );
 		if ( ! is_array( $old_img_sizes ) ) {
 			$old_img_sizes = array();
 		}

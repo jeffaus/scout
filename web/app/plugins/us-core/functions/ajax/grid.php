@@ -18,6 +18,7 @@ function us_ajax_grid() {
 			'post_id' => FALSE,
 			'us_grid_index' => FALSE,
 			'us_grid_ajax_index' => FALSE,
+			'_us_grid_post_type' => NULL,
 			'exclude_items' => 'none',
 			'items_offset' => 0,
 			'items_layout' => 'blog_1',
@@ -26,28 +27,72 @@ function us_ajax_grid() {
 			'img_size' => 'default',
 			'lang' => FALSE,
 			'overriding_link' => 'none',
+			'pagination' => 'regular',
+			'us_grid_filter_params' => NULL,
+			'filters_args' => NULL,
 		), us_maybe_get_post_json( 'template_vars' )
 	);
 
-	if ( class_exists( 'SitePress' ) AND $template_vars['lang'] ) {
-		global $sitepress;
-		$sitepress->switch_lang( $template_vars['lang'] );
+	// Get related parameters for getting data, number of records for taxonomy, price range for WooCommerce, etc.
+	$filters_args = ! empty( $template_vars[ 'filters_args' ] )
+		? $template_vars[ 'filters_args' ]
+		: array();
+	unset( $template_vars[ 'filters_args' ] );
+
+	// If the parameters were passed from the filter, then recount the number of items
+	if ( ! empty( $filters_args['taxonomies_query_args'] ) ) {
+		foreach ( $filters_args['taxonomies_query_args'] as &$items ) {
+			foreach ( $items as &$item_query_args ) {
+				// Add options from Grid Filter
+				if ( ! is_null( $template_vars['us_grid_filter_params'] ) ) {
+					us_apply_grid_filters( NULL, $item_query_args, $template_vars['us_grid_filter_params'] );
+				}
+				$item_query_args = us_grid_filter_get_count_items( $item_query_args );
+			}
+			unset( $item_query_args );
+		}
+		unset( $items, $item_query_args );
 	}
 
-	$post_id = isset( $template_vars['post_id'] ) ? intval( $template_vars['post_id'] ) : 0;
+	// Get min max prices of products, taking into account tax etc.
+	if ( function_exists( 'us_wc_get_min_max_price' ) AND ! empty( $filters_args['wc_min_max_price'] ) ) {
+		$min_max_price_query_vars = array(
+			'tax_query' => us_arr_path( $template_vars, 'query_args.tax_query', array() ),
+			'meta_query' => us_arr_path( $template_vars, 'query_args.meta_query', array() )
+		);
+		if ( ! is_null( $template_vars['us_grid_filter_params'] ) ) {
+			us_apply_grid_filters( NULL, $min_max_price_query_vars, $template_vars['us_grid_filter_params'] );
+		}
+		$filters_args['wc_min_max_price'] = (array) us_wc_get_min_max_price( $min_max_price_query_vars );
+	}
+	if ( ! empty( $filters_args ) ) {
+		echo '<div class="w-grid-filter-json-data hidden"'. us_pass_data_to_js( $filters_args ) .'></div>';
+	}
+
+	if ( has_action( 'us_tr_switch_language' ) AND $template_vars['lang'] ) {
+		global $sitepress;
+		do_action( 'us_tr_switch_language', (string) $template_vars['lang'] );
+	}
+
+	$post_id = isset( $template_vars['post_id'] )
+		? intval( $template_vars['post_id'] )
+		: 0;
+
 	if ( $post_id > 0 ) {
 		$post = get_post( $post_id );
 		if ( empty( $post ) ) {
 			wp_send_json_error();
 		}
 
-		$us_grid_ajax_index = isset( $template_vars['us_grid_ajax_index'] ) ? intval( $template_vars['us_grid_ajax_index'] ) : 1;
+		$us_grid_ajax_index = isset( $template_vars['us_grid_ajax_index'] )
+			? intval( $template_vars['us_grid_ajax_index'] )
+			: 1;
 
 		// Retrieving the relevant shortcode from the page to get options
 		$post_content = $post->post_content;
 
-		preg_match_all( '~\[us_grid(.*?)\]~', $post_content, $matches );
-
+		// If there is no grid then we will return an error
+		preg_match_all( '/\[us_grid((?!\_)([^\]]+)?)/', $post_content, $matches );
 		if ( ! isset( $matches[0][ $us_grid_ajax_index - 1 ] ) ) {
 			wp_send_json_error();
 		}
@@ -81,7 +126,11 @@ function us_ajax_grid() {
 			$allowed_post_types = array( $shortcode_atts['post_type'] );
 		}
 
-		if ( $shortcode_atts['post_type'] == 'current_query' AND ( ( is_array( $template_vars['query_args']['post_type'] ) AND in_array( 'product', $template_vars['query_args']['post_type'] ) ) OR $template_vars['query_args']['post_type'] == 'product' ) ) {
+		if (
+			$shortcode_atts['post_type'] == 'current_query'
+			AND isset( $template_vars['query_args']['post_type'] )
+			AND us_is_available_post_type( $template_vars['query_args']['post_type'], array( 'product' ) )
+		) {
 			$add_wc_hooks = TRUE;
 		}
 	}
@@ -175,6 +224,13 @@ function us_ajax_grid() {
 				unset( $template_vars['query_args']['post_type'] );
 			}
 		}
+		// For grid related post_type
+		if (
+			! empty( $template_vars['_us_grid_post_type'] )
+			AND in_array( $template_vars['_us_grid_post_type'], array( 'related', 'ids' ) )
+		) {
+			$template_vars['query_args']['post_type'] = 'any';
+		}
 		if ( ! isset( $template_vars['query_args']['s'] ) AND ! isset( $template_vars['query_args']['post_type'] ) ) {
 			$template_vars['query_args']['post_type'] = 'post';
 		}
@@ -214,15 +270,24 @@ function us_ajax_grid() {
 		}
 	}
 
+	// Grid Filter
+	if ( $post_id > 0 AND ! is_null( $template_vars['us_grid_filter_params'] ) ) {
+		// Apply parameters received through AJAX
+		us_apply_grid_filters( $post_id, $template_vars['query_args'], $template_vars['us_grid_filter_params'] );
+	}
+
 	// Passing values that were filtered due to post protocol
 	global $us_grid_loop_running;
 	$us_grid_loop_running = TRUE;
 
 	// Apply WooCommerce product ordering if set
 	if ( ! empty( $add_wc_hooks ) AND class_exists( 'woocommerce' ) AND is_object( wc() ) ) {
-		$_GET['orderby'] = ! empty( $template_vars['query_args']['orderby'] )
-			? (string) $template_vars['query_args']['orderby']
-			: '';
+		foreach ( array( 'order', 'orderby' ) as $param ) {
+			if ( ! isset( $_GET[ $param ] ) AND ! empty( $template_vars[ 'query_args' ][ $param ] ) ) {
+				$_GET[ $param ] = (string) $template_vars[ 'query_args' ][ $param ];
+			}
+		}
+
 		add_action( 'pre_get_posts', array( wc()->query, 'product_query' ) );
 	}
 
@@ -235,8 +300,8 @@ function us_ajax_grid() {
 		 * @return void
 		 */
 		function us_pre_get_posts_for_search( $wp_query ) {
-			$query_order = ! empty( $wp_query->query[ 'order' ] )
-				? $wp_query->query[ 'order' ]
+			$query_order = ! empty( $wp_query->query['order'] )
+				? $wp_query->query['order']
 				: NULL;
 			if (
 				$search = $wp_query->get( 's' )
@@ -245,6 +310,7 @@ function us_ajax_grid() {
 				$wp_query->set( 'order', $query_order );
 			}
 		}
+
 		add_action( 'pre_get_posts', 'us_pre_get_posts_for_search', 101, 1 );
 	}
 
@@ -260,14 +326,21 @@ function us_ajax_grid() {
 		function us_posts_orderby_for_search( $orderby, $wp_query ) {
 			global $wpdb;
 			// Adjust search query to match from internal wp_query regeneration
-			if ( $search = $wp_query->get( 's' ) AND $order = $wp_query->get( 'order' ) ) {
+			if (
+				$wp_query->is_search
+				AND $search = $wp_query->get( 's' )
+				AND $order = $wp_query->get( 'order' )
+			) {
 				$order = esc_sql( $order );
 				$search = esc_sql( $wpdb->esc_like( $search ) );
 				$orderby = "{$wpdb->posts}.post_title LIKE '%{$search}%' {$order}, {$wpdb->posts}.post_date {$order}";
+
 			}
+
 			return $orderby;
 		}
-		add_filter( 'posts_orderby', 'us_posts_orderby_for_search', 101, 2 );
+
+		add_filter( 'posts_orderby', 'us_posts_orderby_for_search', 10, 2 );
 	}
 
 	us_load_template( 'templates/us_grid/listing', $template_vars );

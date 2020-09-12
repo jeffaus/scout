@@ -547,8 +547,10 @@
 	}
 #us_carousel .vc_element-icon,
 #us_grid .vc_element-icon,
+#us_grid_filter .vc_element-icon,
 .wpb_us_carousel .vc_element-icon,
-.wpb_us_grid .vc_element-icon {
+.wpb_us_grid .vc_element-icon,
+.wpb_us_grid_filter .vc_element-icon {
 	background: #23ccaa;
 	}
 #us_flipbox .vc_element-icon,
@@ -572,6 +574,10 @@
 #us_sharing .vc_element-icon,
 .wpb_us_sharing .vc_element-icon {
 	background: #f06e6a;
+	}
+#us_search .vc_element-icon,
+.wpb_us_search .vc_element-icon {
+	background: #faba19;
 	}
 #us_socials .vc_element-icon,
 .wpb_us_socials .vc_element-icon {
@@ -616,12 +622,12 @@
 	background: #0073aa;
 	}
 #us_vwrapper .vc_element-icon,
-.vc_element-icon.fa-ellipsis-v {
+.wpb_us_vwrapper > div > .wpb_element_title > .vc_element-icon {
 	background: #ebfaee;
 	color: #0fba2e;
 	}
 #us_hwrapper .vc_element-icon,
-.vc_element-icon.fa-ellipsis-h {
+.wpb_us_hwrapper > div > .wpb_element_title > .vc_element-icon {
 	background: #faf0e6;
 	color: #f70;
 	}

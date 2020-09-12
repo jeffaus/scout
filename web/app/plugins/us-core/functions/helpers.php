@@ -82,7 +82,7 @@ if ( ! function_exists( 'us_locate_file' ) ) {
 				}
 			}
 
-			return $us_file_paths[ $filename ];
+			$result = $us_file_paths[ $filename ];
 		} else {
 			$found = array();
 
@@ -92,8 +92,10 @@ if ( ! function_exists( 'us_locate_file' ) ) {
 				}
 			}
 
-			return $found;
+			$result = $found;
 		}
+
+		return apply_filters( 'us_locate_file', $result, $filename, $all );
 	}
 }
 
@@ -292,7 +294,11 @@ if ( ! function_exists( 'us_implode_atts' ) ) {
 	function us_implode_atts( $params = array(), $separator = ' ' ) {
 		$output = array();
 		foreach ( $params as $key => $value ) {
-			$output[] = sprintf( '%s="%s"', esc_attr( $key ), esc_attr( $value ) );
+			if ( $value == '' ) {
+				$output[] = esc_attr( $key );
+			} else {
+				$output[] = sprintf( '%s="%s"', esc_attr( $key ), esc_attr( $value ) );
+			}
 		}
 
 		return implode( $separator, $output );
@@ -347,7 +353,7 @@ if ( ! function_exists( 'us_config' ) ) {
 	}
 }
 
-if ( ! function_exists( 'us_get_intermediate_image_size' ) ) {
+if ( ! function_exists( 'us_get_image_size_params' ) ) {
 	/**
 	 * Get image size information as an array
 	 *
@@ -355,17 +361,19 @@ if ( ! function_exists( 'us_get_intermediate_image_size' ) ) {
 	 *
 	 * @return array
 	 */
-	function us_get_intermediate_image_size( $size_name ) {
-		global $_wp_additional_image_sizes;
-		if ( isset( $_wp_additional_image_sizes[ $size_name ] ) ) {
-			// Getting custom image size
-			return $_wp_additional_image_sizes[ $size_name ];
+	function us_get_image_size_params( $size_name ) {
+		$img_sizes = wp_get_additional_image_sizes();
+
+		// Getting custom image size
+		if ( isset( $img_sizes[ $size_name ] ) ) {
+			return $img_sizes[ $size_name ];
+
+			// Get standard image size
 		} else {
-			// Getting standard image size
 			return array(
 				'width' => get_option( "{$size_name}_size_w" ),
 				'height' => get_option( "{$size_name}_size_h" ),
-				'crop' => get_option( "{$size_name}_crop" ),
+				'crop' => get_option( "{$size_name}_crop", '0' ),
 			);
 		}
 	}
@@ -673,7 +681,7 @@ if ( ! function_exists( 'us_prepare_inline_css' ) ) {
 	 *
 	 * @return string
 	 */
-	function us_prepare_inline_css( $props, $style_attr = TRUE, $tag = 'div' ) {
+	function us_prepare_inline_css( $props, $style_attr = TRUE ) {
 		$result = '';
 
 		foreach ( $props as $prop => $value ) {
@@ -1002,63 +1010,27 @@ if ( ! function_exists( 'us_get_color' ) ) {
 	 *
 	 * @return String
 	 */
-	function us_get_color( $value = '', $allow_gradient = FALSE ) {
+	function us_get_color( $value = '', $allow_gradient = FALSE, $_iterations = 0 ) {
 
-		if ( strpos( $value, 'color' ) !== FALSE ) {
-			$color = us_get_option( $value, '' ); // if the value has "color" string, get the color from Theme Options > Colors
-		} elseif ( strpos( $value, '_' ) === 0 ) {
-			$color = us_get_option( 'color' . $value, '' ); // if the value begins with "_" string, get the color from Theme Options > Colors
+		// If the value begins "_", get the color from Theme Options > Colors
+		if ( strpos( $value, '_' ) === 0 ) {
+			$color = us_get_option( 'color' . $value, '' );
+
+			// If the value contain "color", get the color from the option with that name
+		} elseif ( strpos( $value, 'color' ) !== FALSE ) {
+			$color = us_get_option( $value, '' );
+
+			// in other cases use value as color
 		} else {
-			$color = $value; // in other cases use value as color
+			$color = $value;
+		}
+
+		// Check for recursion, values may have variables
+		if ( strpos( $color, '_' ) === 0 AND $_iterations <= /* Max count iterations */ 3 ) {
+			$color = us_get_color( 'color' . $color, $allow_gradient, ++$_iterations );
 		}
 
 		return ( $allow_gradient ) ? $color : us_gradient2hex( $color );
-	}
-}
-
-if ( ! function_exists( 'us_grid_query_offset' ) ) {
-	/**
-	 * Grid function
-	 */
-	function us_grid_query_offset( &$query ) {
-		if ( ! isset( $query->query['_id'] ) OR $query->query['_id'] !== 'us_grid' ) {
-			return;
-		}
-
-		global $us_grid_items_offset;
-
-		$posts_per_page = ( ! empty( $query->query['posts_per_page'] ) ) ? $query->query['posts_per_page'] : get_option( 'posts_per_page' );
-
-		if ( $query->is_paged ) {
-			$page_offset = $us_grid_items_offset + ( ( $query->query_vars['paged'] - 1 ) * $posts_per_page );
-
-			// Apply adjust page offset
-			$query->set( 'offset', $page_offset );
-
-		} else {
-			// This is the first page. Just use the offset...
-			$query->set( 'offset', $us_grid_items_offset );
-
-		}
-
-		remove_action( 'pre_get_posts', 'us_grid_query_offset' );
-	}
-}
-
-if ( ! function_exists( 'us_grid_adjust_offset_pagination' ) ) {
-	/**
-	 * Grid function
-	 */
-	function us_grid_adjust_offset_pagination( $found_posts, $query ) {
-		if ( ! isset( $query->query['_id'] ) OR $query->query['_id'] !== 'us_grid' ) {
-			return $found_posts;
-		}
-
-		global $us_grid_items_offset;
-		remove_filter( 'found_posts', 'us_grid_adjust_offset_pagination' );
-
-		// Reduce WordPress's found_posts count by the offset...
-		return $found_posts - $us_grid_items_offset;
 	}
 }
 
@@ -1068,20 +1040,32 @@ if ( ! function_exists( 'us_get_taxonomies' ) ) {
 	 *
 	 * @param $public_only bool
 	 * @param $show_slug bool
-	 * @param $output string woocommerce_exclude / woocommerce_only
+	 * @param $output string 'woocommerce_exclude' / 'woocommerce_only'
+	 * @param $key_prefix string 'tax|'
 	 *
 	 * @return array: slug => title (plural label)
 	 */
-	function us_get_taxonomies( $public_only = FALSE, $show_slug = TRUE, $output = '' ) {
+	function us_get_taxonomies( $public_only = FALSE, $show_slug = TRUE, $output = '', $key_prefix = '' ) {
 		$result = array();
 
-		$args = array( 'show_ui' => TRUE );
-		if ( $public_only ) {
-			$args['public'] = TRUE;
-			$args['publicly_queryable'] = TRUE;
+		// Check if 'woocommerce_only' is requested and WooCommerce is not active
+		if ( $output == 'woocommerce_only' AND ! class_exists( 'woocommerce' ) ) {
+			// Return an empty result in this case
+			return $result;
+		}
+		/*
+		 * Getting list of taxonomies. Some public taxonomies may have no regular UI, so we combine two conditions.
+		 * Public taxonomies may have no regular admin UI.
+		 * And rest of taxonomies should have admin UI to get into our taxonomies list.
+		 */
+		$not_public_args = array( 'show_ui' => TRUE );
+		$public_args = array( 'public' => TRUE, 'publicly_queryable' => TRUE );
+		$taxonomies = array();
+		if ( ! $public_only ) {
+			$taxonomies = get_taxonomies( $not_public_args, 'object' );
 		}
 
-		$taxonomies = get_taxonomies( $args, 'object' );
+		$taxonomies = array_merge( $taxonomies, get_taxonomies( $public_args, 'object' ) );
 		foreach ( $taxonomies as $taxonomy ) {
 
 			// Exclude taxonomy which is not linked to any post type
@@ -1089,10 +1073,22 @@ if ( ! function_exists( 'us_get_taxonomies' ) ) {
 				continue;
 			}
 
+			// Skipping already added taxonomies
+			if ( isset( $result[ $key_prefix . $taxonomy->name ] ) ) {
+				continue;
+			}
+
 			// Check if the taxonomy is related to WooCommerce
 			if ( class_exists( 'woocommerce' ) ) {
 				$is_woo_tax = FALSE;
-				if ( $taxonomy->name == 'product_cat' OR $taxonomy->name == 'product_tag' OR ( strpos( $taxonomy->name, 'pa_' ) === 0 AND is_object_in_taxonomy( 'product', $taxonomy->name ) ) ) {
+				if (
+					$taxonomy->name == 'product_cat'
+					OR $taxonomy->name == 'product_tag'
+					OR (
+						strpos( $taxonomy->name, 'pa_' ) === 0
+						AND is_object_in_taxonomy( 'product', $taxonomy->name )
+					)
+				) {
 					$is_woo_tax = TRUE;
 				}
 
@@ -1117,104 +1113,10 @@ if ( ! function_exists( 'us_get_taxonomies' ) ) {
 				$taxonomy_title .= ' (' . $taxonomy->name . ')';
 			}
 
-			$result[ $taxonomy->name ] = $taxonomy_title;
+			$result[ $key_prefix . $taxonomy->name ] = $taxonomy_title;
 		}
 
 		return $result;
-	}
-}
-
-if ( ! function_exists( 'us_fix_grid_settings' ) ) {
-	/**
-	 * Make the provided grid settings value consistent and proper
-	 *
-	 * @param $value array
-	 *
-	 * @return array
-	 */
-	function us_fix_grid_settings( $value ) {
-		if ( empty( $value ) OR ! is_array( $value ) ) {
-			$value = array();
-		}
-		if ( ! isset( $value['data'] ) OR ! is_array( $value['data'] ) ) {
-			$value['data'] = array();
-		}
-
-		$options_defaults = array();
-		$elements_defaults = array();
-		if ( function_exists( 'usof_get_default' ) ) {
-			foreach ( us_config( 'grid-settings.options', array() ) as $option_name => $option_group ) {
-				foreach ( $option_group as $option_name => $option_field ) {
-					$options_defaults[ $option_name ] = usof_get_default( $option_field );
-				}
-			}
-
-			foreach ( us_config( 'grid-settings.elements', array() ) as $element_name ) {
-				$element_settings = us_config( 'elements/' . $element_name );
-				$elements_defaults[ $element_name ] = array();
-				foreach ( $element_settings['params'] as $param_name => $param_field ) {
-					$elements_defaults[ $element_name ][ $param_name ] = usof_get_default( $param_field );
-				}
-			}
-		}
-
-		foreach ( $options_defaults as $option_name => $option_default ) {
-			if ( ! isset( $value['default']['options'][ $option_name ] ) ) {
-				$value['default']['options'][ $option_name ] = $option_default;
-			}
-		}
-		foreach ( $value['data'] as $element_name => $element_values ) {
-			$element_type = strtok( $element_name, ':' );
-			if ( ! isset( $elements_defaults[ $element_type ] ) ) {
-				continue;
-			}
-			foreach ( $elements_defaults[ $element_type ] as $param_name => $param_default ) {
-				if ( ! isset( $value['data'][ $element_name ][ $param_name ] ) ) {
-					$value['data'][ $element_name ][ $param_name ] = $param_default;
-				}
-			}
-		}
-
-		foreach ( array( 'default' ) as $state ) {
-			if ( ! isset( $value[ $state ] ) OR ! is_array( $value[ $state ] ) ) {
-				$value[ $state ] = array();
-			}
-			if ( ! isset( $value[ $state ]['layout'] ) OR ! is_array( $value[ $state ]['layout'] ) ) {
-				if ( $state != 'default' AND isset( $value['default']['layout'] ) ) {
-					$value[ $state ]['layout'] = $value['default']['layout'];
-				} else {
-					$value[ $state ]['layout'] = array();
-				}
-			}
-			$state_elms = array();
-			foreach ( $value[ $state ]['layout'] as $place => $elms ) {
-				if ( ! is_array( $elms ) ) {
-					$elms = array();
-				}
-				foreach ( $elms as $index => $elm_id ) {
-					if ( ! is_string( $elm_id ) OR strpos( $elm_id, ':' ) == - 1 ) {
-						unset( $elms[ $index ] );
-					} else {
-						$state_elms[] = $elm_id;
-						if ( ! isset( $value['data'][ $elm_id ] ) ) {
-							$value['data'][ $elm_id ] = array();
-						}
-					}
-				}
-				$value[ $state ]['layout'][ $place ] = array_values( $elms );
-			}
-			if ( ! isset( $value[ $state ]['layout']['hidden'] ) OR ! is_array( $value[ $state ]['layout']['hidden'] ) ) {
-				$value[ $state ]['layout']['hidden'] = array();
-			}
-			$value[ $state ]['layout']['hidden'] = array_merge( $value[ $state ]['layout']['hidden'], array_diff( array_keys( $value['data'] ), $state_elms ) );
-			// Fixing options
-			if ( ! isset( $value[ $state ]['options'] ) OR ! is_array( $value[ $state ]['options'] ) ) {
-				$value[ $state ]['options'] = array();
-			}
-			$value[ $state ]['options'] = array_merge( $options_defaults, ( $state != 'default' ) ? $value['default']['options'] : array(), $value[ $state ]['options'] );
-		}
-
-		return $value;
 	}
 }
 
@@ -1579,72 +1481,6 @@ if ( ! function_exists( 'us_get_sidebars' ) ) {
 	}
 }
 
-if ( ! function_exists( 'us_grid_available_post_types' ) ) {
-	/**
-	 * Get post types for selection in Grid element
-	 *
-	 * @param bool $reload used when list of available post types should be reloaded
-	 *            because data that affects it was changed
-	 *
-	 * @return array
-	 */
-	function us_grid_available_post_types( $reload = FALSE ) {
-		static $available_posts_types = array();
-
-		if ( empty( $available_posts_types ) OR $reload ) {
-			$posts_types_params = array(
-				'show_in_menu' => TRUE,
-			);
-			$skip_post_types = array(
-				'us_header',
-				'us_page_block',
-				'us_content_template',
-				'us_grid_layout',
-				'shop_order',
-				'shop_coupon',
-			);
-			foreach ( get_post_types( $posts_types_params, 'objects' ) as $post_type_name => $post_type ) {
-				if ( in_array( $post_type_name, $skip_post_types ) ) {
-					continue;
-				}
-				$available_posts_types[ $post_type_name ] = $post_type->labels->name . ' (' . $post_type_name . ')';
-			}
-		}
-
-		return apply_filters( 'us_grid_available_post_types', $available_posts_types );
-	}
-}
-
-if ( ! function_exists( 'us_grid_available_taxonomies' ) ) {
-	/**
-	 * Get post taxonomies for selection in Grid element
-	 *
-	 * @return array
-	 */
-	function us_grid_available_taxonomies() {
-		$available_taxonomies = array();
-		$available_posts_types = us_grid_available_post_types();
-
-		foreach ( $available_posts_types as $post_type => $name ) {
-			$post_taxonomies = array();
-			$object_taxonomies = get_object_taxonomies( $post_type, 'objects' );
-			foreach ( $object_taxonomies as $tax_object ) {
-				if ( ( $tax_object->public ) AND ( $tax_object->show_ui ) ) {
-					$post_taxonomies[] = $tax_object->name;
-				}
-			}
-			if ( is_array( $post_taxonomies ) AND count( $post_taxonomies ) > 0 ) {
-				$available_taxonomies[ $post_type ] = array();
-				foreach ( $post_taxonomies as $post_taxonomy ) {
-					$available_taxonomies[ $post_type ][] = $post_taxonomy;
-				}
-			}
-		}
-
-		return $available_taxonomies;
-	}
-}
-
 if ( ! function_exists( 'us_get_public_post_types' ) ) {
 	/**
 	 * Get post types, which have frontend single template, taking into account theme options
@@ -1670,7 +1506,7 @@ if ( ! function_exists( 'us_get_public_post_types' ) ) {
 			),
 			'objects'
 		);
-		foreach( $custom_post_types as $post_type_name => $post_type_obj ) {
+		foreach ( $custom_post_types as $post_type_name => $post_type_obj ) {
 			$result[ $post_type_name ] = $post_type_obj->labels->name;
 		}
 
@@ -1736,10 +1572,10 @@ if ( ! function_exists( 'us_get_page_area_id' ) ) {
 			}
 
 			// Archives
-		} elseif ( is_archive() OR is_tax( $public_taxonomies ) OR is_tax( $product_taxonomies ) ) {
+		} elseif ( is_archive() OR is_tax( $public_taxonomies ) OR ( ! empty( $product_taxonomies ) AND is_tax( $product_taxonomies ) ) ) {
 
 			// For product taxonomies use "Shop Page" by default
-			if ( is_tax( $product_taxonomies ) ) {
+			if ( ! empty( $product_taxonomies ) AND is_tax( $product_taxonomies ) ) {
 				$area_id = us_get_option( $area . '_shop_id' );
 
 				// For others use "Archives" by default
@@ -1751,6 +1587,20 @@ if ( ! function_exists( 'us_get_page_area_id' ) ) {
 				$current_tax = 'category';
 			} elseif ( is_tag() ) {
 				$current_tax = 'post_tag';
+				/*
+				 * Checking WooCommerce taxonomies,
+				 * same as is_category / is_tag they require separate check
+				 */
+			} elseif (
+				function_exists( 'is_product_category' )
+				AND is_product_category()
+			) {
+				$current_tax = 'product_cat';
+			} elseif (
+				function_exists( 'is_product_tag' )
+				AND is_product_tag()
+			) {
+				$current_tax = 'product_tag';
 			} elseif ( is_tax() ) {
 				$current_tax = get_query_var( 'taxonomy' );
 			}
@@ -1763,8 +1613,12 @@ if ( ! function_exists( 'us_get_page_area_id' ) ) {
 				}
 			}
 
-			if ( ! empty( $current_tax ) AND us_get_option( $area . '_tax_' . $current_tax . '_id' ) != '__defaults__' ) {
-				$area_id = us_get_option( $area . '_tax_' . $current_tax . '_id' );
+			if (
+				! empty( $current_tax )
+				AND $_area_id = us_get_option( $area . '_tax_' . $current_tax . '_id' )
+				AND $_area_id !== '__defaults__'
+			) {
+				$area_id = $_area_id;
 			}
 
 			// Other Post Types
@@ -1775,7 +1629,11 @@ if ( ! function_exists( 'us_get_page_area_id' ) ) {
 			} elseif ( is_singular( 'us_portfolio' ) ) {
 				$post_type = 'portfolio'; // force "portfolio" suffix to avoid migration from old theme options
 			} elseif ( is_singular( 'tribe_events' ) ) {
-				$post_type = 'tribe_events'; // force "tribe_events" suffix cause The Events Calendar returns incorrect type
+				$post_type = 'tribe_events'; // force "tribe_*" suffix cause The Events Calendar always returns "page" type
+			} elseif ( is_singular( 'tribe_venue' ) ) {
+				$post_type = 'tribe_venue';
+			} elseif ( is_singular( 'tribe_organizer' ) ) {
+				$post_type = 'tribe_organizer';
 			} else {
 				$post_type = get_post_type();
 			}
@@ -1798,32 +1656,45 @@ if ( ! function_exists( 'us_get_page_area_id' ) ) {
 		}
 
 		// Search Results page
-		if ( is_search() AND ! is_post_type_archive( 'product' ) AND $postID = us_get_option( 'search_page', 'default' ) AND $postID != 'default' ) {
+		if (
+			is_search()
+			AND ! is_post_type_archive( 'product' )
+			AND $postID = us_get_option( 'search_page', 'default' )
+			AND is_numeric( $postID )
+		) {
 			$area_id = usof_meta( 'us_' . $area . '_id', $postID );
 		}
 
 		// Posts page
-		if ( is_home() AND $postID = us_get_option( 'posts_page', 'default' ) AND $postID != 'default' ) {
+		if (
+			is_home()
+			AND $postID = us_get_option( 'posts_page', 'default' )
+			AND $postID != 'default'
+		) {
 			$area_id = usof_meta( 'us_' . $area . '_id', $postID );
 		}
 
 		// 404 page
-		if ( is_404() AND $postID = us_get_option( 'page_404', 'default' ) AND $postID != 'default' ) {
+		if (
+			is_404()
+			AND $postID = us_get_option( 'page_404', 'default' )
+			AND $postID != 'default'
+		) {
 			$area_id = usof_meta( 'us_' . $area . '_id', $postID );
 		}
 
 		// Specific page
 		if ( is_singular() ) {
-			$postID = get_the_ID();
+			$postID = get_queried_object_id();
 
 			// Check all terms of the post and get "Pages Content template" term custom field (any first numeric value it's enough)
 			if ( $area === 'content' AND ! empty( get_post_taxonomies( $postID ) ) ) {
-				foreach( get_post_taxonomies( $postID ) as $taxonomy_slug ) {
+				foreach ( get_post_taxonomies( $postID ) as $taxonomy_slug ) {
 
 					$terms = get_the_terms( $postID, $taxonomy_slug );
 
 					if ( ! empty( $terms ) AND is_array( $terms ) ) {
-						foreach( $terms as $term ) {
+						foreach ( $terms as $term ) {
 							if ( is_numeric( $pages_content_id = get_term_meta( $term->term_id, 'pages_content_id', TRUE ) ) ) {
 								$area_id = $pages_content_id;
 
@@ -1856,25 +1727,52 @@ if ( ! function_exists( 'us_get_page_area_id' ) ) {
 	}
 }
 
+if ( ! function_exists( 'us_get_current_page_block_ids' ) ) {
+	/**
+	 * Get Page Blocks ids of the current page
+	 *
+	 * @return array
+	 */
+	function us_get_current_page_block_ids() {
+		$ids = array();
+		foreach ( array( 'footer', 'content', 'titlebar' ) as $name ) {
+			if ( $area_id = us_get_page_area_id( $name ) AND is_numeric( $area_id ) ) {
+				if ( has_filter( 'us_tr_object_id' ) ) {
+					$translated_id = apply_filters( 'us_tr_object_id', $area_id, 'us_page_block', TRUE );
+					if ( $translated_id != $area_id ) {
+						$area_id = $translated_id;
+					}
+				}
+				$ids[] = $area_id;
+			}
+		}
+		return array_unique( $ids );
+	}
+}
+
 if ( ! function_exists( 'us_get_current_page_block_content' ) ) {
 	/**
 	 * Get Page Blocks content of the current page
+	 *
+	 * @return string
 	 */
 	function us_get_current_page_block_content() {
-		$content = '';
-		foreach ( array( 'footer', 'content', 'titlebar' ) as $name ) {
-			$post_id = us_get_page_area_id( $name );
-			if ( $post_id != '' AND $post = get_post( (int) $post_id ) ) {
-				$translated_id = apply_filters( 'wpml_object_id', $post->ID, 'us_page_block', TRUE );
-				if ( $translated_id != $post->ID ) {
-					$post = get_post( $translated_id );
+		$output = '';
+		if ( $page_block_ids = (array) us_get_current_page_block_ids() ) {
+			$query_args = array(
+				'nopaging' => TRUE,
+				'post__in' => $page_block_ids,
+				'post_type' => array( 'us_page_block', 'us_content_template' ),
+				'suppress_filters' => TRUE,
+			);
+			foreach ( get_posts( $query_args ) as $post ) {
+				if ( ! empty( $post->post_content ) ) {
+					$output .= $post->post_content;
 				}
-
-				$content .= $post->post_content;
 			}
 		}
 
-		return $content;
+		return $output;
 	}
 }
 
@@ -1904,7 +1802,7 @@ if ( ! function_exists( 'us_get_btn_styles' ) ) {
 	}
 }
 
-if ( ! function_exists( 'us_image_sizes_select_values' ) ) {
+if ( ! function_exists( 'us_get_image_sizes_list' ) ) {
 	/**
 	 * Get image size values for selection
 	 *
@@ -1912,62 +1810,43 @@ if ( ! function_exists( 'us_image_sizes_select_values' ) ) {
 	 *
 	 * @return array
 	 */
-	function us_image_sizes_select_values( $size_names = NULL ) {
-		$image_sizes = array();
+	function us_get_image_sizes_list( $include_full = TRUE ) {
 
-		// Default WordPress image sizes
-		if ( $size_names === NULL ) {
-			$size_names = array( 'full', 'large', 'medium', 'thumbnail' );
+		if ( $include_full ) {
+			$image_sizes = array( 'full' => us_translate( 'Full Size' ) );
+		} else {
+			$image_sizes = array();
 		}
 
-		// Add WooCommerce image sizes if enabled
-		if ( class_exists( 'woocommerce' ) ) {
-			$size_names[] = 'shop_single';
-			$size_names[] = 'shop_catalog';
-		}
-
-		// For translation purposes
-		$size_titles = array(
-			'full' => us_translate( 'Full Size' ),
+		// Exclude doubled WooCommerce size names
+		$exclude_sizes = array(
+			'woocommerce_thumbnail',
+			'woocommerce_single',
+			'woocommerce_gallery_thumbnail',
 		);
 
-		foreach ( $size_names as $size_name ) {
-			$size_title = isset( $size_titles[ $size_name ] ) ? $size_titles[ $size_name ] : ucwords( $size_name );
-			if ( $size_name != 'full' ) {
-
-				// Detecting size
-				$size = us_get_intermediate_image_size( $size_name );
-
-				$size_title = ( ( $size['width'] == 0 ) ? __( 'any', 'us' ) : $size['width'] );
-				$size_title .= ' × ';
-				$size_title .= ( $size['height'] == 0 ) ? __( 'any', 'us' ) : $size['height'];
-				if ( $size['crop'] ) {
-					$size_title .= ' ' . __( 'cropped', 'us' );
-				}
+		foreach ( get_intermediate_image_sizes() as $size_name ) {
+			if ( in_array( $size_name, $exclude_sizes ) ) {
+				continue;
 			}
-			$image_sizes[ $size_name ] = $size_title;
-		}
 
-		// Custom sizes
-		$custom_tnail_sizes = us_get_option( 'img_size' );
-		if ( is_array( $custom_tnail_sizes ) ) {
-			foreach ( $custom_tnail_sizes as $size_index => $size ) {
-				$crop = ( ! empty( $size['crop'][0] ) );
-				$crop_str = ( $crop ) ? '_crop' : '';
-				$width = ( ! empty( $size['width'] ) AND intval( $size['width'] ) > 0 ) ? intval( $size['width'] ) : 0;
-				$height = ( ! empty( $size['height'] ) AND intval( $size['height'] ) > 0 ) ? intval( $size['height'] ) : 0;
-				$size_name = 'us_' . $width . '_' . $height . $crop_str;
+			// Get size params
+			$size = us_get_image_size_params( $size_name );
 
-				$size_title = ( $width == 0 ) ? __( 'any', 'us' ) : $width;
-				$size_title .= ' × ';
-				$size_title .= ( $height == 0 ) ? __( 'any', 'us' ) : $height;
-				if ( $crop ) {
-					$size_title .= ' ' . __( 'cropped', 'us' );
-				}
+			// Do not include sizes with both zero values
+			if ( $size['width'] == 0 AND $size['height'] == 0 ) {
+				continue;
+			}
 
-				if ( ! in_array( $size_title, $image_sizes ) ) {
-					$image_sizes[ $size_name ] = $size_title;
-				}
+			$size_title = ( ( $size['width'] == 0 ) ? __( 'any', 'us' ) : $size['width'] );
+			$size_title .= '×';
+			$size_title .= ( $size['height'] == 0 ) ? __( 'any', 'us' ) : $size['height'];
+			if ( $size['crop'] ) {
+				$size_title .= ' ' . __( 'cropped', 'us' );
+			}
+
+			if ( ! in_array( $size_title, $image_sizes ) ) {
+				$image_sizes[ $size_name ] = $size_title;
 			}
 		}
 
@@ -1993,9 +1872,11 @@ if ( ! function_exists( 'us_get_link_from_custom_field' ) ) {
 				: NULL;
 
 			if ( $meta_value = get_post_meta( $postID, $matches[1], TRUE ) ) {
+
 				// If the value is array, return itself
 				if ( is_array( $meta_value ) ) {
 					$link_array = $meta_value;
+
 					// If the value is serialized array (used in USOF metabox options)
 				} elseif ( substr( strval( $meta_value ), 0, 1 ) === '{' ) {
 					try {
@@ -2014,23 +1895,30 @@ if ( ! function_exists( 'us_get_link_from_custom_field' ) ) {
 					}
 					catch ( Exception $e ) {
 					}
-					// If the value is string with digits, use it as attachment ID
-				} elseif ( is_numeric( $meta_value ) ) {
-					$link_array['url'] = wp_get_attachment_url( $meta_value );
+
+					// If the value is string with digits, use it as post or attachment ID
+				} elseif ( is_numeric( $meta_value ) AND $post_type = get_post_type( (int) $meta_value ) ) {
+					$link_array['url'] = ( $post_type == 'attachment' )
+						? wp_get_attachment_url( $meta_value )
+						: get_permalink( $meta_value );
+
 					// In other cases return the value as 'url'
 				} else {
 					$link_array['url'] = trim( $meta_value );
 				}
+
 				// If the value in terms
-			} elseif ( $term_id AND $term_metadata = get_metadata( 'term', $term_id, $matches[ 1 ], TRUE ) ) {
+			} elseif ( $term_id AND $term_metadata = get_metadata( 'term', $term_id, $matches[1], TRUE ) ) {
 				$link_array['url'] = ! empty( $term_metadata['url'] )
 					? $term_metadata['url']
 					: '';
+
 				// If the value is empty, return empty 'url'
 			} else {
 				$link_array['url'] = '';
 			}
 		}
+
 		return $link_array;
 	}
 }
@@ -2133,13 +2021,14 @@ if ( ! function_exists( 'us_get_elm_link_options' ) ) {
 				$fields = acf_get_fields( $group['ID'] );
 				foreach ( $fields as $field ) {
 
-					// Add specific types as link options
-					if ( in_array( $field['type'], array( 'url', 'link', 'file', 'email' ) ) ) {
+					// Add specific ACF types as link options
+					if ( in_array( $field['type'], array( 'url', 'link', 'page_link', 'file', 'email' ) ) ) {
 						$link_options[ $field['name'] ] = $group['title'] . ': ' . $field['label'];
 					}
 				}
 			}
 		}
+
 		return $link_options;
 	}
 }
@@ -2210,59 +2099,70 @@ if ( ! function_exists( 'us_get_smart_date' ) ) {
 	}
 }
 
-if ( ! function_exists( 'us_replace_comment_count_var' ) ) {
+if ( ! function_exists( 'us_get_posts_titles_for' ) ) {
 	/**
-	 * Change '{{comment_count}}' string to comments amount of the current page
+	 * Get list of posts titles by a certain post types
+	 * @param array $post_types Post types to get
+	 * @param bool $force_no_cache Allow using cache (use FALSE to force not-cached version)
+	 * @return array
 	 */
-	function us_replace_comment_count_var( $string ) {
+	function us_get_all_posts_titles_for( $post_types, $orderby = 'title', $force_no_cache = TRUE ) {
+		if ( empty( $post_types ) OR ! is_array( $post_types ) ) {
+			return array();
+		}
 
-		if ( strpos( $string, '{{comment_count}}' ) !== FALSE ) {
-			global $post;
-			if ( $post ) {
-				$comments_amount = get_comment_count( $post->ID );
-				$string = str_replace( '{{comment_count}}', $comments_amount['approved'], $string );
-			} else {
-				$string = str_replace( '{{comment_count}}', '0', $string );
+		static $results = array();
+		$post_types = array_map( 'trim', $post_types );
+
+		$is_empty_result = FALSE;
+		foreach ( $post_types as $post_type ) {
+			if ( ! isset( $results[ $post_type ] ) ) {
+				$results[ $post_type ] = array();
+				$is_empty_result = TRUE;
 			}
 		}
 
-		return $string;
-	}
-}
-
-/**
- * Get list of posts titles by a certain post type
- * @param string $post_type Post type to get
- * @param bool $force_no_cache Allow using cache (use FALSE to force not-cached version)
- * @return array
- */
-function us_get_posts_titles_for( $post_type, $orderby = 'title', $force_no_cache = TRUE ) {
-	// Caching results
-	static $result = array();
-	if ( ! isset( $result[ $post_type ] ) OR $force_no_cache ) {
-		global $wpdb;
-		$sql = "
-			SELECT
-				ID, post_title
-			FROM $wpdb->posts
-			WHERE
-				post_type = %s
-		";
-		if ( ! empty( $orderby ) AND $orderby == 'title' ) {
-			$sql .= " ORDER BY post_title ASC";
-		}
-		$posts = $wpdb->get_results( $wpdb->prepare( $sql, $post_type ) );
-		$result[ $post_type ] = array();
-		foreach ( $posts as $post ) {
-			if ( $post->post_title != '' ) {
-				$result[ $post_type ][ $post->ID ] = $post->post_title;
-			} else {
-				$result[ $post_type ][ $post->ID ] = us_translate( '(no title)' );
+		if ( $is_empty_result ) {
+			global $wpdb;
+			$query = "
+				SELECT
+					ID, post_title, post_status, post_type
+				FROM {$wpdb->posts}
+				WHERE
+					post_type IN('". implode( "','", $post_types ) ."')
+					AND post_status != 'trash'
+			";
+			if ( ! empty( $orderby ) AND $orderby == 'title' ) {
+				$query .= " ORDER BY post_title ASC";
+			}
+			$posts = array();
+			foreach ( $wpdb->get_results( $query ) as $post ) {
+				$posts[ $post->ID ] = $post;
+			}
+			// Filtering by language
+			if ( apply_filters( 'us_tr_selected_lang_page', /* Default value */ FALSE ) ) {
+				$posts = apply_filters( 'us_filter_posts_by_language', $posts );
+			}
+			foreach ( $posts as $post ) {
+				$results[ $post->post_type ][ $post->ID ] = ( $post->post_title )
+					? $post->post_title
+					: us_translate( '(no title)' );
 			}
 		}
+
+		return $results;
 	}
 
-	return $result[ $post_type ];
+	/**
+	 * Get list of posts titles by a certain post type
+	 * @param string $post_type Post type to get
+	 * @param bool $force_no_cache Allow using cache (use FALSE to force not-cached version)
+	 * @return array
+	 */
+	function us_get_posts_titles_for( $post_type, $orderby = 'title', $force_no_cache = TRUE ) {
+		$results = (array) us_get_all_posts_titles_for( array( $post_type ), $orderby, $force_no_cache );
+		return us_arr_path( $results, $post_type );
+	}
 }
 
 if ( ! class_exists( 'Us_Vc_Base' ) ) {
@@ -2363,7 +2263,7 @@ if ( ! function_exists( 'us_get_img_placeholder' ) ) {
 	function us_get_img_placeholder( $size = 'full', $src_only = FALSE ) {
 
 		// Default placeholder
-		$size_array = us_get_intermediate_image_size( $size );
+		$size_array = us_get_image_size_params( $size );
 		$img_src = US_CORE_URI . '/assets/images/placeholder.svg';
 		$img_full = '<img class="g-placeholder"';
 		$img_full .= ' src="' . US_CORE_URI . '/assets/images/placeholder.svg"';
@@ -2441,7 +2341,6 @@ if ( ! function_exists( 'us_get_demo_import_config' ) ) {
 }
 
 if ( ! function_exists( 'us_output_design_css' ) ) {
-	add_action( 'us_before_closing_head_tag', 'us_output_design_css', 10 );
 	/**
 	 * Prepares all custom styles for page output.
 	 * @return string
@@ -2450,16 +2349,17 @@ if ( ! function_exists( 'us_output_design_css' ) ) {
 		global $wp_query;
 
 		// Load css for specific page
-		$posts = $wp_query->posts;
+		$posts = is_404() ? array() : $wp_query->posts;
 		if ( ! empty( $custom_posts ) AND is_array( $custom_posts ) ) {
 			$posts = array_merge( $posts, $custom_posts );
 		}
+
 		$query_posts_id = array();
 		foreach ( $posts as $post ) {
 			$query_posts_id[] = $post->ID;
 		}
 
-		foreach ( array( 'header', 'titlebar', 'content', 'footer' ) as $area ) {
+		foreach ( array( 'header', 'titlebar', 'sidebar', 'content', 'footer' ) as $area ) {
 			if ( $area_id = us_get_page_area_id( $area ) AND $post = get_post( (int) $area_id ) ) {
 
 				// Check Menu element in header, if it uses Page Block as menu item
@@ -2487,10 +2387,72 @@ if ( ! function_exists( 'us_output_design_css' ) ) {
 			}
 		}
 
+		// List of post IDs
+		$include_ids = array();
+
+		// The event plugin uses a non-standard way of receiving data, so we get the id from the request object
+		if (
+			is_singular( array( 'tribe_events', 'tribe_venue', 'tribe_organizer' ) )
+			AND get_queried_object() instanceof WP_Post
+		) {
+			$include_ids[] = get_queried_object_id();
+		}
+
+		// If we are on the search page, we will add the template page from the settings
+		if ( $wp_query->is_search AND $search_page = us_get_option( 'search_page' ) ) {
+			$include_ids[] = $search_page;
+		}
+
+		// Get a custom page to display posts
+		if ( get_option( 'show_on_front' ) === 'page' AND $posts_page = us_get_option( 'posts_page' ) ) {
+			$include_ids[] = $posts_page;
+		}
+
+		$include_ids = array_unique( $include_ids );
+
+		// The include posts to $posts
+		if ( ! empty( $include_ids ) ) {
+			$include_posts = get_posts( array(
+				'include' => array_map( 'intval', $include_ids ),
+				'post_type' => 'any',
+				'posts_per_page' => -1,
+			) );
+			$posts = array_merge( $include_posts, $posts );
+		}
+
+		// Get templatera IDs and add temptales to $posts
+		if ( class_exists( 'VcTemplateManager' ) ) {
+			$templatera_ids = array();
+			foreach ( $posts as $post ) {
+				if (
+					! empty( $post->post_content )
+					AND preg_match_all( '/\[templatera([^\]]+)\]/', $post->post_content, $matches )
+				) {
+					foreach ( us_arr_path( $matches, '1', array() ) as $atts ) {
+						if( empty( $atts ) ) {
+							continue;
+						}
+						$atts = shortcode_parse_atts( $atts );
+						if ( $id = us_arr_path( $atts, 'id' ) ) {
+							$templatera_ids[] = $id;
+						}
+					}
+				}
+			}
+			if ( ! empty( $templatera_ids ) ) {
+				$include_posts = get_posts( array(
+					'include' => array_map( 'intval', $templatera_ids ),
+					'post_type' => 'templatera',
+					'posts_per_page' => -1,
+				) );
+				$posts = array_merge( $include_posts, $posts );
+			}
+		}
+
 		/**
 		 *  Collect all page blocks into one variable
-		 *  @param WP_Post $post
-		 *  @return void
+		 * @param WP_Post $post
+		 * @return void
 		 */
 		$func_acc_posts = function ( $post ) use ( &$posts ) {
 			if ( $post instanceof WP_Post ) {
@@ -2499,7 +2461,7 @@ if ( ! function_exists( 'us_output_design_css' ) ) {
 		};
 
 		foreach ( $posts as $post ) {
-			if ( strpos( $post->post_content, 'us_page_block' ) !== FALSE ) {
+			if ( $post instanceof WP_Post AND strpos( $post->post_content, 'us_page_block' ) !== FALSE ) {
 				us_get_recursive_parse_page_block( $post, $func_acc_posts );
 			}
 		}
@@ -2529,6 +2491,7 @@ if ( ! function_exists( 'us_output_design_css' ) ) {
 									) {
 										continue;
 									}
+									$css_options = apply_filters( 'us_output_design_css_options', $css_options, $device_type );
 									$jsoncss_collection[ $device_type ][ $class_name ] = $css_options;
 								}
 							}
@@ -2538,11 +2501,41 @@ if ( ! function_exists( 'us_output_design_css' ) ) {
 			}
 		}
 
+		// Apply filters
+		$jsoncss_collection = apply_filters( 'us_output_design_css', $jsoncss_collection, $posts );
+
 		// Generate css code and output data
 		if ( $custom_css = us_jsoncss_compile( $jsoncss_collection ) ) {
 			echo sprintf( '<style id="us-design-options-css">%s</style>', $custom_css );
 		}
 	}
+	add_action( 'us_before_closing_head_tag', 'us_output_design_css', 10 );
+}
+
+if ( ! function_exists( 'us_filter_design_css_colors' ) ) {
+	/**
+	 * Replace variable colors with values
+	 *
+	 * @param array $css_options
+	 * @return array
+	 */
+	function us_filter_design_css_colors( $css_options ) {
+		// key => with_gradient
+		$keys = array(
+			'color' => FALSE,
+			'background' => TRUE,
+			'background-color' => TRUE,
+			'border-color' => FALSE,
+			'box-shadow-color' => FALSE,
+		);
+		foreach ( $keys as $key => $with_gradient ) {
+			if ( ! empty( $css_options[ $key ] ) ) {
+				$css_options[ $key ] = us_get_color( $css_options[ $key ], $with_gradient );
+			}
+		}
+		return $css_options;
+	}
+	add_filter( 'us_output_design_css_options', 'us_filter_design_css_colors', 1, 1 );
 }
 
 if ( ! function_exists( 'us_get_recursive_parse_page_block' ) ) {
@@ -2575,15 +2568,16 @@ if ( ! function_exists( 'us_get_recursive_parse_page_block' ) ) {
 						$us_recursive_parse_page_blocks[ $id ] = get_post( $id );
 					}
 					$next_post = $us_recursive_parse_page_blocks[ $id ];
-					if ( is_callable( $callback )) {
+					if ( is_callable( $callback ) ) {
 						call_user_func( $callback, $next_post, $atts );
 					}
 					if ( $next_post instanceof WP_Post AND strrpos( $next_post->post_content, 'us_page_block' ) !== FALSE ) {
-						$output = array_merge( $output, us_get_recursive_parse_page_block( $next_post, $callback, $max_level, ++$current_level ) );
+						$output = array_merge( $output, us_get_recursive_parse_page_block( $next_post, $callback, $max_level, ++ $current_level ) );
 					}
 				}
 			}
 		}
+
 		return (array) $output;
 	}
 }
@@ -2605,15 +2599,18 @@ if ( ! function_exists( 'us_find_element_in_post_page_blocks' ) ) {
 			AND $post = get_post( $post_id )
 			AND function_exists( 'us_get_recursive_parse_page_block' )
 		) {
-			us_get_recursive_parse_page_block( $post, function( $post ) use( &$result, $find_value ) {
+			us_get_recursive_parse_page_block(
+				$post, function ( $post ) use ( &$result, $find_value ) {
 				if ( $result ) {
 					return;
 				}
 				if ( $post instanceof WP_Post ) {
 					$result = stripos( $post->post_content, $find_value ) !== FALSE;
 				}
-			} );
+			}
+			);
 		}
+
 		return $result;
 	}
 }
@@ -2890,6 +2887,73 @@ if ( ! function_exists( 'us_remove_url_protocol' ) ) {
 }
 
 if ( ! function_exists( 'us_get_terms_by_slug' ) ) {
+
+	/**
+	 * Get all terms by taxonomy slug
+	 *
+	 * @param array $slug
+	 * @param integer $offset
+	 * @param integer $number_per_page
+	 * @param string $name
+	 * @return array
+	 */
+	function us_get_all_terms_by_slug( $taxonomies_slug, $offset = 0, $number_per_page = 50, $name = '' ) {
+		if ( empty( $taxonomies_slug ) OR ! is_array( $taxonomies_slug ) ) {
+			return array();
+		}
+
+		$result = array();
+		static $results = array();
+
+		$func_args = func_get_args();
+		$taxonomies_unique_keys = array();
+		// Making keys for cache, combining  all args (taxonomy slug, offset and number per page) in one key
+		foreach ( array_unique( array_map( 'trim', $taxonomies_slug ) ) as $taxonomy ) {
+			$func_args[ /* $taxonomies_slug */ 0] = $taxonomy;
+			$taxonomy_key = md5( json_encode( $func_args ) );
+			if ( ! empty( $results[ $taxonomy ][ $taxonomy_key ] ) ) {
+				$result[ $taxonomy ] = $results[ $taxonomy ][ $taxonomy_key ];
+			} else {
+				$taxonomies_unique_keys[ $taxonomy ] = $taxonomy_key;
+			}
+		}
+		unset( $func_args );
+
+		// If the list of keys is empty then return the result
+		if ( empty( $taxonomies_unique_keys ) ) {
+			return $result;
+		}
+
+		$query_args = array(
+			//'fields' => 'id=>name',
+			'hide_empty' => TRUE,
+			'number' => (int) $number_per_page,
+			'offset' => (int) $offset,
+			'suppress_filter' => FALSE,
+			'taxonomy' => array_keys( $taxonomies_unique_keys ),
+		);
+
+		if ( ! empty( $name ) AND count( $taxonomies_slug ) === 1 ) {
+			if ( substr( $name, 0, strlen( 'params:' ) ) === 'params:' ) {
+				$slug = explode( ',', substr( $name, strlen( 'params:' ) ) );
+				$query_args['slug'] = array_unique( $slug );
+			} else {
+				$query_args['name__like'] = trim( $name );
+			}
+		}
+
+		foreach ( get_terms( $query_args ) as $term ) {
+			if ( $taxonomy_key = us_arr_path( $taxonomies_unique_keys, $term->taxonomy ) ) {
+				// Data to be saved to cache
+				$results[ $term->taxonomy ][ $taxonomy_key ][ $term->slug ] = $term->name;
+				// Data to return as result
+				$result[ $term->taxonomy ][ $term->slug ] = $term->name;
+			}
+		}
+
+		return (array) $result;
+	}
+
 	/**
 	 * Get terms by taxonomy slug
 	 *
@@ -2900,38 +2964,10 @@ if ( ! function_exists( 'us_get_terms_by_slug' ) ) {
 	 * @return array
 	 */
 	function us_get_terms_by_slug( $taxonomy_slug, $offset = 0, $number_per_page = 50, $name = '' ) {
-		global $wpdb;
-		$where = '';
-		$taxonomy_items = array();
-
-		if ( ! empty( $name ) ) {
-			if ( substr( $name, 0, strlen( 'params:' ) ) === 'params:' ) {
-				// Escaping terms slugs for IN SQL statement
-				$slugs = explode( ',', substr( $name, strlen( 'params:' ) ) );
-				$slugsCount = count( $slugs );
-				$placeholdersArray = array_fill( 0, $slugsCount, '%s' );
-				$slugPlaceholders = implode( ', ', $placeholdersArray );
-				$where = $wpdb->prepare( " AND `t`.`slug` IN(" . $slugPlaceholders . ") ", $slugs );
-			} else {
-				$where = $wpdb->prepare( " AND `t`.`name` LIKE %s ", '%' . trim( $name ) . '%' );
-			}
-		}
-
-		$query = "
-			SELECT
-				`t`.`name`, `t`.`slug`
-			FROM $wpdb->terms AS t
-			LEFT JOIN $wpdb->term_taxonomy AS tt
-				ON `t`.`term_id` = `tt`.`term_id`
-			" . $wpdb->prepare( " WHERE `tt`.`taxonomy` = %s ", $taxonomy_slug ) . $where . "
-			ORDER BY `t`.`name` ASC
-			LIMIT $offset, $number_per_page;
-		";
-		foreach ( $wpdb->get_results( $query ) as $item ) {
-			$taxonomy_items[ $item->slug ] = $item->name;
-		}
-
-		return $taxonomy_items;
+		$results = (array) us_get_all_terms_by_slug( array( $taxonomy_slug ), $offset, $number_per_page, $name );
+		return ! empty( $results[ $taxonomy_slug ] )
+			? $results[ $taxonomy_slug ]
+			: array();
 	}
 }
 
@@ -2977,6 +3013,40 @@ if ( ! function_exists( 'us_get_aspect_ratio_values' ) ) {
 	}
 }
 
+if ( ! function_exists( 'us_filter_posts_by_language' ) ) {
+	/**
+	 * Filters posts and remove unnecessary translations from the list
+	 *
+	 * @param $array $posts
+	 * @return array
+	 */
+	function us_filter_posts_by_language( $posts ) {
+		if (
+			has_filter( 'us_tr_current_language' )
+			AND ! empty( $posts )
+			AND is_array( $posts )
+		) {
+			$current_lang = apply_filters( 'us_tr_current_language', NULL );
+			if ( ! is_null ( $current_lang ) ) {
+				foreach ( $posts as $post_id => $post ) {
+
+					// Exclude Grid Layouts
+					if ( get_post_type( $post_id ) === 'us_grid_layout' ) {
+						continue;
+					}
+
+					$post_lang_code = apply_filters( 'us_tr_get_post_language_code', (int) $post_id );
+					if ( ! is_null( $post_lang_code ) AND $current_lang !== $post_lang_code ) {
+						unset( $posts[ $post_id ] );
+					}
+				}
+			}
+		}
+		return $posts;
+	}
+	add_filter( 'us_filter_posts_by_language', 'us_filter_posts_by_language', 10, 1 );
+}
+
 if ( ! function_exists( 'us_set_time_limit' ) ) {
 	function us_set_time_limit( $limit = 0 ) {
 		$limit = intval( $limit );
@@ -2986,8 +3056,121 @@ if ( ! function_exists( 'us_set_time_limit' ) ) {
 			&& ! ini_get( 'safe_mode' )
 		) {
 			set_time_limit( $limit );
-		} elseif( function_exists( 'ini_set' ) ) {
-			ini_set( 'max_execution_time',$limit );
+		} elseif ( function_exists( 'ini_set' ) ) {
+			ini_set( 'max_execution_time', $limit );
 		}
+	}
+}
+
+if ( ! function_exists( 'us_replace_dynamic_value' ) ) {
+	/**
+	 * Filters the string via replacing {{}} with custom field value or some other data
+	 *
+	 * @param string $string
+	 * @param string $elm_context: shortcode / grid / header
+	 * @param string $grid_object_type 'post' / 'term' - used for grid context only
+	 * @return string
+	 */
+	function us_replace_dynamic_value( $string, $elm_context, $grid_object_type = 'post' ) {
+
+		// Filter the string, only if it contains the {{}} value
+		if ( is_string( $string ) AND preg_match( "#{{([^}]+)}}#", trim( $string ), $matches ) ) {
+
+			// Check the current object type and ID
+			// case: the grid item showing single term
+			if ( $elm_context == 'grid' AND $grid_object_type == 'term' ) {
+				global $us_grid_term;
+				$object_id = $us_grid_term->term_id;
+				$object_type = 'term';
+
+				// case: the current single term
+			} elseif (
+				$elm_context != 'grid'
+				AND (
+					is_tax()
+					OR is_tag()
+					OR is_category()
+				)
+				AND $term = get_queried_object()
+			) {
+				$object_id = $term->term_id;
+				$object_type = 'term';
+
+				// case: the current single post or grid item showing single post.
+			} else {
+				$object_id = get_the_ID();
+				$object_type = 'post';
+			}
+
+			$replace = '';
+
+			// Predefined behavior: change '{{comment_count}}' to comments amount of the current post
+			if ( $matches[0] === '{{comment_count}}' AND $object_type === 'post' ) {
+				$comments_amount = get_comment_count( $object_id );
+				$replace = $comments_amount['approved'];
+
+				// Check the metadata existance and replace by its value
+			} elseif ( $meta_value = get_metadata( $object_type, $object_id, $matches[1], TRUE ) ) {
+				if ( is_string( $meta_value ) ) {
+					$replace = $meta_value;
+				}
+			}
+
+			// Always replace {{}} part of the string
+			$string = str_replace( $matches[0], $replace, $string );
+		}
+
+		return $string;
+	}
+}
+
+if ( ! function_exists( 'us_register_context_layout' ) ) {
+	/**
+	 * Register context layout
+	 *
+	 * @param string $layout
+	 * @return void
+	 */
+	function us_register_context_layout( $layout ) {
+		global $us_context_layout;
+		$us_context_layout = (string) strtolower( $layout );
+	}
+}
+
+if ( ! function_exists( 'us_is_faqs_page' ) ) {
+	/**
+	 * The current page is FAQs
+	 * @return bool
+	 */
+	function us_is_faqs_page() {
+		return (
+			is_singular( 'page' )
+			AND us_get_option( 'schema_markup', FALSE )
+			AND us_get_option( 'schema_faqs_page', NULL ) == get_the_ID()
+		);
+	}
+}
+
+if ( ! function_exists( 'us_is_available_post_type' ) ) {
+	/**
+	 * Checking post type availables
+	 *
+	 * @param string|array $post_types
+	 * @param array $available_post_types
+	 * @return bool
+	 */
+	function us_is_available_post_type( $post_types, $available_post_types = array() ) {
+		if ( empty( $post_types ) OR empty( $available_post_types ) ) {
+			return FALSE;
+		}
+		if ( is_string( $post_types ) ) {
+			$post_types = array( $post_types );
+		}
+		foreach ( $post_types as $post_type ) {
+			if ( in_array( $post_type, $available_post_types ) ) {
+				return TRUE;
+			}
+		}
+		return FALSE;
 	}
 }

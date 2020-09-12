@@ -7,6 +7,7 @@ return array(
 	'title' => us_translate( 'Menu' ),
 	'icon' => 'fas fa-bars',
 	'params' => array_merge( array(
+		// General
 		'source' => array(
 			'title' => us_translate( 'Menu' ),
 			'description' => $misc['desc_menu_select'],
@@ -64,6 +65,8 @@ return array(
 			),
 			'std' => 'simple',
 		),
+
+		// Dropdowns
 		'dropdown_arrow' => array(
 			'title' => __( 'Dropdown Indication', 'us' ),
 			'type' => 'switch',
@@ -92,6 +95,89 @@ return array(
 			'std' => FALSE,
 			'group' => __( 'Dropdowns', 'us' ),
 		),
+
+		// Menu colors
+		'color_active_bg' => array(
+			'type' => 'color',
+			'text' => __( 'Active Menu Item Background', 'us' ),
+			'std' => 'transparent',
+			'group' => us_translate( 'Colors' ),
+		),
+		'color_active_text' => array(
+			'type' => 'color',
+			'with_gradient' => FALSE,
+			'text' => __( 'Active Menu Item Text', 'us' ),
+			'std' => '_header_middle_text_hover',
+			'group' => us_translate( 'Colors' ),
+		),
+		'color_transparent_active_bg' => array(
+			'type' => 'color',
+			'text' => __( 'Transparent Header', 'us' ) . ': ' . __( 'Active Menu Item Background', 'us' ),
+			'std' => 'transparent',
+			'group' => us_translate( 'Colors' ),
+		),
+		'color_transparent_active_text' => array(
+			'type' => 'color',
+			'with_gradient' => FALSE,
+			'text' => __( 'Transparent Header', 'us' ) . ': ' . __( 'Active Menu Item Text', 'us' ),
+			'std' => '_header_transparent_text_hover',
+			'group' => us_translate( 'Colors' ),
+		),
+		'color_hover_bg' => array(
+			'type' => 'color',
+			'text' => __( 'Menu Item Background on hover', 'us' ),
+			'std' => 'transparent',
+			'group' => us_translate( 'Colors' ),
+		),
+		'color_hover_text' => array(
+			'type' => 'color',
+			'with_gradient' => FALSE,
+			'text' => __( 'Menu Item Text on hover', 'us' ),
+			'std' => '_header_middle_text_hover',
+			'group' => us_translate( 'Colors' ),
+		),
+
+		'color_drop_bg' => array(
+			'type' => 'color',
+			'text' => __( 'Dropdown Background', 'us' ),
+			'std' => '_header_middle_bg',
+			'group' => us_translate( 'Colors' ),
+		),
+		'color_drop_text' => array(
+			'type' => 'color',
+			'with_gradient' => FALSE,
+			'text' => __( 'Dropdown Text', 'us' ),
+			'std' => '_header_middle_text',
+			'group' => us_translate( 'Colors' ),
+		),
+		'color_drop_hover_bg' => array(
+			'type' => 'color',
+			'text' => __( 'Dropdown Item Background on hover', 'us' ),
+			'std' => 'transparent',
+			'group' => us_translate( 'Colors' ),
+		),
+		'color_drop_hover_text' => array(
+			'type' => 'color',
+			'with_gradient' => FALSE,
+			'text' => __( 'Dropdown Item Text on hover', 'us' ),
+			'std' => '_header_middle_text_hover',
+			'group' => us_translate( 'Colors' ),
+		),
+		'color_drop_active_bg' => array(
+			'type' => 'color',
+			'text' => __( 'Dropdown Active Item Background', 'us' ),
+			'std' => 'transparent',
+			'group' => us_translate( 'Colors' ),
+		),
+		'color_drop_active_text' => array(
+			'type' => 'color',
+			'with_gradient' => FALSE,
+			'text' => __( 'Dropdown Active Item Text', 'us' ),
+			'std' => '_header_middle_text_hover',
+			'group' => us_translate( 'Colors' ),
+		),
+
+		// Mobile menu
 		'mobile_width' => array(
 			'title' => __( 'Show mobile menu when screen width is less than', 'us' ),
 			'type' => 'slider',
@@ -127,8 +213,10 @@ return array(
 			'group' => __( 'Mobile Menu', 'us' ),
 		),
 		'mobile_effect_f' => array(
-			'type' => 'radio',
+			'title' => __( 'Animation', 'us' ),
+			'type' => 'select',
 			'options' => array(
+				'fade' => __( 'Fade', 'us' ),
 				'aft' => __( 'Appear From Top', 'us' ),
 				'afc' => __( 'Appear From Center', 'us' ),
 				'afb' => __( 'Appear From Bottom', 'us' ),

@@ -28,34 +28,38 @@
  *
  */
 
-$classes = isset( $classes ) ? $classes : '';
-$classes .= $img_html = $links_html = $link_opener = $link_closer = '';
+$_atts['class'] = 'w-person';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+$_atts['class'] .= ' layout_' . $layout;
+if ( $effect != 'none' ) {
+	$_atts['class'] .= ' effect_' . $effect;
+}
+if ( ! empty( $content ) ) {
+	$_atts['class'] .= ' with_desc';
+}
+
+// When text color is set in Design Options, add the specific class
+if ( us_design_options_has_property( $css, 'color' ) ) {
+	$_atts['class'] .= ' has_text_color';
+}
+
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
 
 // Generate schema.org markup
-$schema_base = $schema_image = $schema_name = $schema_job = $schema_desc = '';
+$schema_image = $schema_name = $schema_job = $schema_desc = '';
 if ( us_get_option( 'schema_markup' ) ) {
-	$schema_base = ' itemscope itemtype="https://schema.org/Person"';
+	$_atts['itemscope'] = '';
+	$_atts['itemtype'] = 'https://schema.org/Person';
 	$schema_image = ' itemprop="image"';
 	$schema_name = ' itemprop="name"';
 	$schema_job = ' itemprop="jobTitle"';
 	$schema_desc = ' itemprop="description"';
 }
-
-$classes .= ' layout_' . $layout;
-if ( $effect != 'none' ) {
-	$classes .= ' effect_' . $effect;
-}
-if ( ! empty( $content ) ) {
-	$classes .= ' with_desc';
-}
-
-// When text color is set in Design Options, add the specific class
-if ( us_design_options_has_property( $css, 'color' ) ) {
-	$classes .= ' has_text_color';
-}
-
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
 
 // Get the image
 $img_html = wp_get_attachment_image( $image, $img_size );
@@ -71,46 +75,93 @@ if ( ! empty( $image_hover ) ) {
 	}
 }
 
+$links_html = '';
 if ( ! empty( $email ) ) {
-	$links_html .= '<a class="w-person-links-item type_email" href="mailto:' . esc_attr( $email ) . '"><i></i></a>';
+	$links_atts = array(
+		'class' => 'w-person-links-item type_email',
+		'href' => 'mailto:' . sanitize_email( $email ),
+		'title' => us_translate( 'Email' ),
+	);
+	$links_html .= '<a ' . us_implode_atts( $links_atts ) . '><i></i></a>';
 }
 if ( ! empty( $facebook ) ) {
-	$links_html .= '<a class="w-person-links-item" href="' . esc_url( $facebook ) . '" target="_blank" rel="noopener"><i class="fab fa-facebook-f"></i></a>';
+	$links_atts = array(
+		'class' => 'w-person-links-item',
+		'href' => $facebook,
+		'target' => '_blank',
+		'rel' => 'noopener',
+		'title' => 'Facebook',
+	);
+	$links_html .= '<a ' . us_implode_atts( $links_atts ) . '><i class="fab fa-facebook-f"></i></a>';
 }
 if ( ! empty( $twitter ) ) {
-	$links_html .= '<a class="w-person-links-item" href="' . esc_url( $twitter ) . '" target="_blank" rel="noopener"><i class="fab fa-twitter"></i></a>';
+	$links_atts = array(
+		'class' => 'w-person-links-item',
+		'href' => $twitter,
+		'target' => '_blank',
+		'rel' => 'noopener',
+		'title' => 'Twitter',
+	);
+	$links_html .= '<a ' . us_implode_atts( $links_atts ) . '><i class="fab fa-twitter"></i></a>';
 }
 if ( ! empty( $google_plus ) ) {
-	$links_html .= '<a class="w-person-links-item" href="' . esc_url( $google_plus ) . '" target="_blank" rel="noopener"><i class="fab fa-google"></i></a>';
+	$links_atts = array(
+		'class' => 'w-person-links-item',
+		'href' => $google_plus,
+		'target' => '_blank',
+		'rel' => 'noopener',
+		'title' => 'Google',
+	);
+	$links_html .= '<a ' . us_implode_atts( $links_atts ) . '><i class="fab fa-google"></i></a>';
 }
 if ( ! empty( $linkedin ) ) {
-	$links_html .= '<a class="w-person-links-item" href="' . esc_url( $linkedin ) . '" target="_blank" rel="noopener"><i class="fab fa-linkedin-in"></i></a>';
+	$links_atts = array(
+		'class' => 'w-person-links-item',
+		'href' => $linkedin,
+		'target' => '_blank',
+		'rel' => 'noopener',
+		'title' => 'LinkedIn',
+	);
+	$links_html .= '<a ' . us_implode_atts( $links_atts ) . '><i class="fab fa-linkedin-in"></i></a>';
 }
 if ( ! empty( $skype ) ) {
 	// Skype link may be some http(s): or skype: link. If protocol is not set, adding "skype:"
-	$skype_url = $skype;
-	if ( strpos( $skype_url, ':' ) === FALSE ) {
-		$skype_url = 'skype:' . esc_attr( $skype_url );
+	if ( strpos( $skype, ':' ) === FALSE ) {
+		$skype = 'skype:' . $skype;
 	}
-	$links_html .= '<a class="w-person-links-item" href="' . $skype_url . '"><i class="fab fa-skype"></i></a>';
+	$links_atts = array(
+		'class' => 'w-person-links-item',
+		'href' => $skype,
+		'title' => 'Skype',
+	);
+	$links_html .= '<a ' . us_implode_atts( $links_atts ) . '><i class="fab fa-skype"></i></a>';
 }
 if ( ! empty( $custom_icon ) AND ! empty( $custom_link ) ) {
-	$links_html .= '<a class="w-person-links-item" href="' . esc_url( $custom_link ) . '" target="_blank" rel="noopener">' . us_prepare_icon_tag( $custom_icon ) . '</a>';
+	$links_atts = array(
+		'class' => 'w-person-links-item',
+		'href' => $custom_link,
+		'target' => '_blank',
+		'rel' => 'noopener',
+		'aria-label' => $custom_icon,
+	);
+	$links_html .= '<a ' . us_implode_atts( $links_atts ) . '>' . us_prepare_icon_tag( $custom_icon ) . '</a>';
 }
+
 if ( ! empty( $links_html ) ) {
-	$classes .= ' with_socials';
+	$_atts['class'] .= ' with_socials';
 	$links_html = '<div class="w-person-links"><div class="w-person-links-list">' . $links_html . '</div></div>';
 }
 
 // Link
+$link_opener = $link_closer = '';
 $link_atts = us_generate_link_atts( $link );
 if ( ! empty( $link_atts ) ) {
-	$link_opener = '<a class="w-person-link"' . $link_atts . '>';
+	$link_opener = '<a class="w-person-link"' . $link_atts . ' aria-label="' . esc_attr( strip_tags( $name ) ) . '">';
 	$link_closer = '</a>';
 }
 
 // Output the element
-$output = '<div class="w-person' . $classes . '"' . $el_id . $schema_base . '>';
+$output = '<div ' . us_implode_atts( $_atts ) . '>';
 $output .= '<div class="w-person-image">';
 $output .= $link_opener . $img_html . $link_closer;
 if ( in_array( $layout, array( 'square', 'circle' ) ) ) {

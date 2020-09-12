@@ -131,10 +131,12 @@ function us_maybe_change_woocommerce_template_path() {
 
 remove_action( 'woocommerce_before_main_content', 'woocommerce_output_content_wrapper', 10 );
 if ( ! function_exists( 'us_woocommerce_before_main_content' ) ) {
-	add_action( 'woocommerce_before_main_content', 'us_woocommerce_before_main_content', 10 );
 	function us_woocommerce_before_main_content() {
-
 		$show_shop_section = TRUE;
+
+		if ( function_exists( 'us_register_context_layout' ) ) {
+			us_register_context_layout( 'main' );
+		}
 
 		if ( is_single() ) {
 			$content_area_id = us_get_page_area_id( 'content' );
@@ -174,6 +176,7 @@ if ( ! function_exists( 'us_woocommerce_before_main_content' ) ) {
 			echo '<div class="l-section-h i-cf">';
 		}
 	}
+	add_action( 'woocommerce_before_main_content', 'us_woocommerce_before_main_content', 10 );
 }
 
 function us_wc_get_template_part_content_single_product( $template, $slug, $name = '' ) {
@@ -415,4 +418,159 @@ if ( ! function_exists( 'us_posts_clauses' ) ) {
 		return $args;
 	}
 	add_action( 'posts_clauses', 'us_posts_clauses', 100, 2 );
+}
+
+if ( ! function_exists( 'us_woocommerce_enable_setup_wizard' ) ) {
+	/**
+	 * Disable redirects wc-setup for developers after resetting the database
+	 *
+	 * @param bool $true
+	 * @return bool
+	 */
+	function us_woocommerce_enable_setup_wizard( $true ) {
+		return defined( 'US_DEV' ) ? FALSE : $true;
+	}
+	add_filter( 'woocommerce_enable_setup_wizard', 'us_woocommerce_enable_setup_wizard', 10, 1 );
+}
+
+if ( ! function_exists( 'us_wc_pre_get_posts' ) ) {
+	/**
+	 * Disable the output of products that are out of stock
+	 *
+	 * @param WP_Query $query
+	 * @return void
+	 */
+	function us_wc_pre_get_posts( $query ) {
+		if (
+			is_admin()
+			OR ! class_exists( 'woocommerce' )
+			OR get_option( 'woocommerce_hide_out_of_stock_items', 'no' ) !== 'yes'
+			// If the search page is not for products then exit
+			OR (
+				is_search()
+				AND $query->get( 'post_type' ) !== 'product'
+			)
+		) {
+			return;
+		}
+
+		$include_outofstock_meta = FALSE;
+		$query_vars = &$query->query_vars;
+
+		// The for Product Archive Pages
+		if ( isset( $query_vars['wc_query'] ) AND $query_vars['wc_query'] === 'product_query' ) {
+			$include_outofstock_meta = TRUE;
+
+			// The for post_type == `product`
+		} else if (
+			! isset( $query_vars['product'] ) // Not a product page
+			AND ! empty( $query_vars['post_type'] )
+			AND (
+				$query_vars['post_type'] === 'product'
+				OR (
+					is_array( $query_vars['post_type'] )
+					AND in_array( 'product', $query_vars['post_type'] )
+				)
+			)
+		) {
+			$include_outofstock_meta = TRUE;
+
+			// The for definition by tax_query
+		} else if ( ! empty( $query_vars['tax_query'] ) ) {
+			foreach ( $query_vars['tax_query'] as $tax ) {
+				if (
+					! empty( $tax['taxonomy'] )
+					AND (
+						$tax['taxonomy'] === 'product_cat'
+						OR taxonomy_is_product_attribute( $tax['taxonomy'] )
+					)
+				) {
+					$include_outofstock_meta = TRUE;
+					break;
+				}
+			}
+		}
+
+		// Add meta_query for outofstock
+		if ( $include_outofstock_meta ) {
+			$query_vars['meta_query'][] = array(
+				'key' => '_stock_status',
+				'value' => 'outofstock',
+				'compare' => '!=',
+			);
+		}
+	}
+	add_filter( 'pre_get_posts', 'us_wc_pre_get_posts', 10, 1 );
+}
+
+
+if ( ! function_exists( 'us_wc_get_min_max_price' ) ) {
+	/**
+	 * Get min max prices of products, taking into account tax etc.
+	 *
+	 * @param array $query_vars
+	 * @return array
+	 */
+	function us_wc_get_min_max_price( $query_vars = array() ) {
+		if ( ! wp_doing_ajax() AND defined( 'WP_ADMIN' ) ) {
+			return array();
+		}
+
+		global $wpdb;
+
+		$tax_query = us_arr_path( $query_vars, 'tax_query', array() );
+		$meta_query = us_arr_path( $query_vars, 'meta_query',  array() );
+
+		$meta_query = new WP_Meta_Query( $meta_query );
+		$tax_query = new WP_Tax_Query( $tax_query );
+
+		$meta_query_sql = $meta_query->get_sql( 'post', $wpdb->posts, 'ID' );
+		$tax_query_sql = $tax_query->get_sql( $wpdb->posts, 'ID' );
+		// TODO: Add search criteria to $search_query_sql
+		$search_query_sql = '';
+
+		// Get post_types
+		$post_types = array_map( 'esc_sql', apply_filters( 'woocommerce_price_filter_post_type', array( 'product' ) ) );
+
+		// Preparing a SQL query to get the min and max price
+		$query_sql = "
+			SELECT
+				MIN( min_price ) AS min_price, MAX( max_price ) AS max_price
+			FROM {$wpdb->wc_product_meta_lookup}
+			WHERE product_id IN (
+				SELECT
+					ID
+				FROM {$wpdb->posts} " . $tax_query_sql['join'] . $meta_query_sql['join'] . "
+				WHERE
+					{$wpdb->posts}.post_type IN ('" . implode( "','", $post_types ) . "')
+					AND {$wpdb->posts}.post_status = 'publish'
+					" . $tax_query_sql['where'] . $meta_query_sql['where'] . $search_query_sql . '
+			)';
+		$query_sql = apply_filters( 'woocommerce_price_filter_sql', $query_sql, $meta_query_sql, $tax_query_sql );
+
+		// Get the min and max price
+		$prices = $wpdb->get_row( $query_sql );
+		$min_price = floor( $prices->min_price );
+		$max_price = ceil( $prices->max_price );
+
+		// Check to see if we should add taxes to the prices if store are excl tax but display incl.
+		$tax_display_mode = get_option( 'woocommerce_tax_display_shop' );
+		if ( wc_tax_enabled() && ! wc_prices_include_tax() && 'incl' === $tax_display_mode ) {
+			$tax_rates = WC_Tax::get_rates( apply_filters( 'woocommerce_price_filter_widget_tax_class', '' ) );
+			if ( $tax_rates ) {
+				$min_price += WC_Tax::get_tax_total( WC_Tax::calc_exclusive_tax( $min_price, $tax_rates ) );
+				$max_price += WC_Tax::get_tax_total( WC_Tax::calc_exclusive_tax( $max_price, $tax_rates ) );
+			}
+		}
+
+		// Round values to nearest 10 by default.
+		$step = max( apply_filters( 'woocommerce_price_filter_widget_step', 10 ), 1 );
+		$min_price = apply_filters( 'woocommerce_price_filter_widget_min_amount', floor( $min_price / $step ) * $step );
+		$max_price = apply_filters( 'woocommerce_price_filter_widget_max_amount', ceil( $max_price / $step ) * $step );
+
+		return array(
+			'min' => $min_price,
+			'max' => $max_price,
+		);
+	}
 }

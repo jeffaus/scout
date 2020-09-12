@@ -1,7 +1,7 @@
 <?php defined( 'ABSPATH' ) OR die( 'This script cannot be accessed directly.' );
 
 /**
- * Output menu element
+ * Menu element
  *
  * @var $hover_effect    string Hover Effect: 'simple' / 'underline'
  * @var $dropdown_effect string Dropdown Effect
@@ -36,33 +36,32 @@ if ( empty( $location ) AND ( empty( $source ) OR ! is_nav_menu( $source ) ) ) {
 	return;
 }
 
-$classes = isset( $classes ) ? $classes : '';
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
+$_atts['class'] = 'w-nav type_desktop';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
+$_atts['class'] .= ( $vstretch ) ? ' height_full' : '';
+$_atts['class'] .= ( $spread ) ? ' spread' : '';
+$_atts['class'] .= ' dropdown_' . $dropdown_effect;
+$_atts['class'] .= ' m_align_' . $mobile_align;
+$_atts['class'] .= ' m_layout_' . $mobile_layout;
 
-if ( $vstretch ) {
-	$classes .= ' height_full';
+if ( $mobile_layout == 'panel' ) {
+	$_atts['class'] .= ' m_effect_' . $mobile_effect_p;
 }
-$classes .= ' type_desktop dropdown_' . $dropdown_effect;
-$classes .= ( isset( $mobile_align ) ) ? ' m_align_' . $mobile_align : '';
-$classes .= ( $spread ) ? ' spread' : '';
-if ( isset( $mobile_layout ) ) {
-	$classes .= ' m_layout_' . $mobile_layout;
-	if ( $mobile_layout == 'panel' ) {
-		$classes .= ( isset( $mobile_effect_p ) ) ? ' m_effect_' . $mobile_effect_p : '';
-	}
-	if ( $mobile_layout == 'fullscreen' ) {
-		$classes .= ( isset( $mobile_effect_f ) ) ? ' m_effect_' . $mobile_effect_f : '';
-	}
+if ( $mobile_layout == 'fullscreen' ) {
+	$_atts['class'] .= ' m_effect_' . $mobile_effect_f;
+}
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
 }
 
-$list_classes = ' level_1 hide_for_mobiles';
-$list_classes .= ( isset( $hover_effect ) ) ? ' hover_' . $hover_effect : '';
-
-echo '<nav class="w-nav' . $classes . '"';
 if ( us_get_option( 'schema_markup' ) ) {
-	echo ' itemscope itemtype="https://schema.org/SiteNavigationElement"';
+	$_atts['itemscope'] = '';
+	$_atts['itemtype'] = 'https://schema.org/SiteNavigationElement';
 }
-echo '>';
+
+// Output the lement
+echo '<nav ' . us_implode_atts( $_atts ) . '>';
+
 echo '<a class="w-nav-control" href="javascript:void(0);" aria-label="' . us_translate( 'Menu' ) . '">';
 if ( isset( $mobile_icon_text ) AND $mobile_icon_text == 'left' ) {
 	echo '<span>' . us_translate( 'Menu' ) . '</span>';
@@ -72,7 +71,9 @@ if ( isset( $mobile_icon_text ) AND $mobile_icon_text == 'right' ) {
 	echo '<span>' . us_translate( 'Menu' ) . '</span>';
 }
 echo '</a>';
-echo '<ul class="w-nav-list' . $list_classes . '">';
+
+// Items list
+echo '<ul class="w-nav-list level_1 hide_for_mobiles hover_' . $hover_effect . '">';
 if ( $location ) {
 	wp_nav_menu(
 		array(
@@ -96,6 +97,7 @@ if ( $location ) {
 }
 echo '<li class="w-nav-close"></li>';
 echo '</ul>';
+
 echo '<div class="w-nav-options hidden"';
 echo us_pass_data_to_js(
 	array(
@@ -104,4 +106,5 @@ echo us_pass_data_to_js(
 	)
 );
 echo '></div>';
+
 echo '</nav>';

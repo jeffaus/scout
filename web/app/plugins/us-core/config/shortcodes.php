@@ -18,6 +18,7 @@ $elements = array(
 	'sharing',
 	'socials',
 	'grid',
+	'grid_filter',
 	'carousel',
 	'popup',
 	'flipbox',
@@ -33,6 +34,7 @@ $elements = array(
 	'message',
 	'scroller',
 	'additional_menu',
+	'search',
 	'breadcrumbs',
 
 	// Post Elements
@@ -45,10 +47,9 @@ $elements = array(
 	'post_comments',
 	'post_navigation',
 	'post_custom_field',
+	'post_views'
 );
-if ( class_exists( 'Post_Views_Counter' ) ) {
-	$elements[] = 'post_views';
-}
+
 if ( class_exists( 'woocommerce' ) ) {
 	$elements[] = 'product_gallery';
 	$elements[] = 'product_field';
@@ -138,18 +139,19 @@ return array(
 		),
 		'vc_column' => array(
 			'atts' => array(
-				'link' => '',
-				'text_color' => '',
 				'animate' => '',
 				'animate_delay' => '',
-				'width' => '1/1',
+				'css' => '',
+				'el_class' => '',
+				'el_id' => '',
+				'link' => '',
 				'offset' => '',
 				'sticky' => FALSE,
 				'sticky_pos_top' => '',
 				'stretch' => FALSE,
-				'el_id' => '',
-				'el_class' => '',
-				'css' => '',
+				'text_color' => '',
+				'us_bg_overlay_color' => '',
+				'width' => '1/1',
 			),
 		),
 		'vc_column_inner' => array(
@@ -217,8 +219,8 @@ return array(
 				'us_shape_custom_bottom' => '',
 				'us_shape_height_top' => '15vh',
 				'us_shape_height_bottom' => '15vh',
-				'us_shape_color_top' => '#ffffff',
-				'us_shape_color_bottom' => '#ffffff',
+				'us_shape_color_top' => '_content_bg',
+				'us_shape_color_bottom' => '_content_bg',
 				'us_shape_overlap_top' => FALSE,
 				'us_shape_overlap_bottom' => FALSE,
 				'us_shape_flip_top' => FALSE,
@@ -250,7 +252,9 @@ return array(
 		'vc_tta_accordion' => array(
 			'atts' => array(
 				'toggle' => FALSE,
+				'scrolling' => '1',
 				'remove_indents' => FALSE,
+				'faq_markup' => FALSE,
 				'c_align' => 'left',
 				'c_icon' => 'chevron',
 				'c_position' => 'right',
@@ -297,6 +301,7 @@ return array(
 				// Default values for aliased shortcodes
 				'toggle' => FALSE,
 				'remove_indents' => FALSE,
+				'faq_markup' => FALSE,
 				'c_align' => 'left',
 				'c_icon' => 'chevron',
 				'c_position' => 'right',
@@ -331,6 +336,11 @@ return array(
 				'ratio' => '16x9',
 				'max_width' => '',
 				'align' => 'left',
+				'overlay_image' => '',
+				'overlay_icon' => '1',
+				'overlay_icon_size' => '1.5rem',
+				'overlay_icon_bg_color' => 'rgba(0,0,0,0.5)',
+				'overlay_icon_text_color' => '#fff',
 				'el_id' => '',
 				'el_class' => '',
 				'css' => '',

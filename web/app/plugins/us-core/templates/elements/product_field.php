@@ -4,8 +4,13 @@
  * WooCommerce Product data
  */
 
-global $product;
-if ( ! class_exists( 'woocommerce' ) OR ! $product OR $us_elm_context == 'grid_term' ) {
+global $product, $us_grid_object_type;
+
+if (
+	! class_exists( 'woocommerce' )
+	OR ! $product
+	OR ( $us_elm_context == 'grid' AND $us_grid_object_type == 'term' )
+) {
 	return;
 }
 

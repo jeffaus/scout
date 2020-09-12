@@ -1,16 +1,35 @@
 <?php defined( 'ABSPATH' ) OR die( 'This script cannot be accessed directly.' );
 
-add_action( 'load-post.php', 'us_post_meta_boxes_setup' );
-add_action( 'load-post-new.php', 'us_post_meta_boxes_setup' );
+if ( ! function_exists( 'us_post_meta_boxes_setup' ) ) {
+	add_action( 'load-post.php', 'us_post_meta_boxes_setup' );
+	add_action( 'load-post-new.php', 'us_post_meta_boxes_setup' );
 
-function us_post_meta_boxes_setup() {
+	function us_post_meta_boxes_setup() {
 
-	$config = us_config( 'meta-boxes', array() );
+		$config = us_config( 'meta-boxes', array() );
 
-	foreach ( $config as &$meta_box ) {
-		new US_Meta_Box( $meta_box );
+		foreach ( $config as &$meta_box ) {
+			new US_Meta_Box( $meta_box );
+		}
 	}
 }
+
+if ( has_filter( 'us_tr_default_language' ) AND ! function_exists( 'us_admin_body_class_non_default_lang' ) ) {
+	/**
+	 * Add 'us_lang_non_default' class to body element on non-default language admin pages
+	 * to disable some of metaboxes
+	 */
+	function us_admin_body_class_non_default_lang( $class ) {
+		$current_language = apply_filters( 'us_tr_current_language', NULL );
+		$default_language = apply_filters( 'us_tr_default_language', NULL );
+		if ( $current_language != $default_language ) {
+			$class .= ' us_lang_non_default';
+		}
+		return $class;
+	}
+	add_filter( 'admin_body_class', 'us_admin_body_class_non_default_lang' );
+}
+
 
 class US_Meta_Box {
 

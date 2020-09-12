@@ -7,7 +7,6 @@
 $classes = isset( $classes ) ? $classes : '';
 $classes .= ' align_' . $alignment;
 $classes .= ' valign_' . $valign;
-
 $classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
 $el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
 

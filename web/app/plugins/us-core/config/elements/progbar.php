@@ -33,14 +33,31 @@ return array(
 		'count' => array(
 			'title' => __( 'Progress Value', 'us' ),
 			'type' => 'text',
-			'std' => '50',
+			'std' => '50%',
 			'holder' => 'span',
+			'cols' => 2,
+		),
+		'final_value' => array(
+			'title' => __( 'Final Value', 'us' ),
+			'type' => 'text',
+			'std' => '100%',
+			'holder' => 'span',
+			'cols' => 2,
 		),
 		'hide_count' => array(
 			'type' => 'switch',
 			'switch_text' => __( 'Hide progress value counter', 'us' ),
 			'std' => FALSE,
+			'cols' => 2,
 			'classes' => 'for_above',
+		),
+		'hide_final_value' => array(
+			'type' => 'switch',
+			'switch_text' => __( 'Hide final value', 'us' ),
+			'std' => '1',
+			'classes' => 'for_above',
+			'cols' => 2,
+			'show_if' => array( 'hide_count', '=', FALSE ),
 		),
 		'style' => array(
 			'title' => us_translate( 'Style' ),
@@ -69,6 +86,7 @@ return array(
 		),
 		'bar_color' => array(
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'std' => '',
 			'classes' => 'for_above',
 			'show_if' => array( 'color', '=', 'custom' ),

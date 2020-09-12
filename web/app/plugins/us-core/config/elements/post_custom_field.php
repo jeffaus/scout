@@ -74,7 +74,7 @@ return array(
 			'title' => __( 'Image Size', 'us' ),
 			'description' => $misc['desc_img_sizes'],
 			'type' => 'select',
-			'options' => us_image_sizes_select_values(),
+			'options' => us_get_image_sizes_list(),
 			'std' => 'large',
 			'show_if' => array( 'key', '=', $image_fields ),
 		),

@@ -36,6 +36,7 @@ return array(
 		),
 		'custom_color' => array(
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'with_gradient' => FALSE,
 			'std' => '',
 			'classes' => 'for_above',

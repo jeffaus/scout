@@ -78,8 +78,9 @@ if ( empty( $providers_list ) ) {
 
 if ( empty( $url ) ) {
 	// Using the current page URL
-	$url = home_url( $_SERVER['REQUEST_URI'] );
-	$url = str_replace( '?us_iframe=1', '', $url );
+	$url  = wp_parse_url( home_url(), PHP_URL_SCHEME ) . '://';
+	$url .= wp_parse_url( home_url(), PHP_URL_HOST );
+	$url .= str_replace( '?us_iframe=1', '', $_SERVER['REQUEST_URI'] );
 }
 
 if ( $counters == 'show' ) {

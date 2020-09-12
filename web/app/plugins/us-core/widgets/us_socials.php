@@ -23,7 +23,7 @@ class US_Widget_Socials extends US_Widget {
 			$output .= '<h3 class="widgettitle">' . $title . '</h3>';
 		}
 
-		$classes .= ' style_' . $instance['style'];
+		$classes  = ' style_' . $instance['style'];
 		$classes .= ' hover_' . $instance['hover'];
 		$classes .= ' color_' . $instance['color'];
 		$classes .= ' shape_' . $instance['shape'];

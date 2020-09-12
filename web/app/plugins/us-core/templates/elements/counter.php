@@ -23,7 +23,9 @@ $el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
 // Generate inline styles for Value
 $value_inline_css = us_prepare_inline_css(
 	array(
-		'color' => ( $color == 'custom' ) ? $custom_color : '',
+		'color' => ( $color == 'custom' )
+			? us_get_color( $custom_color )
+			: '',
 	)
 );
 $title_inline_css = us_prepare_inline_css(
@@ -67,8 +69,8 @@ $output .= '<div class="w-counter-value"' . $value_inline_css . '>';
 // Determining if we treat each part as a number or as a letter combination
 for ( $index = 0, $length = count( $pos['initial'] ) - 1; $index < $length; $index++ ) {
 	$part_type = ( $index % 2 ) ? 'number' : 'text';
-	$part_initial = substr( $initial, $pos['initial'][ $index ], $pos['initial'][ $index + 1 ] - $pos['initial'][ $index ] );
-	$part_final = substr( $final, $pos['final'][ $index ], $pos['final'][ $index + 1 ] - $pos['final'][ $index ] );
+	$part_initial = mb_substr( $initial, $pos['initial'][ $index ], $pos['initial'][ $index + 1 ] - $pos['initial'][ $index ] );
+	$part_final = mb_substr( $final, $pos['final'][ $index ], $pos['final'][ $index + 1 ] - $pos['final'][ $index ] );
 	$output .= '<span class="w-counter-value-part type_' . $part_type . '" data-final="' . esc_attr( $part_final ) . '">' . $part_initial . '</span>';
 }
 

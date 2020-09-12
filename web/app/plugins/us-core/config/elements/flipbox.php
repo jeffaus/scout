@@ -45,6 +45,7 @@ return array(
 		'front_bgcolor' => array(
 			'title' => __( 'Background Color', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'std' => '',
 			'cols' => 2,
 			'group' => __( 'Front Side', 'us' ),
@@ -52,6 +53,7 @@ return array(
 		'front_textcolor' => array(
 			'title' => __( 'Text Color', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'with_gradient' => FALSE,
 			'std' => '',
 			'cols' => 2,
@@ -67,7 +69,7 @@ return array(
 			'title' => __( 'Background Image Size', 'us' ),
 			'description' => $misc['desc_img_sizes'],
 			'type' => 'select',
-			'options' => us_image_sizes_select_values(),
+			'options' => us_get_image_sizes_list(),
 			'std' => 'large',
 			'cols' => 2,
 			'show_if' => array( 'front_bgimage', '!=', '' ),
@@ -113,6 +115,7 @@ return array(
 		'front_icon_color' => array(
 			'title' => __( 'Icon Color', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'with_gradient' => FALSE,
 			'std' => '',
 			'cols' => 2,
@@ -122,6 +125,7 @@ return array(
 		'front_icon_bgcolor' => array(
 			'title' => __( 'Icon Circle Color', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'std' => '',
 			'cols' => 2,
 			'show_if' => array( 'front_icon_type', '=', 'font' ),
@@ -191,6 +195,7 @@ return array(
 		'back_bgcolor' => array(
 			'title' => __( 'Background Color', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'std' => '',
 			'cols' => 2,
 			'group' => __( 'Back Side', 'us' ),
@@ -198,6 +203,7 @@ return array(
 		'back_textcolor' => array(
 			'title' => __( 'Text Color', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'with_gradient' => FALSE,
 			'std' => '',
 			'cols' => 2,
@@ -213,12 +219,12 @@ return array(
 			'title' => __( 'Background Image Size', 'us' ),
 			'description' => $misc['desc_img_sizes'],
 			'type' => 'select',
-			'options' => us_image_sizes_select_values(),
+			'options' => us_get_image_sizes_list(),
 			'std' => 'large',
 			'cols' => 2,
 			'show_if' => array( 'back_bgimage', '!=', '' ),
 			'group' => __( 'Back Side', 'us' ),
-			
+
 		),
 
 		// Link

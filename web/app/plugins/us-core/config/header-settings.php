@@ -27,8 +27,10 @@ return array(
 	// Supported elements
 	'elements' => $elements,
 
-	// General Options
+	// Side options
 	'options' => array(
+
+		// General Header Settings
 		'global' => array(
 			'breakpoint' => array(
 				'title' => __( 'Apply when the screen width is less than', 'us' ),
@@ -140,6 +142,8 @@ return array(
 				'std' => 'thin',
 			),
 		),
+
+		// Top Area
 		'top' => array(
 			'top_show' => array(
 				'switch_text' => __( 'Show Area', 'us' ),
@@ -197,13 +201,80 @@ return array(
 				'switch_text' => __( 'Center the middle cell', 'us' ),
 				'type' => 'switch',
 				'std' => FALSE,
+				'classes' => 'for_above',
 				'show_if' => array(
 					array( 'top_show', '=', TRUE ),
 					'and',
 					array( 'orientation', '=', 'hor' ),
 				),
 			),
+			'top_bg_color' => array(
+				'type' => 'color',
+				'title' => us_translate( 'Background' ),
+				'std' => '_header_top_bg',
+				'show_if' => array(
+					array( 'top_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'top_text_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => us_translate( 'Text' ) . ' / ' . us_translate( 'Link' ),
+				'std' => '_header_top_text',
+				'show_if' => array(
+					array( 'top_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'top_text_hover_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => __( 'Link on hover', 'us' ),
+				'std' => '_header_top_text_hover',
+				'show_if' => array(
+					array( 'top_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'top_transparent_bg_color' => array(
+				'type' => 'color',
+				'title' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Background' ),
+				'std' => '_header_top_transparent_bg',
+				'show_if' => array(
+					array( 'top_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'top_transparent_text_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Text' ) . ' / ' . us_translate( 'Link' ),
+				'std' => '_header_top_transparent_text',
+				'show_if' => array(
+					array( 'top_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'top_transparent_text_hover_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => __( 'Transparent Header', 'us' ) . ': ' . __( 'Link on hover', 'us' ),
+				'std' => '_header_top_transparent_text_hover',
+				'show_if' => array(
+					array( 'top_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
 		),
+
+		// Main Area
 		'middle' => array(
 			'middle_height' => array(
 				'title' => __( 'Area Height', 'us' ),
@@ -248,6 +319,7 @@ return array(
 				'switch_text' => __( 'Center the middle cell', 'us' ),
 				'type' => 'switch',
 				'std' => FALSE,
+				'classes' => 'for_above',
 				'show_if' => array( 'orientation', '=', 'hor' ),
 			),
 			'elm_valign' => array(
@@ -320,7 +392,79 @@ return array(
 			'bg_img_wrapper_end' => array(
 				'type' => 'wrapper_end',
 			),
+			'middle_bg_color' => array(
+				'type' => 'color',
+				'title' => us_translate( 'Background' ),
+				'std' => '_header_middle_bg',
+				'show_if' => array(
+					// Placing stub condition that will always be true but will force to check this show_if rule
+					array( 'orientation', '=', array( 'hor', 'ver' ) ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'middle_text_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => us_translate( 'Text' ) . ' / ' . us_translate( 'Link' ),
+				'std' => '_header_middle_text',
+				'show_if' => array(
+					// Placing stub condition that will always be true but will force to check this show_if rule
+					array( 'orientation', '=', array( 'hor', 'ver' ) ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'middle_text_hover_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => __( 'Link on hover', 'us' ),
+				'std' => '_header_middle_text_hover',
+				'show_if' => array(
+					// Placing stub condition that will always be true but will force to check this show_if rule
+					array( 'orientation', '=', array( 'hor', 'ver' ) ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'middle_transparent_bg_color' => array(
+				'type' => 'color',
+				'title' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Background' ),
+				'std' => '_header_transparent_bg',
+				'show_if' => array(
+					// Placing stub condition that will always be true but will force to check this show_if rule
+					array( 'orientation', '=', array( 'hor', 'ver' ) ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'middle_transparent_text_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Text' ) . ' / ' . us_translate( 'Link' ),
+				'std' => '_header_transparent_text',
+				'show_if' => array(
+					// Placing stub condition that will always be true but will force to check this show_if rule
+					array( 'orientation', '=', array( 'hor', 'ver' ) ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'middle_transparent_text_hover_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => __( 'Transparent Header', 'us' ) . ': ' . __( 'Link on hover', 'us' ),
+				'std' => '_header_transparent_text_hover',
+				'show_if' => array(
+					// Placing stub condition that will always be true but will force to check this show_if rule
+					array( 'orientation', '=', array( 'hor', 'ver' ) ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
 		),
+
+		// Bottom Area
 		'bottom' => array(
 			'bottom_show' => array(
 				'switch_text' => __( 'Show Area', 'us' ),
@@ -377,10 +521,75 @@ return array(
 				'switch_text' => __( 'Center the middle cell', 'us' ),
 				'type' => 'switch',
 				'std' => FALSE,
+				'classes' => 'for_above',
 				'show_if' => array(
 					array( 'bottom_show', '=', TRUE ),
 					'and',
 					array( 'orientation', '=', 'hor' ),
+				),
+			),
+			'bottom_bg_color' => array(
+				'type' => 'color',
+				'title' => us_translate( 'Background' ),
+				'std' => '_header_middle_bg',
+				'show_if' => array(
+					array( 'bottom_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'bottom_text_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => us_translate( 'Text' ) . ' / ' . us_translate( 'Link' ),
+				'std' => '_header_middle_text',
+				'show_if' => array(
+					array( 'bottom_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'bottom_text_hover_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => __( 'Link on hover', 'us' ),
+				'std' => '_header_middle_text_hover',
+				'show_if' => array(
+					array( 'bottom_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'bottom_transparent_bg_color' => array(
+				'type' => 'color',
+				'title' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Background' ),
+				'std' => '_header_transparent_bg',
+				'show_if' => array(
+					array( 'bottom_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'bottom_transparent_text_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => __( 'Transparent Header', 'us' ) . ': ' . us_translate( 'Text' ) . ' / ' . us_translate( 'Link' ),
+				'std' => '_header_transparent_text',
+				'show_if' => array(
+					array( 'bottom_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
+				),
+			),
+			'bottom_transparent_text_hover_color' => array(
+				'type' => 'color',
+				'with_gradient' => FALSE,
+				'title' => __( 'Transparent Header', 'us' ) . ': ' . __( 'Link on hover', 'us' ),
+				'std' => '_header_transparent_text_hover',
+				'show_if' => array(
+					array( 'bottom_show', '=', TRUE ),
+					'and',
+					array( 'state', '=', 'default' ),
 				),
 			),
 		),

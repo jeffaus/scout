@@ -43,6 +43,7 @@ return array(
 		'icon_color' => array(
 			'title' => __( 'Icon Color', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'std' => '',
 			'cols' => 2,
 			'show_if' => array( 'color', '=', 'custom' ),
@@ -50,6 +51,7 @@ return array(
 		'circle_color' => array(
 			'title' => __( 'Icon Circle Color', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'std' => '',
 			'cols' => 2,
 			'show_if' => array( 'color', '=', 'custom' ),

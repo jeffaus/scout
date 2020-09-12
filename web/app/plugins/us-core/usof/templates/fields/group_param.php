@@ -13,6 +13,7 @@
 global $usof_options;
 
 $output = '<div class="usof-form-group-item">';
+$output .= '<style></style>';
 $group_content_styles = '';
 
 // Output group title block, if "is_accordion" is set
@@ -22,7 +23,7 @@ if ( ! empty( $field['is_accordion'] ) ) {
 	$param_title = ! empty( $field['title'] ) ? $field['title'] : '';
 	foreach ( $field['params'] as $param_name => $param ) {
 		if ( strpos( $param_title, '{{' . $param_name . '}}' ) !== FALSE ) {
-			$param_value = isset( $params_values[$param_name] ) ? $params_values[$param_name] : $field['params'][$param_name]['std'];
+			$param_value = isset( $params_values[ $param_name ] ) ? $params_values[ $param_name ] : $field['params'][ $param_name ]['std'];
 			$param_value = esc_attr( trim( $param_value ) );
 			$param_title = str_replace( '{{' . $param_name . '}}', $param_value, $param_title );
 		}
@@ -33,11 +34,7 @@ if ( ! empty( $field['is_accordion'] ) ) {
 	// Output Button preview, if preview attribute is set as "button"
 	if ( isset( $field['preview'] ) AND $field['preview'] == 'button' ) {
 		$output .= '<div class="usof-btn-preview hov_fade">';
-		$output .= '<div class="usof-btn">';
-		$output .= '<div class="usof-btn-before"></div>';
-		$output .= '<span class="usof-btn-label">' . $param_title . '</span>';
-		$output .= '<div class="usof-btn-after"></div>';
-		$output .= '</div>';
+		$output .= '<div class="usof-btn"><span class="usof-btn-label">' . strip_tags( $param_title ) . '</span></div>';
 		$output .= '</div>';
 	} else {
 		$output .= $param_title;
@@ -47,7 +44,6 @@ if ( ! empty( $field['is_accordion'] ) ) {
 } elseif ( isset( $field['preview'] ) AND $field['preview'] == 'input_fields' ) {
 
 	// Output Input Fields preview, if preview attribute is set as "input_fields"
-	$output .= '<style></style>';
 	$output .= '<div class="usof-input-preview" style="background: ' . $usof_options['color_content_bg'] . '">';
 	$output .= '<input class="usof-input-preview-elm" type="text"';
 	$output .= ' value="' . esc_attr( us_translate( 'Text' ) . ' ' . __( '(single line)', 'us' ) ) . '"';

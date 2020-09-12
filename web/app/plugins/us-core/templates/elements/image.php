@@ -4,16 +4,21 @@
  * Output Image element
  */
 
-$img_html = $img_src = $img_shadow = $inline_css = '';
+$_atts['class'] = 'w-image';
+$_atts['class'] .= isset( $classes ) ? $classes : '';
 
-$classes = isset( $classes ) ? $classes : '';
-$classes .= ( ! empty( $style ) ) ? ' style_' . $style : '';
-$classes .= ( ! empty( $el_class ) ) ? ( ' ' . $el_class ) : '';
-$el_id = ( ! empty( $el_id ) ) ? ( ' id="' . esc_attr( $el_id ) . '"' ) : '';
-$css = ! empty( $css ) ? $css : '';
+if ( ! empty( $style ) ) {
+	$_atts['class'] .= ' style_' . $style;
+}
+if ( ! empty( $el_class ) ) {
+	$_atts['class'] .= ' ' . $el_class;
+}
+if ( ! empty( $el_id ) ) {
+	$_atts['id'] = $el_id;
+}
 
-if ( class_exists( 'SitePress' ) ) {
-	$image = apply_filters( 'wpml_object_id', $image );
+if ( has_filter( 'us_tr_object_id' ) ) {
+	$image = apply_filters( 'us_tr_object_id', $image );
 }
 
 // Classes & inline styles
@@ -21,23 +26,21 @@ if ( $us_elm_context == 'shortcode' ) {
 
 	$img = $image;
 
-	$classes .= ' align_' . $align;
-	$classes .= ( $meta ) ? ' meta_' . $meta_style : '';
+	$_atts['class'] .= ' align_' . $align;
+	$_atts['class'] .= ( $meta ) ? ' meta_' . $meta_style : '';
+
 	if ( ! empty( $animate ) ) {
-		$classes .= ' animate_' . $animate;
+		$_atts['class'] .= ' animate_' . $animate;
 		if ( ! empty( $animate_delay ) ) {
-			$inline_css = us_prepare_inline_css(
-				array(
-					'animation-delay' => floatval( $animate_delay ) . 's',
-				)
-			);
+			$_atts['style'] = 'animation-delay:' . floatval( $animate_delay ) . 's';
 		}
 	}
 }
 
 // Get the image
+$img_src = '';
 $img_arr = explode( '|', $img );
-$img_html .= wp_get_attachment_image( $img_arr[0], $size );
+$img_html = wp_get_attachment_image( $img_arr[0], $size );
 
 if ( empty( $img_html ) ) {
 	// check if image ID is URL
@@ -53,7 +56,7 @@ if ( empty( $img_html ) ) {
 
 // Get the image for transparent header if set
 if ( ! empty( $img_transparent ) AND preg_match( '~^(\d+)(\|(.+))?$~', $img_transparent, $matches ) ) {
-	$classes .= ' with_transparent';
+	$_atts['class'] .= ' with_transparent';
 	$img_arr = explode( '|', $img_transparent );
 	$img_html .= wp_get_attachment_image( $img_arr[0], $size );
 }
@@ -86,19 +89,20 @@ if ( $us_elm_context == 'shortcode' AND $img_html AND $meta ) {
 
 	// When colors is set in Design settings, add the specific class
 	if ( us_design_options_has_property( $css, array( 'background-color', 'background-image' ) ) ) {
-		$classes .= ' has_bg_color';
+		$_atts['class'] .= ' has_bg_color';
 	}
 	if ( us_design_options_has_property( $css, 'color' ) ) {
-		$classes .= ' has_text_color';
+		$_atts['class'] .= ' has_text_color';
 	}
 }
 
 // Get url to the image to immitate shadow
+$img_shadow_html = '';
 if ( $style == 'shadow-2' ) {
 	$img_src = empty( $img_src ) ? wp_get_attachment_image_url( $img, $size ) : $img_src;
 	$img_src = empty( $img_src ) ? us_get_img_placeholder( $size, TRUE ) : $img_src;
 
-	$img_shadow = '<div class="w-image-shadow" style="background-image:url(' . $img_src . ');"></div>';
+	$img_shadow_html = '<div class="w-image-shadow" style="background-image:url(' . $img_src . ');"></div>';
 }
 
 // Link
@@ -116,19 +120,22 @@ if ( $onclick === 'none' ) {
 }
 if ( ! empty( $link_atts ) ) {
 	$tag = 'a';
+	// Add placeholder aria-label for Accessibility
+	// TODO: make this dependable from image title
+	$link_atts .= ' aria-label="' . us_translate( 'Link' ) . '"';
 } else {
 	$tag = 'div';
 }
 
 // Force "Open in a new tab" attributes
-if ( $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
+if ( ! empty( $link_atts ) AND $link_new_tab AND strpos( $link_atts, 'target="_blank"' ) === FALSE ) {
 	$link_atts .= ' target="_blank" rel="noopener nofollow"';
 }
 
 // Output the element
-$output = '<div class="w-image' . $classes . '"' . $el_id . $inline_css . '>';
+$output = '<div ' . us_implode_atts( $_atts ) . '>';
 $output .= '<' . $tag . ' class="w-image-h"' . $link_atts . '>';
-$output .= $img_shadow;
+$output .= $img_shadow_html;
 $output .= $img_html;
 $output .= '</' . $tag . '>';
 $output .= '</div>';

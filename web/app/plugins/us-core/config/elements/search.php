@@ -1,6 +1,5 @@
 <?php defined( 'ABSPATH' ) OR die( 'This script cannot be accessed directly.' );
 
-global $usof_options;
 $misc = us_config( 'elements_misc' );
 $design_options = us_config( 'elements_design_options' );
 
@@ -13,6 +12,7 @@ return array(
 			'title' => __( 'Placeholder', 'us' ),
 			'type' => 'text',
 			'std' => us_translate( 'Search' ),
+			'admin_label' => TRUE,
 		),
 		'product_search' => array(
 			'type' => 'switch',
@@ -23,6 +23,7 @@ return array(
 		'layout' => array(
 			'title' => __( 'Layout', 'us' ),
 			'type' => 'radio',
+			'context' => array( 'header' ),
 			'options' => array(
 				'simple' => __( 'Simple', 'us' ),
 				'modern' => __( 'Modern', 'us' ),
@@ -35,6 +36,7 @@ return array(
 			'title' => __( 'Field Width', 'us' ),
 			'type' => 'slider',
 			'std' => '240px',
+			'context' => array( 'header' ),
 			'options' => array(
 				'px' => array(
 					'min' => 200,
@@ -56,6 +58,7 @@ return array(
 			'title' => __( 'Field Width on Tablets', 'us' ),
 			'type' => 'slider',
 			'std' => '200px',
+			'context' => array( 'header' ),
 			'options' => array(
 				'px' => array(
 					'min' => 200,
@@ -77,16 +80,16 @@ return array(
 		'field_bg_color' => array(
 			'title' => __( 'Search Field Background', 'us' ),
 			'type' => 'color',
-			// fallback for old versions, when Search colors were in Theme Options
-			'std' => isset( $usof_options['color_header_search_bg'] ) ? $usof_options['color_header_search_bg'] : '', 
+			'clear_pos' => 'left',
+			'std' => '',
 			'cols' => 2,
 		),
 		'field_text_color' => array(
 			'title' => __( 'Search Field Text', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'with_gradient' => FALSE,
-			// fallback for old versions, when Search colors were in Theme Options
-			'std' => isset( $usof_options['color_header_search_text'] ) ? $usof_options['color_header_search_text'] : '',
+			'std' => '',
 			'cols' => 2,
 		),
 		'icon' => array(
@@ -99,12 +102,13 @@ return array(
 			'description' => $misc['desc_font_size'],
 			'type' => 'text',
 			'std' => '18px',
-			'cols' => 3,
+			'header_cols' => 3,
 		),
 		'icon_size_tablets' => array(
 			'title' => __( 'Icon Size on Tablets', 'us' ),
 			'description' => $misc['desc_font_size'],
 			'type' => 'text',
+			'context' => array( 'header' ),
 			'std' => '18px',
 			'cols' => 3,
 		),
@@ -112,6 +116,7 @@ return array(
 			'title' => __( 'Icon Size on Mobiles', 'us' ),
 			'description' => $misc['desc_font_size'],
 			'type' => 'text',
+			'context' => array( 'header' ),
 			'std' => '18px',
 			'cols' => 3,
 		),

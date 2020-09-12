@@ -20,7 +20,7 @@ if ( $titlebar_id != '' ) {
 
 	us_open_wp_query_context();
 	if ( $page_block ) {
-		$translated_page_block_id = apply_filters( 'wpml_object_id', $page_block->ID, 'us_page_block', TRUE );
+		$translated_page_block_id = apply_filters( 'us_tr_object_id', $page_block->ID, 'us_page_block', TRUE );
 		if ( $translated_page_block_id != $page_block->ID ) {
 			$page_block = get_post( $translated_page_block_id );
 		}

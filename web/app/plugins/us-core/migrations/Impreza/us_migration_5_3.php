@@ -231,7 +231,9 @@ class us_migration_5_3 extends US_Migration_Translator {
 		} else {
 			$options['sidebar_portfolio_id'] = $options['portfolio_sidebar_id'];
 		}
-		$options['sidebar_portfolio_pos'] = $options['portfolio_sidebar_pos'];
+		if ( ! empty( $options['portfolio_sidebar_pos'] ) ) {
+			$options['portfolio_sidebar_pos'] = $options['sidebar_portfolio_pos'];
+		}
 
 		// Sidebars for Posts
 		if ( isset( $options['post_sidebar'] ) AND $options['post_sidebar'] == 0 ) {
@@ -301,7 +303,9 @@ class us_migration_5_3 extends US_Migration_Translator {
 		} elseif ( isset( $options['event_sidebar'] ) ) {
 			$options['sidebar_tribe_events_id'] = $options['event_sidebar_id'];
 		}
-		$options['sidebar_tribe_events_pos'] = $options['event_sidebar_pos'];
+		if ( ! empty( $options['event_sidebar_pos'] ) ) {
+			$options['sidebar_tribe_events_pos'] = $options['event_sidebar_pos'];
+		}
 
 		// Sidebars for Forums
 		if ( isset( $options['forum_sidebar'] ) AND $options['forum_sidebar'] == 0 ) {

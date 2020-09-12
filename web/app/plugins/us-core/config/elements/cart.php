@@ -1,8 +1,5 @@
 <?php defined( 'ABSPATH' ) OR die( 'This script cannot be accessed directly.' );
 
-$color_bg = us_get_color( 'color_menu_button_bg', TRUE );
-$color_text = us_get_color( 'color_menu_button_text' );
-
 $misc = us_config( 'elements_misc' );
 $design_options = us_config( 'elements_design_options' );
 
@@ -46,14 +43,14 @@ return array(
 		'quantity_color_bg' => array(
 			'title' => __( 'Quantity Badge Background', 'us' ),
 			'type' => 'color',
-			'std' => $color_bg,
+			'std' => '_header_middle_text_hover',
 			'cols' => 2,
 		),
 		'quantity_color_text' => array(
 			'title' => __( 'Quantity Badge Text', 'us' ),
 			'type' => 'color',
 			'with_gradient' => FALSE,
-			'std' => $color_text,
+			'std' => '_header_middle_bg',
 			'cols' => 2,
 		),
 		'vstretch' => array(

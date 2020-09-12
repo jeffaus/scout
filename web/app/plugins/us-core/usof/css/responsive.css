@@ -38,6 +38,7 @@
 	display: block;
 	}
 .us-bld-editor {
+	position: static;
 	padding: 0 0 20px;
 	}
 .type_header_builder .us-bld-editor-elm {
@@ -53,12 +54,13 @@
 	max-width: none;
 	width: auto;
 	}
-.type_check_table .usof-checkbox {
-	margin: 0 !important;
-	width: 100% !important;
+.type_check_table .usof-checkbox-list {
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+	columns: auto auto;
 	}
-.type_check_table .usof-checkbox:nth-child(3) .usof-checkbox-size:before {
-	display: none;
+.type_check_table .usof-checkbox {
+	max-width: none;
 	}
 .us-bld-window.type_htemplate .us-bld-window-item {
 	width: 100%;

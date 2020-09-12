@@ -18,69 +18,47 @@
 			opacity: 1;
 			}
 	.usof-autocomplete-options {
-		display: flex;
-		flex-wrap: wrap;
 		min-height: 34px;
+		line-height: 34px;
+		padding: 2px;
 		border-radius: 3px;
 		border: 1px solid;
 		border-color: #ddd #eee #eee;
-		/* background for dropdown arrow from the WordPress styles */
-		background: #f1f1f1 url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%23555%22%2F%3E%3C%2Fsvg%3E') no-repeat right 5px top 12px;
-		background-size: 16px 16px;
-		}
-	.usof-autocomplete.multiple .usof-autocomplete-options {
-		padding: 2px 24px 2px 2px;
+		background: #f1f1f1;
 		}
 		.usof-autocomplete-selected {
-			display: flex;
-			line-height: 28px;
-			margin: 2px;
-			padding: 0 6px;
+			display: block;
+			margin-bottom: 2px;
+			padding: 0 8px;
 			position: relative;
 			background-color: #fff;
 			box-shadow: 0 1px 0 rgba(0,0,0,0.15);
 			}
-			.usof-autocomplete-selected:hover {
-				color: #007cba;
-				}
 			.usof-autocomplete-selected-remove {
+				display: none !important;
 				position: absolute;
 				top: 0;
-				left: 0;
 				right: 0;
 				bottom: 0;
+				width: 28px;
+				text-align: center;
+				line-height: inherit !important;
+				color: #999;
 				outline: none !important;
 				}
+			.usof-autocomplete.multiple .usof-autocomplete-selected:hover .usof-autocomplete-selected-remove {
+				display: block !important;
+				}
+			.usof-autocomplete-selected-remove:hover {
+				color: red;
+				}
 		.usof-autocomplete .usof-autocomplete-options input {
-			flex-grow: 1;
-			width: 0;
-			min-width: 100px;
-			line-height: 34px;
+			line-height: inherit;
 			border: none !important;
 			background: none !important;
 			box-shadow: none !important;
 			outline: none !important;
 			}
-		.usof-autocomplete-remove-all {
-			visibility: hidden;
-			position: absolute;
-			top: 1px;
-			right: 1px;
-			font-size: 13px;
-			line-height: 38px !important;
-			text-align: center;
-			width: 24px;
-			z-index: 2;
-			background-color: #f1f1f1;
-			color: inherit !important;
-			text-decoration: none !important;
-			}
-			.usof-autocomplete-remove-all:hover {
-				background-color: #ffc9c9;
-				}
-			.usof-autocomplete-options:hover span ~ .usof-autocomplete-remove-all {
-				visibility: visible;
-				}
 	.usof-autocomplete-list,
 	.usof-autocomplete-message {
 		display: none;
@@ -100,18 +78,19 @@
 			font-weight: bold;
 			padding: 4px 10px;
 			}
-		.usof-autocomplete-list .usof-autocomplete-list-group > [data-text] {
+		.usof-autocomplete-list .usof-autocomplete-list-group > [data-value] {
 			padding-left: 20px;
 			}
-		.usof-autocomplete-list *:not(.usof-autocomplete-list-group) {
+		.usof-autocomplete-list [data-value] {
 			padding: 4px 10px;
+			line-height: 24px;
 			cursor: pointer;
 			}
-		.usof-autocomplete-list *.selected:not(.usof-autocomplete-list-group) {
+		.usof-autocomplete-list [data-value].selected {
 			background-color: #007cba;
 			color: #fff;
 			}
-		.usof-autocomplete-list *:hover:not(.usof-autocomplete-list-group) {
+		.usof-autocomplete-list [data-value]:hover {
 			background-color: #fff;
 			color: #007cba;
 			}
@@ -132,10 +111,21 @@
 		padding: 8px 10px;
 		text-align: center;
 		}
+	.usof-autocomplete-list i,
+	.usof-autocomplete-selected > i {
+		font-size: .85em;
+		font-style: normal;
+		opacity: .66;
+		margin-left: 2px;
+		}
 
 /* Single variant selection */
 .usof-autocomplete:not(.multiple) .usof-autocomplete-options {
 	height: 40px;
+	padding: 0 24px 0 0;
+	/* background for dropdown arrow from the WordPress styles */
+	background: #f1f1f1 url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%23555%22%2F%3E%3C%2Fsvg%3E') no-repeat right 5px top 12px;
+	background-size: 16px 16px;
 	}
 .usof-autocomplete:not(.multiple) .usof-autocomplete-toggle.show .usof-autocomplete-options {
 	border-color: #007cba;
@@ -167,8 +157,7 @@
 	.usof-autocomplete:not(.multiple) .usof-autocomplete-selected {
 		cursor: default;
 		margin: 0;
-		padding: 4px 10px;
-		width: 100%;
+		padding: 2px 10px;
 		background: transparent;
 		box-shadow: none;
 		}
@@ -178,6 +167,21 @@
 		.usof-autocomplete:not(.multiple) .usof-autocomplete-selected > * {
 			display: none;
 			}
-	.usof-autocomplete:not(.multiple) .usof-autocomplete-remove-all {
-		visibility: hidden !important;
-		}
+
+/* Drag & Drop
+   ========================================================================== */
+.usof-dragdrop > span {
+	-webkit-user-select: none;
+	user-select: none;
+	cursor: move;
+	}
+.usof-dragdrop > span.usof-dragdrop-active {
+	opacity: .33;
+	}
+.usof-dragdrop-moving > input {
+	pointer-events: none;
+	}
+.usof-dragdrop-over {
+	border-top: 3px dotted;
+	margin-top: -3px;
+	}

@@ -19,7 +19,9 @@ if ( ! function_exists( 'pvc_get_post_views' ) ) {
 	return;
 }
 
-if ( $us_elm_context == 'grid_term' ) {
+global $us_grid_object_type;
+
+if ( $us_elm_context == 'grid' AND $us_grid_object_type == 'term' ) {
 	return;
 } elseif ( $us_elm_context == 'shortcode' AND ( is_tax() OR is_tag() OR is_category() ) ) {
 	return;

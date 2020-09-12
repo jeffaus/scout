@@ -3,7 +3,7 @@ if ( window.$ushb === undefined ) {
 }
 $ushb.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test( navigator.userAgent );
 
-! function( $ ) {
+! function( $, undefined ) {
 	if ( window.$ushb.mixins === undefined ) {
 		window.$ushb.mixins = {};
 	}
@@ -63,6 +63,17 @@ $ushb.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 		}
 
 		this.initFields( this.$container );
+
+		// Delete all fields that are in design_options since they will be initialized by design_options,
+		// otherwise there will be duplication events on different parent objects
+		for ( var k in this.fields ) {
+			if (
+				this.fields[ k ].type === 'color'
+				&& this.fields[ k ].$row.closest( '.type_design_options' ).length
+			) {
+				delete this.fields[ k ];
+			}
+		}
 	};
 	$.extend( $ushb.EForm.prototype, $usof.mixins.Fieldset );
 
@@ -203,7 +214,6 @@ $ushb.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 				} );
 				return;
 			}
-
 			if ( this.eforms[ name ] === undefined ) {
 				// Initializing EForm on the first show
 				if ( this.$eforms[ name ] === undefined ) {
@@ -771,7 +781,12 @@ $ushb.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 		 * @param event
 		 */
 		_dragDrop: function( event ) {
-			this.$container.find( '.us-bld-editor-wrapper' ).removeClass( 'empty' ).find( '.us-bld-editor-wrapper-content:empty' ).parent().addClass( 'empty' );
+			this.$container
+				.find( '.us-bld-editor-wrapper' )
+				.removeClass( 'empty' )
+				.find( '.us-bld-editor-wrapper-content:empty' )
+				.parent()
+				.addClass( 'empty' );
 			this._updateBlindSpot( event );
 		},
 		_dragEnd: function( event ) {
@@ -785,7 +800,9 @@ $ushb.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 				var elmId = this.$draggedElm.data( 'id' ),
 					$prev = this.$draggedElm.prev();
 				if ( $prev.length == 0 ) {
-					var $parent = this.$draggedElm.parent().closest( '.us-bld-editor-cell, .us-bld-editor-wrapper, .us-bld-editor-row.for_hidden' ),
+					var $parent = this.$draggedElm
+							.parent()
+							.closest( '.us-bld-editor-cell, .us-bld-editor-wrapper, .us-bld-editor-row.for_hidden' ),
 						place = 'hidden';
 					if ( $parent.hasClass( 'us-bld-editor-cell' ) ) {
 						place = $parent.parent().parent().usMod( 'at' ) + '_' + $parent.usMod( 'at' );
@@ -1270,7 +1287,9 @@ $ushb.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 					}
 					prevLayout[ plc ] = [];
 				}
-				var $place = ( plc.indexOf( ':' ) == - 1 ) ? this.$places[ plc ] : this.$wrappers[ plc ].children( '.us-bld-editor-wrapper-content' );
+				var $place = ( plc.indexOf( ':' ) == - 1 )
+					? this.$places[ plc ]
+					: this.$wrappers[ plc ].children( '.us-bld-editor-wrapper-content' );
 				for ( i = 0; i < this.value[ this.state ].layout[ plc ].length; i ++ ) {
 					elmId = this.value[ this.state ].layout[ plc ][ i ];
 					var $elm = this[ ( elmId.substr( 1, 7 ) == 'wrapper' ) ? '$wrappers' : '$elms' ][ elmId ];
@@ -1308,7 +1327,12 @@ $ushb.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 				this._updateElementPlaceholder( this.$elms[ elmId ], elmId, this.value.data[ elmId ] );
 			}
 			// Fixing wrappers
-			this.$container.find( '.us-bld-editor-wrapper' ).removeClass( 'empty' ).find( '.us-bld-editor-wrapper-content:empty' ).parent().addClass( 'empty' );
+			this.$container
+				.find( '.us-bld-editor-wrapper' )
+				.removeClass( 'empty' )
+				.find( '.us-bld-editor-wrapper-content:empty' )
+				.parent()
+				.addClass( 'empty' );
 		},
 
 		/**
@@ -1322,7 +1346,9 @@ $ushb.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 			}
 			var fieldId = field.name,
 				value = field.getValue(),
-				state = ( $.inArray( fieldId, this.sharedOptions ) != - 1 ) ? 'default' : this.state;
+				state = ( $.inArray( fieldId, this.sharedOptions ) != - 1 )
+					? 'default'
+					: this.state;
 			if ( this.value[ state ] === undefined ) {
 				this.value[ state ] = {};
 			}
@@ -1366,7 +1392,9 @@ $ushb.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 							continue;
 						}
 						var align = place.split( '_' ),
-							newPlace = ( align.length == 2 ) ? ( align[ 0 ] + '_left' ) : 'hidden';
+							newPlace = ( align.length == 2 )
+								? ( align[ 0 ] + '_left' )
+								: 'hidden';
 						if ( this.value[ this.state ].layout[ newPlace ] === undefined ) {
 							this.value[ this.state ].layout[ newPlace ] = [];
 						}
@@ -1389,7 +1417,7 @@ $ushb.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 
 }( jQuery );
 
-jQuery( function( $ ) {
+;jQuery( function( $, undefined ) {
 	var USHB = function( container ) {
 		this.$container = $( container );
 		if ( ! this.$container.length ) {
@@ -1439,19 +1467,29 @@ jQuery( function( $ ) {
 			clearTimeout( this.saveStateTimer );
 			this.$saveMessage.html( '' );
 			this.$saveControl.usMod( 'status', 'loading' );
+			var data = {
+				action: 'us_ajax_hb_save',
+				ID: this.$container.data( 'id' ),
+				post_title: this.getValue( 'post_title' ),
+				post_content: JSON.stringify( this.getValue( 'post_content' ) ),
+				_wpnonce: this.$container.find( '[name="_wpnonce"]' ).val(),
+				_wp_http_referer: this.$container.find( '[name="_wp_http_referer"]' ).val()
+			};
+
+			// Inject polylang data from AJAX request
+			$.each( $('form#post').serializeArray() || {}, function( _, param ) {
+				$.each( [ 'post_lang_', 'post_tr_' ], function( _, param_prefix ) {
+					if ( param.name.indexOf( param_prefix ) !== -1 ) {
+						data[ param.name ] = param.value;
+					}
+				} );
+			} );
 
 			$.ajax( {
 				type: 'POST',
 				url: $usof.ajaxUrl,
 				dataType: 'json',
-				data: {
-					action: 'us_ajax_hb_save',
-					ID: this.$container.data( 'id' ),
-					post_title: this.getValue( 'post_title' ),
-					post_content: JSON.stringify( this.getValue( 'post_content' ) ),
-					_wpnonce: this.$container.find( '[name="_wpnonce"]' ).val(),
-					_wp_http_referer: this.$container.find( '[name="_wp_http_referer"]' ).val()
-				},
+				data: data,
 				success: function( result ) {
 					if ( result.success ) {
 						this.valuesChanged = {};

@@ -71,7 +71,7 @@ if ( ! vc_is_page_editable() ) {
 					__( 'On hover', 'us' ) => 'hover',
 				),
 				'std' => $config['atts']['switch_sections'],
-				'weight' => 201,
+				'weight' => 202,
 			),
 			array(
 				'param_name' => 'title_tag',

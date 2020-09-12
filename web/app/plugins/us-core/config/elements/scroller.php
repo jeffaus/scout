@@ -61,6 +61,7 @@ return array(
 		'dots_color' => array(
 			'title' => __( 'Dots Color', 'us' ),
 			'type' => 'color',
+			'clear_pos' => 'left',
 			'with_gradient' => FALSE,
 			'std' => '',
 			'cols' => 2,
