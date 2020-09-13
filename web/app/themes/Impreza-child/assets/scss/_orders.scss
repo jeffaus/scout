@@ -1,0 +1,128 @@
+.card-header {
+  border-radius: $border-radius $border-radius 0 0;
+  padding: 1.5rem 1rem;
+  .status {
+    color: $white;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.card-body {
+  padding: 2rem 1rem;
+  background-color: $white;
+  border-radius: 0 0 $border-radius $border-radius;
+}
+
+.order-status {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  &:before {
+    content: '';
+    position: absolute;
+    display: block;
+    left: 2rem;
+    right: 2rem;
+    top: calc( 50% - 2px );
+    height: 4px;
+    background-color: $gray-200;
+  }
+  li {
+    position: relative;
+    z-index: 10;
+    margin: 2rem !important;
+    padding: 0;
+    background-color: $white;
+    img {
+      opacity: 0.4;
+    }
+    &.active img {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+}
+
+.date-container {
+  text-align: center;
+  .delivery {
+    font-weight: bold;
+    color: $white;
+    padding: 2rem 1rem;
+    margin: 0 auto;
+    max-width: 250px;
+    text-transform: uppercase;
+  }
+  .date {
+    padding: 60px;
+    font-size: 140px;
+    font-weight: bold;
+    line-height: 1;
+    text-transform: uppercase;
+    border-top: 2px solid $tertiary;
+    span {
+      display: block;
+      font-size: 60px;
+    }
+  }
+}
+
+.account-link {
+  text-align: center;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: $secondary !important;
+  display: block;
+  overflow: hidden;
+  background-color: $light;
+  img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 50px;
+    max-height: 50px;
+    object-fit: contain;
+    margin: 0 auto 10px;
+  }
+  .circle {
+    padding: 1.5rem;
+    position: relative;
+    &:before {
+      content: '';
+      display: block;
+      width: 180px;
+      height: 180px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      border-radius: 100%;
+      transform: translate(-50%, -50%);
+      background-color: rgba($secondary, 0.1);
+      transition: all 300ms ease;
+    }
+  }
+  &:hover {
+    background-color: darken($light, 2%) !important;
+    .circle {
+      &:before {
+        width: 200px;
+        height: 200px;
+      }
+    }
+  }
+  &:active {
+    background-color: darken($light, 1%) !important;
+    .circle {
+      &:before {
+        transition: all 100ms ease;
+        width: 180px;
+        height: 180px;
+      }
+    }
+  }
+}

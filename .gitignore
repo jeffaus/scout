@@ -30,6 +30,7 @@ wp-cli.local.yml
 *.log
 error_log
 error_log_dev
+node_modules
 
 # Ignore LDE symlink
 /public
