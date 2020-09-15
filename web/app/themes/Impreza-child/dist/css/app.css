@@ -17582,7 +17582,7 @@ html body {
 }
 
 .card-body {
-  padding: 2rem;
+  padding: 3.5rem 2rem;
   background-color: #fff;
   border-radius: 0 0 0.5rem 0.5rem;
 }
@@ -17638,10 +17638,22 @@ html body {
 }
 .order-status li img {
   opacity: 0.4;
+  display: block;
 }
 .order-status li.active img {
   opacity: 1;
   transform: scale(1.2);
+}
+@media (max-width: 767.98px) {
+  .order-status:before {
+    left: 1rem;
+    right: 1rem;
+    top: calc( 50% - 1px );
+    height: 2px;
+  }
+  .order-status li {
+    margin: 1rem !important;
+  }
 }
 
 .date-container {
