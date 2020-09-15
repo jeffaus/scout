@@ -1,0 +1,136 @@
+#comments {
+  .w-comments-title {
+    color: #515B99;
+    font-size: 35px;
+    margin-bottom: 2.5rem;
+  }
+  #respond {
+    #reply-title,
+    .comment-notes {
+      display: none;
+    }
+  }
+  #commentform {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+  .logged-in-as {
+    margin: 0 0 6px;
+    width: 100%;
+    text-align: right;
+    font-size: 14px;
+    color: $secondary;
+    a {
+      color: $secondary;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+  textarea, [type=email], [type=text] {
+    border-radius: $border-radius;
+    border: 1px solid #878AB1;
+    height: 1rem;
+    background-color: $white;
+  }
+  .for_text {
+    width: 50%;
+    padding-right: 8px;
+  }
+  .for_email {
+    width: 50%;
+    padding-left: 8px;
+  }
+  .for_agreement {
+    font-size: 12px;
+    flex: 1;
+    label {
+      align-items: center;
+    }
+  }
+  [type="submit"] {
+    background-color: $secondary;
+    text-transform: uppercase;
+    border-radius: $border-radius;
+    filter: brightness(100%);
+    transition: filter 150ms ease;
+    &:hover {
+      filter: brightness(110%);
+    }
+  }
+  .form-submit {
+    margin-left: auto;
+  }
+  @media screen and (max-width: 600px) {
+    .w-comments-title {
+      font-size: 28px;
+    }
+    .for_text,
+    .for_email {
+      width: 100%;
+      padding: 0;
+    }
+  }
+}
+
+
+.w-comments-list {
+  margin: 0 !important;
+  .comment {
+    .w-comments-item-meta {
+      display: flex;
+      .w-comments-item-date {
+        margin-left: 10px;
+      }
+    }
+    .w-comments-item-author span {
+      background: transparent !important;
+      color: $secondary !important;
+      padding: 0;
+    }
+    .avatar {
+      background-color: $white;
+      span {
+        color: $secondary;
+      }
+    }
+    .w-comments-item-text {
+      background-color: $white;
+      padding: 0.5rem 1rem;
+      border-radius: 0 2rem 2rem 2rem;
+      color: #0D101A;
+      font-size: 16px;
+      margin-left: 60px;
+      max-width: 70%;
+      display: inline-block;
+    }
+    &.byuser {
+      text-align: right;
+      .avatar {
+        background-color: $primary;
+        span {
+          color: $white;
+        }
+      }
+      .w-comments-item-meta {
+        flex-direction: row-reverse;
+        a {
+          display: flex;
+          flex-direction: row-reverse;
+        }
+        .w-comments-item-author {
+          margin-right: 60px;
+          margin-left: 10px;
+        }
+      }
+      .w-comments-item-text {
+        border-radius: 2rem 0 2rem 2rem;
+        background-color: $primary;
+        color: $white;
+        margin-right: 60px;
+        margin-left: auto;
+      }
+    }
+  }
+}

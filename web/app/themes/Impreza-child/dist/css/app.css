@@ -25,6 +25,7 @@
   --danger: #dc3545;
   --light: #F5F5FC;
   --dark: #343a40;
+  --tertiary: #D1D7FF;
   --breakpoint-xs: 0;
   --breakpoint-sm: 576px;
   --breakpoint-md: 768px;
@@ -1278,6 +1279,16 @@ button.bg-dark:focus {
   background-color: #1d2124 !important;
 }
 
+.bg-tertiary {
+  background-color: #D1D7FF !important;
+}
+
+a.bg-tertiary:hover, a.bg-tertiary:focus,
+button.bg-tertiary:hover,
+button.bg-tertiary:focus {
+  background-color: #9eabff !important;
+}
+
 .bg-white {
   background-color: #fff !important;
 }
@@ -1356,6 +1367,10 @@ button.bg-dark:focus {
 
 .border-dark {
   border-color: #343a40 !important;
+}
+
+.border-tertiary {
+  border-color: #D1D7FF !important;
 }
 
 .border-white {
@@ -5322,6 +5337,14 @@ a.text-light:hover, a.text-light:focus {
 
 a.text-dark:hover, a.text-dark:focus {
   color: #121416 !important;
+}
+
+.text-tertiary {
+  color: #D1D7FF !important;
+}
+
+a.text-tertiary:hover, a.text-tertiary:focus {
+  color: #8594ff !important;
 }
 
 .text-body {
@@ -17624,6 +17647,7 @@ html body {
   display: block;
   overflow: hidden;
   background-color: #F5F5FC;
+  font-size: 18px;
 }
 .account-link img {
   display: block;
@@ -17666,4 +17690,138 @@ html body {
   transition: all 100ms ease;
   width: 180px;
   height: 180px;
+}
+
+#comments .w-comments-title {
+  color: #515B99;
+  font-size: 35px;
+  margin-bottom: 2.5rem;
+}
+#comments #respond #reply-title,
+#comments #respond .comment-notes {
+  display: none;
+}
+#comments #commentform {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+#comments .logged-in-as {
+  margin: 0 0 6px;
+  width: 100%;
+  text-align: right;
+  font-size: 14px;
+  color: #515B99;
+}
+#comments .logged-in-as a {
+  color: #515B99;
+}
+#comments .logged-in-as a:hover {
+  text-decoration: underline;
+}
+#comments textarea, #comments [type=email], #comments [type=text] {
+  border-radius: 0.5rem;
+  border: 1px solid #878AB1;
+  height: 1rem;
+  background-color: #fff;
+}
+#comments .for_text {
+  width: 50%;
+  padding-right: 8px;
+}
+#comments .for_email {
+  width: 50%;
+  padding-left: 8px;
+}
+#comments .for_agreement {
+  font-size: 12px;
+  flex: 1;
+}
+#comments .for_agreement label {
+  align-items: center;
+}
+#comments [type=submit] {
+  background-color: #515B99;
+  text-transform: uppercase;
+  border-radius: 0.5rem;
+  -webkit-filter: brightness(100%);
+          filter: brightness(100%);
+  transition: -webkit-filter 150ms ease;
+  transition: filter 150ms ease;
+  transition: filter 150ms ease, -webkit-filter 150ms ease;
+}
+#comments [type=submit]:hover {
+  -webkit-filter: brightness(110%);
+          filter: brightness(110%);
+}
+#comments .form-submit {
+  margin-left: auto;
+}
+@media screen and (max-width: 600px) {
+  #comments .w-comments-title {
+    font-size: 28px;
+  }
+  #comments .for_text,
+#comments .for_email {
+    width: 100%;
+    padding: 0;
+  }
+}
+
+.w-comments-list {
+  margin: 0 !important;
+}
+.w-comments-list .comment .w-comments-item-meta {
+  display: flex;
+}
+.w-comments-list .comment .w-comments-item-meta .w-comments-item-date {
+  margin-left: 10px;
+}
+.w-comments-list .comment .w-comments-item-author span {
+  background: transparent !important;
+  color: #515B99 !important;
+  padding: 0;
+}
+.w-comments-list .comment .avatar {
+  background-color: #fff;
+}
+.w-comments-list .comment .avatar span {
+  color: #515B99;
+}
+.w-comments-list .comment .w-comments-item-text {
+  background-color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 0 2rem 2rem 2rem;
+  color: #0D101A;
+  font-size: 16px;
+  margin-left: 60px;
+  max-width: 70%;
+  display: inline-block;
+}
+.w-comments-list .comment.byuser {
+  text-align: right;
+}
+.w-comments-list .comment.byuser .avatar {
+  background-color: #4248FB;
+}
+.w-comments-list .comment.byuser .avatar span {
+  color: #fff;
+}
+.w-comments-list .comment.byuser .w-comments-item-meta {
+  flex-direction: row-reverse;
+}
+.w-comments-list .comment.byuser .w-comments-item-meta a {
+  display: flex;
+  flex-direction: row-reverse;
+}
+.w-comments-list .comment.byuser .w-comments-item-meta .w-comments-item-author {
+  margin-right: 60px;
+  margin-left: 10px;
+}
+.w-comments-list .comment.byuser .w-comments-item-text {
+  border-radius: 2rem 0 2rem 2rem;
+  background-color: #4248FB;
+  color: #fff;
+  margin-right: 60px;
+  margin-left: auto;
 }
