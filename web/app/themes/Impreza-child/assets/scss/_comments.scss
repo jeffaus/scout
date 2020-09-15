@@ -1,8 +1,13 @@
 #comments {
+  max-width: 650px;
+  margin: 0 auto;
   .w-comments-title {
     color: #515B99;
     font-size: 35px;
     margin-bottom: 2.5rem;
+    @media (max-width: 959.98px) {
+      font-size: 20px;
+    }
   }
   #respond {
     #reply-title,
@@ -80,8 +85,19 @@
   .comment {
     .w-comments-item-meta {
       display: flex;
-      .w-comments-item-date {
-        margin-left: 10px;
+      @media (max-width: 767.98px) {
+        flex-direction: column !important;
+        .w-comments-item-date {
+          margin-left: 40px;
+        }
+        .w-comments-item-author {
+          margin-left: 40px;
+        }
+      }
+      @media (min-width: 768px) {
+        .w-comments-item-date {
+          margin-left: 10px;
+        }
       }
     }
     .w-comments-item-author span {
@@ -91,19 +107,39 @@
     }
     .avatar {
       background-color: $white;
+
       span {
         color: $secondary;
       }
     }
+    @media (max-width: 767.98px) {
+      .w-comments-item-icon {
+        width: 30px;
+        border-radius: 0;
+      }
+      .avatar {
+        line-height: 30px !important;
+        height: 30px !important;
+        width: 30px !important;
+        border-radius: 100% !important;
+      }
+    }
+
     .w-comments-item-text {
       background-color: $white;
       padding: 0.5rem 1rem;
-      border-radius: 0 2rem 2rem 2rem;
+      border-radius: 0 1.375rem 1.375rem 1.375rem;
       color: #0D101A;
       font-size: 16px;
       margin-left: 60px;
       max-width: 70%;
       display: inline-block;
+      @media (max-width: 767.98px) {
+        margin-left: 40px;
+        max-width: 100%;
+        font-size: 14px;
+        line-height: 1.8;
+      }
     }
     &.byuser {
       text-align: right;
@@ -123,13 +159,25 @@
           margin-right: 60px;
           margin-left: 10px;
         }
+        @media (max-width: 767.98px) {
+          .w-comments-item-author {
+            margin-right: 40px;
+          }
+          .w-comments-item-date {
+            margin-left: 0;
+            margin-right: 40px;
+          }
+        }
       }
       .w-comments-item-text {
-        border-radius: 2rem 0 2rem 2rem;
+        border-radius: 1.375rem 0 1.375rem 1.375rem;
         background-color: $primary;
         color: $white;
         margin-right: 60px;
         margin-left: auto;
+        @media (max-width: 767.98px) {
+          margin-right: 40px;
+        }
       }
     }
   }

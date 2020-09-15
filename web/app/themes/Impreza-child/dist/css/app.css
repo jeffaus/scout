@@ -17573,14 +17573,43 @@ html body {
   color: #fff;
   font-weight: bold;
   margin-bottom: 0.5rem;
+  font-size: 25px;
+}
+@media (max-width: 959.98px) {
+  .card-header .status {
+    font-size: 20px;
+  }
 }
 
 .card-body {
-  padding: 2rem 1rem;
+  padding: 2rem;
   background-color: #fff;
   border-radius: 0 0 0.5rem 0.5rem;
 }
+@media (max-width: 959.98px) {
+  .card-body {
+    padding: 1rem;
+  }
+}
 
+@media (min-width: 768px) {
+  .info-col {
+    flex: 0 0 240px;
+    max-width: 240px;
+  }
+}
+@media (min-width: 960px) {
+  .info-col {
+    flex: 0 0 300px;
+    max-width: 300px;
+  }
+}
+@media (min-width: 1200px) {
+  .info-col {
+    flex: 0 0 370px;
+    max-width: 370px;
+  }
+}
 .order-status {
   list-style: none;
   margin: 0;
@@ -17619,6 +17648,7 @@ html body {
   text-align: center;
 }
 .date-container .delivery {
+  font-size: 28px;
   font-weight: bold;
   color: #fff;
   padding: 2rem 1rem;
@@ -17637,6 +17667,23 @@ html body {
 .date-container .date span {
   display: block;
   font-size: 60px;
+}
+@media (max-width: 959.98px) {
+  .date-container {
+    padding: 1rem;
+  }
+  .date-container .delivery {
+    font-size: 18px;
+    padding: 1rem;
+    max-width: 140px;
+  }
+  .date-container .date {
+    padding: 1rem;
+    font-size: 60px;
+  }
+  .date-container .date span {
+    font-size: 30px;
+  }
 }
 
 .account-link {
@@ -17691,11 +17738,44 @@ html body {
   width: 180px;
   height: 180px;
 }
+@media (max-width: 959.98px) {
+  .account-link {
+    font-size: 16px;
+  }
+  .account-link img {
+    max-width: 40px;
+    max-height: 40px;
+  }
+  .account-link .circle {
+    padding: 1rem;
+  }
+  .account-link .circle:before {
+    width: 140px;
+    height: 140px;
+  }
+  .account-link:hover .circle:before {
+    width: 160px;
+    height: 160px;
+  }
+  .account-link:active .circle:before {
+    width: 140px;
+    height: 140px;
+  }
+}
 
+#comments {
+  max-width: 650px;
+  margin: 0 auto;
+}
 #comments .w-comments-title {
   color: #515B99;
   font-size: 35px;
   margin-bottom: 2.5rem;
+}
+@media (max-width: 959.98px) {
+  #comments .w-comments-title {
+    font-size: 20px;
+  }
 }
 #comments #respond #reply-title,
 #comments #respond .comment-notes {
@@ -17774,8 +17854,21 @@ html body {
 .w-comments-list .comment .w-comments-item-meta {
   display: flex;
 }
-.w-comments-list .comment .w-comments-item-meta .w-comments-item-date {
-  margin-left: 10px;
+@media (max-width: 767.98px) {
+  .w-comments-list .comment .w-comments-item-meta {
+    flex-direction: column !important;
+  }
+  .w-comments-list .comment .w-comments-item-meta .w-comments-item-date {
+    margin-left: 40px;
+  }
+  .w-comments-list .comment .w-comments-item-meta .w-comments-item-author {
+    margin-left: 40px;
+  }
+}
+@media (min-width: 768px) {
+  .w-comments-list .comment .w-comments-item-meta .w-comments-item-date {
+    margin-left: 10px;
+  }
 }
 .w-comments-list .comment .w-comments-item-author span {
   background: transparent !important;
@@ -17788,15 +17881,35 @@ html body {
 .w-comments-list .comment .avatar span {
   color: #515B99;
 }
+@media (max-width: 767.98px) {
+  .w-comments-list .comment .w-comments-item-icon {
+    width: 30px;
+    border-radius: 0;
+  }
+  .w-comments-list .comment .avatar {
+    line-height: 30px !important;
+    height: 30px !important;
+    width: 30px !important;
+    border-radius: 100% !important;
+  }
+}
 .w-comments-list .comment .w-comments-item-text {
   background-color: #fff;
   padding: 0.5rem 1rem;
-  border-radius: 0 2rem 2rem 2rem;
+  border-radius: 0 1.375rem 1.375rem 1.375rem;
   color: #0D101A;
   font-size: 16px;
   margin-left: 60px;
   max-width: 70%;
   display: inline-block;
+}
+@media (max-width: 767.98px) {
+  .w-comments-list .comment .w-comments-item-text {
+    margin-left: 40px;
+    max-width: 100%;
+    font-size: 14px;
+    line-height: 1.8;
+  }
 }
 .w-comments-list .comment.byuser {
   text-align: right;
@@ -17818,10 +17931,24 @@ html body {
   margin-right: 60px;
   margin-left: 10px;
 }
+@media (max-width: 767.98px) {
+  .w-comments-list .comment.byuser .w-comments-item-meta .w-comments-item-author {
+    margin-right: 40px;
+  }
+  .w-comments-list .comment.byuser .w-comments-item-meta .w-comments-item-date {
+    margin-left: 0;
+    margin-right: 40px;
+  }
+}
 .w-comments-list .comment.byuser .w-comments-item-text {
-  border-radius: 2rem 0 2rem 2rem;
+  border-radius: 1.375rem 0 1.375rem 1.375rem;
   background-color: #4248FB;
   color: #fff;
   margin-right: 60px;
   margin-left: auto;
+}
+@media (max-width: 767.98px) {
+  .w-comments-list .comment.byuser .w-comments-item-text {
+    margin-right: 40px;
+  }
 }

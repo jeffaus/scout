@@ -5,14 +5,43 @@
     color: $white;
     font-weight: bold;
     margin-bottom: 0.5rem;
+    font-size: 25px;
+    @media (max-width: 959.98px) {
+      font-size: 20px;
+    }
   }
 }
 
 .card-body {
-  padding: 2rem 1rem;
+  padding: 2rem;
   background-color: $white;
   border-radius: 0 0 $border-radius $border-radius;
+  @media (max-width: 959.98px) {
+    padding: 1rem;
+  }
 }
+
+@media (min-width: 768px) {
+  .info-col {
+    flex: 0 0 240px;
+    max-width: 240px;
+  }
+}
+
+@media (min-width: 960px) {
+  .info-col {
+    flex: 0 0 300px;
+    max-width: 300px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .info-col {
+    flex: 0 0 370px;
+    max-width: 370px;
+  }
+}
+
 
 .order-status {
   list-style: none;
@@ -51,6 +80,7 @@
 .date-container {
   text-align: center;
   .delivery {
+    font-size: 28px;
     font-weight: bold;
     color: $white;
     padding: 2rem 1rem;
@@ -68,6 +98,21 @@
     span {
       display: block;
       font-size: 60px;
+    }
+  }
+  @media (max-width: 959.98px) {
+    padding: 1rem;
+    .delivery {
+      font-size: 18px;
+      padding: 1rem;
+      max-width: 140px;
+    }
+    .date {
+      padding: 1rem;
+      font-size: 60px;
+      span {
+        font-size: 30px;
+      }
     }
   }
 }
@@ -123,6 +168,36 @@
         transition: all 100ms ease;
         width: 180px;
         height: 180px;
+      }
+    }
+  }
+  @media (max-width: 959.98px) {
+    font-size: 16px;
+   img {
+     max-width: 40px;
+     max-height: 40px;
+   }
+    .circle {
+      padding: 1rem;
+      &:before {
+        width: 140px;
+        height: 140px;
+      }
+    }
+    &:hover {
+      .circle {
+        &:before {
+          width: 160px;
+          height: 160px;
+        }
+      }
+    }
+    &:active {
+      .circle {
+        &:before {
+          width: 140px;
+          height: 140px;
+        }
       }
     }
   }

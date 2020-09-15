@@ -23,7 +23,7 @@ if ( 'production' == $order_status ) {
 
 ?>
 <div class="row">
-    <div class="col-12 col-md-4 order-0 order-md-1">
+    <div class="col-12 info-col order-0 order-md-1">
         <div class="rounded shadow bg-primary text-light mb-5 date-container">
             <h2 class="delivery">Expected Delivery</h2>
             <div class="date">
@@ -43,7 +43,7 @@ if ( 'production' == $order_status ) {
             </div>
         </a>
     </div>
-    <div class="col-12 col-md-8 order-1 order-md-0">
+    <div class="col-12 col-md order-1 order-md-0">
         <div class="rounded shadow mb-5">
             <div class="card-header bg-primary text-light text-center">
                 <h1 class="status">Your order <?php echo esc_attr( strtoupper( $order_id ) ); ?> <?php echo esc_attr( $message ); ?>.</h1>
@@ -65,7 +65,7 @@ if ( 'production' == $order_status ) {
                 </ul>
             </div>
         </div>
-        <div class="rounded shadow bg-tertiary p-4 p-sm-6">
+        <div class="rounded shadow bg-tertiary px-4 py-6 p-lg-6">
           <?php // Display the comments section
             comments_template();
             ?>
