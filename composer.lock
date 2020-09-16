@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "72f03aca2cbe41f04471f63642cedc40",
+    "content-hash": "e8cc7bd1a1b4af99eb401800c5a31f94",
     "packages": [
         {
             "name": "composer/installers",
@@ -772,6 +772,24 @@
             },
             "type": "wordpress-plugin",
             "homepage": "https://wordpress.org/plugins/disable-gutenberg/"
+        },
+        {
+            "name": "wpackagist-plugin/dorzki-notifications-to-slack",
+            "version": "2.0.7",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/dorzki-notifications-to-slack/",
+                "reference": "tags/2.0.7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/dorzki-notifications-to-slack.2.0.7.zip"
+            },
+            "require": {
+                "composer/installers": "~1.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/dorzki-notifications-to-slack/"
         },
         {
             "name": "wpackagist-plugin/duplicate-post",
