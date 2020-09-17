@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e8cc7bd1a1b4af99eb401800c5a31f94",
+    "content-hash": "1a09f66f6fed35cafaf2728aaa3cd50b",
     "packages": [
         {
             "name": "composer/installers",
@@ -934,6 +934,24 @@
             },
             "type": "wordpress-plugin",
             "homepage": "https://wordpress.org/plugins/wp-migrate-db/"
+        },
+        {
+            "name": "wpackagist-plugin/zapier",
+            "version": "1.0.1",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/zapier/",
+                "reference": "tags/1.0.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/zapier.1.0.1.zip"
+            },
+            "require": {
+                "composer/installers": "~1.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/zapier/"
         }
     ],
     "packages-dev": [
