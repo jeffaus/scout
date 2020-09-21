@@ -29,9 +29,70 @@ function my_acf_save_post( $post_id ) {
     $shipping_date = strtotime($post_date . '+ ' . $total_days . ' days');
     $shipping_date = date( 'Ymd', $shipping_date );
 
-    // Check if a specific value was updated.
+    // Add estimated shipping date if empty
     if( empty ( $_POST['acf']['field_5f5ca30efb7b4'] ) ) {
         $_POST['acf']['field_5f5ca30efb7b4'] = $shipping_date;
     }
-    
+    // Add initial duration
+    if( empty ( $_POST['acf']['field_5f688edb9a6cb'] ) ) {
+        $_POST['acf']['field_5f688edb9a6cb'] = $order_new;
+    }
+
+}
+
+
+// Cron Job to progress order statuses
+if(!wp_next_scheduled( 'progress_order_status')){
+    wp_schedule_event(time(), 'daily', 'progress_order_status');
+}
+add_action('progress_order_status', 'progress_order_status_action');
+
+// Build the function
+function progress_order_status_action(){
+
+    $order_production = (int) get_field( 'production', 'option' );
+    $order_shipping = (int) get_field( 'shipping', 'option' );
+
+    $args = array(
+      'post_type' => 'orders',
+      'post_status' => 'publish',
+    );
+
+    $orders = new WP_Query( $args );
+
+    if ($orders->have_posts()) {
+        while ($orders->have_posts()) {
+            $orders->the_post();
+
+            $status = get_field( 'order_status' );
+            $duration = (int) get_field( 'duration' );
+
+            if ( 'delivered' == $status ) {
+                return;
+            } elseif ( $duration <= 1 ) {
+
+                if ( 'new' == $status ) {
+                    update_field( 'order_status', 'production', get_the_ID() );
+                    update_field( 'duration', $order_production, get_the_ID() );
+                }
+
+                if ( 'production' == $status ) {
+                    update_field( 'order_status', 'shipped', get_the_ID() );
+                    update_field( 'duration', $order_shipping, get_the_ID() );
+                }
+
+                if ( 'shipped' == $status ) {
+                    update_field( 'order_status', 'delivered', get_the_ID() );
+                    update_field( 'duration', '0', get_the_ID() );
+                }
+
+            } else {
+                $duration--;
+                update_field( 'duration', $duration, get_the_ID() );
+            }
+
+        }
+        wp_reset_postdata();
+    }
+
 }
