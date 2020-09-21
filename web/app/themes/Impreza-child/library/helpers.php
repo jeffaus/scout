@@ -43,7 +43,7 @@ function my_acf_save_post( $post_id ) {
 
 // Cron Job to progress order statuses
 if(!wp_next_scheduled( 'progress_order_status')){
-    wp_schedule_event(time(), 'daily', 'progress_order_status');
+    wp_schedule_event(time(), 'hourly', 'progress_order_status');
 }
 add_action('progress_order_status', 'progress_order_status_action');
 
