@@ -58,12 +58,12 @@ function my_acf_save_post( $post_id ) {
     $shipping_date = date( 'Ymd', $shipping_date );
 
     // Add estimated shipping date if empty
-    if( empty ( $_POST['acf']['field_5f5ca30efb7b4'] ) ) {
-        $_POST['acf']['field_5f5ca30efb7b4'] = $shipping_date;
+    if( empty ( get_field( 'expected_delivery_date', $post_id ) ) ) {
+        update_field( 'expected_delivery_date', $shipping_date, $post_id );
     }
     // Add initial duration
-    if( empty ( $_POST['acf']['field_5f688edb9a6cb'] ) ) {
-        $_POST['acf']['field_5f688edb9a6cb'] = $order_new;
+    if( empty ( get_field( 'duration', $post_id ) ) ) {
+        update_field( 'duration', $order_new, $post_id );
     }
 
 }
