@@ -43,7 +43,7 @@ add_action('init', 'myprefix_unregister_tags');
 
 
 // Functions to handle new orders
-add_action('acf/save_post', 'my_acf_save_post', 5);
+add_action('save_post', 'my_acf_save_post', 5);
 function my_acf_save_post( $post_id ) {
 
     // Get days from options page
@@ -67,7 +67,6 @@ function my_acf_save_post( $post_id ) {
     }
 
 }
-
 
 // Cron Job to progress order statuses
 if(!wp_next_scheduled( 'progress_order_status')){
