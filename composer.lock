@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4c3dbb79f09764a63436198217363ec1",
+    "content-hash": "50124a65459dc8a61c19a8cdca186d85",
     "packages": [
         {
             "name": "composer/installers",
@@ -862,6 +862,24 @@
             },
             "type": "wordpress-plugin",
             "homepage": "https://wordpress.org/plugins/letter-avatars/"
+        },
+        {
+            "name": "wpackagist-plugin/oauth2-provider",
+            "version": "3.8.1",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/oauth2-provider/",
+                "reference": "tags/3.8.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/oauth2-provider.3.8.1.zip"
+            },
+            "require": {
+                "composer/installers": "~1.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/oauth2-provider/"
         },
         {
             "name": "wpackagist-plugin/redirection",
