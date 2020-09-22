@@ -54,7 +54,7 @@ function progress_order_status_action(){
     $order_shipping = (int) get_field( 'shipping', 'option' );
 
     $args = array(
-      'post_type' => 'orders',
+      'post_type' => 'post',
       'post_status' => 'publish',
     );
 

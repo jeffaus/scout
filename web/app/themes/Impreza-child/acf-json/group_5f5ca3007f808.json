@@ -133,7 +133,7 @@
             {
                 "param": "post_type",
                 "operator": "==",
-                "value": "orders"
+                "value": "post"
             }
         ]
     ],
@@ -145,5 +145,5 @@
     "hide_on_screen": "",
     "active": 1,
     "description": "",
-    "modified": 1600687878
+    "modified": 1600774161
 }
