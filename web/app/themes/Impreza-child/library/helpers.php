@@ -15,6 +15,34 @@ if( function_exists('acf_add_options_page') ) {
 }
 
 
+// Remove post formats & Featured Image
+add_action('after_setup_theme', 'remove_post_formats', 100);
+function remove_post_formats()
+{
+    remove_theme_support( 'post-formats' );
+    remove_theme_support( 'post-thumbnails' );
+}
+
+// Remove post categories
+function wpse120418_unregister_categories() {
+    register_taxonomy( 'category', array() );
+}
+add_action( 'init', 'wpse120418_unregister_categories' );
+
+// Disable Tags Dashboard WP
+add_action('admin_menu', 'my_remove_sub_menus');
+
+function my_remove_sub_menus() {
+    remove_submenu_page('edit.php', 'edit-tags.php?taxonomy=post_tag');
+}
+// Remove tags support from posts
+function myprefix_unregister_tags() {
+    unregister_taxonomy_for_object_type('post_tag', 'post');
+}
+add_action('init', 'myprefix_unregister_tags');
+
+
+// Functions to handle new orders
 add_action('acf/save_post', 'my_acf_save_post', 5);
 function my_acf_save_post( $post_id ) {
 
