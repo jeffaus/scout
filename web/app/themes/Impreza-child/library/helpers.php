@@ -16,7 +16,7 @@ if( function_exists('acf_add_options_page') ) {
 
 
 // Remove post formats & Featured Image
-add_action('after_setup_theme', 'remove_post_formats', 100);
+add_action('after_setup_theme', 'remove_post_formats', 11);
 function remove_post_formats()
 {
     remove_theme_support( 'post-formats' );
