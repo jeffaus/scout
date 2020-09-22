@@ -6,7 +6,6 @@ $delivery_date = get_field( 'expected_delivery_date' );
 $order_id = get_field( 'order_id' );
 $order_status = get_field( 'order_status' );
 $order_link = get_field( 'order_link' );
-$account_link = get_field( 'account_link' );
 
 $delivery_date = DateTime::createFromFormat('d/m/Y', $delivery_date);
 $delivery_date = $delivery_date->format( 'd<\s\p\a\n>M</\s\p\a\n>' );
@@ -30,12 +29,14 @@ if ( 'production' == $order_status ) {
                 <?php echo $delivery_date; ?>
             </div>
         </div>
+        <?php if ( ! empty( $order_link ) ) : ?>
         <a href="<?php echo esc_url( $order_link ); ?>" class="rounded shadow mb-5 account-link">
             <div class="circle">
                 <img src="<?php echo get_stylesheet_directory_uri(); ?>/dist/images/icon-order.png" alt="Your Order" />
                 View Order
             </div>
         </a>
+        <?php endif; ?>
         <a href="<?php echo esc_url( 'https://www.akela.supply/' ); ?>" target="_blank" class="rounded shadow mb-5 account-link">
             <div class="circle">
                 <img src="<?php echo get_stylesheet_directory_uri(); ?>/dist/images/icon-account.png" alt="Your Order" />
