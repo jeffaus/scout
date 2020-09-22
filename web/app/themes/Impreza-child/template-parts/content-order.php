@@ -36,7 +36,7 @@ if ( 'production' == $order_status ) {
                 View Order
             </div>
         </a>
-        <a href="<?php echo esc_url( $account_link ); ?>" class="rounded shadow mb-5 account-link">
+        <a href="<?php echo esc_url( 'https://www.akela.supply/' ); ?>" target="_blank" class="rounded shadow mb-5 account-link">
             <div class="circle">
                 <img src="<?php echo get_stylesheet_directory_uri(); ?>/dist/images/icon-account.png" alt="Your Order" />
                 My Account
