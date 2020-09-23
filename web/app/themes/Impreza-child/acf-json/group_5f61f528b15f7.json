@@ -115,11 +115,47 @@
             "endpoint": 0
         },
         {
-            "key": "field_5f6b16bd35072",
+            "key": "field_5f6b2aa5195b9",
             "label": "In Production",
+            "name": "",
+            "type": "message",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "message": "Sent once an order enters production.<br \/><br \/>\r\nAlready starts with Dear <strong>{{name}}<\/strong>",
+            "new_lines": "wpautop",
+            "esc_html": 0
+        },
+        {
+            "key": "field_5f6b2a82195b8",
+            "label": "In Production - Subject",
+            "name": "email_production_subject",
+            "type": "text",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": "",
+            "maxlength": ""
+        },
+        {
+            "key": "field_5f6b16bd35072",
+            "label": "In Production - Content",
             "name": "email_production",
             "type": "wysiwyg",
-            "instructions": "Sent once an order enters production.<br \/><br \/>\r\nAlready starts with Dear <strong>{{name}}<\/strong>",
+            "instructions": "",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -132,13 +168,49 @@
             "toolbar": "full",
             "media_upload": 0,
             "delay": 0
+        },
+        {
+            "key": "field_5f6b2aaf195ba",
+            "label": "Shipped",
+            "name": "",
+            "type": "message",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "message": "Sent once an order has shipped.<br \/><br \/>\r\nAlready starts with Dear <strong>{{name}}<\/strong>",
+            "new_lines": "wpautop",
+            "esc_html": 0
+        },
+        {
+            "key": "field_5f6b2ad8195bc",
+            "label": "Shipped - Subject",
+            "name": "email_shipped_subject",
+            "type": "text",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": "",
+            "maxlength": ""
         },
         {
             "key": "field_5f6b16d335073",
-            "label": "Shipped",
+            "label": "Shipped - Content",
             "name": "email_shipped",
             "type": "wysiwyg",
-            "instructions": "Sent once an order has shipped.<br \/><br \/>\r\nAlready starts with Dear <strong>{{name}}<\/strong>",
+            "instructions": "",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -153,11 +225,47 @@
             "delay": 0
         },
         {
-            "key": "field_5f6b16f135074",
+            "key": "field_5f6b2ab2195bb",
             "label": "Delivered",
+            "name": "",
+            "type": "message",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "message": "Sent once an order has been delivered.<br \/><br \/>\r\nAlready starts with Dear <strong>{{name}}<\/strong>",
+            "new_lines": "wpautop",
+            "esc_html": 0
+        },
+        {
+            "key": "field_5f6b2aed195bd",
+            "label": "Delivered - Subject",
+            "name": "email_delivered_subject",
+            "type": "text",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": "",
+            "maxlength": ""
+        },
+        {
+            "key": "field_5f6b16f135074",
+            "label": "Delivered - Content",
             "name": "email_delivered",
             "type": "wysiwyg",
-            "instructions": "Sent once an order has been delivered.<br \/><br \/>\r\nAlready starts with Dear <strong>{{name}}<\/strong>",
+            "instructions": "",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -189,5 +297,5 @@
     "hide_on_screen": "",
     "active": 1,
     "description": "",
-    "modified": 1600853899
+    "modified": 1600859408
 }
