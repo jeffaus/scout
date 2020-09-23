@@ -146,7 +146,9 @@ add_action( 'all_admin_notices', 'admin_email_buttons');
 // This is the function specified in the "add_action" above
 function admin_email_buttons( ) {
 
-    if ( 'post' == get_post_type() && is_single() )
+    global $pagenow;
+
+    if ( 'post' == get_post_type() && 'post.php' == $pagenow )
     // Do stuff here.
     echo '<div style="margin-top: 30px; margin-bottom: 10px; display: inline-block;">
             <form method="post">
