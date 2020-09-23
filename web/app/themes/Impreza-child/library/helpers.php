@@ -117,16 +117,19 @@ function progress_order_status_action(){
                 if ( 'new' == $status ) {
                     update_field( 'order_status', 'production', get_the_ID() );
                     update_field( 'duration', $order_production, get_the_ID() );
+                    send_production_email();
                 }
 
                 if ( 'production' == $status ) {
                     update_field( 'order_status', 'shipped', get_the_ID() );
                     update_field( 'duration', $order_shipping, get_the_ID() );
+                    send_shipping_email();
                 }
 
                 if ( 'shipped' == $status ) {
                     update_field( 'order_status', 'delivered', get_the_ID() );
                     update_field( 'duration', '0', get_the_ID() );
+                    send_delivery_email();
                 }
 
             } else {
