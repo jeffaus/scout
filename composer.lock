@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "50124a65459dc8a61c19a8cdca186d85",
+    "content-hash": "569576be20facad24b4ae54ff563a500",
     "packages": [
         {
             "name": "composer/installers",
@@ -826,6 +826,24 @@
             },
             "type": "wordpress-plugin",
             "homepage": "https://wordpress.org/plugins/duplicate-post/"
+        },
+        {
+            "name": "wpackagist-plugin/email-templates",
+            "version": "1.3.1.2",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/email-templates/",
+                "reference": "tags/1.3.1.2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/email-templates.1.3.1.2.zip"
+            },
+            "require": {
+                "composer/installers": "~1.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/email-templates/"
         },
         {
             "name": "wpackagist-plugin/ewww-image-optimizer",
