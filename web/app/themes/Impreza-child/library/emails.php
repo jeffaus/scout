@@ -1,10 +1,5 @@
 <?php
 
-function wpse27856_set_content_type(){
-    return "text/html";
-}
-add_filter( 'wp_mail_content_type','wpse27856_set_content_type' );
-
 // Tells WP to do something at the do_action mentioned above
 add_action( 'all_admin_notices', 'admin_email_notice');
 
