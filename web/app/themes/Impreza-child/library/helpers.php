@@ -72,6 +72,10 @@ function my_acf_save_post( $post_id ) {
     if( empty ( get_field( 'email_address', $post_id ) ) ) {
         update_field( 'email_address', $details[2], $post_id );
     }
+    // Add Email Address if empty
+    if( empty ( get_field( 'order_id', $post_id ) ) ) {
+        update_field( 'order_id', $details[3], $post_id );
+    }
 
     // Add estimated shipping date if empty
     if( empty ( get_field( 'expected_delivery_date', $post_id ) ) ) {
