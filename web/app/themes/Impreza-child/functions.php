@@ -6,3 +6,6 @@ require_once('library/enqueue.php');
 
 // Helper Functions
 require_once('library/helpers.php');
+
+// Email Functions
+require_once('library/emails.php');

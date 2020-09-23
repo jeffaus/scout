@@ -3,6 +3,22 @@
     "title": "General Settings",
     "fields": [
         {
+            "key": "field_5f6b16aa35070",
+            "label": "Durations",
+            "name": "",
+            "type": "tab",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "placement": "top",
+            "endpoint": 0
+        },
+        {
             "key": "field_5f61f5318df11",
             "label": "Durations",
             "name": "",
@@ -81,6 +97,79 @@
             "min": "",
             "max": "",
             "step": ""
+        },
+        {
+            "key": "field_5f6b16b635071",
+            "label": "Emails",
+            "name": "",
+            "type": "tab",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "placement": "top",
+            "endpoint": 0
+        },
+        {
+            "key": "field_5f6b16bd35072",
+            "label": "In Production",
+            "name": "email_production",
+            "type": "wysiwyg",
+            "instructions": "Sent once an order enters production.<br \/><br \/>\r\nAlready starts with Dear <strong>{{name}}<\/strong>",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "tabs": "all",
+            "toolbar": "full",
+            "media_upload": 0,
+            "delay": 0
+        },
+        {
+            "key": "field_5f6b16d335073",
+            "label": "Shipped",
+            "name": "email_shipped",
+            "type": "wysiwyg",
+            "instructions": "Sent once an order has shipped.<br \/><br \/>\r\nAlready starts with Dear <strong>{{name}}<\/strong>",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "tabs": "all",
+            "toolbar": "full",
+            "media_upload": 0,
+            "delay": 0
+        },
+        {
+            "key": "field_5f6b16f135074",
+            "label": "Delivered",
+            "name": "email_delivered",
+            "type": "wysiwyg",
+            "instructions": "Sent once an order has been delivered.<br \/><br \/>\r\nAlready starts with Dear <strong>{{name}}<\/strong>",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "tabs": "all",
+            "toolbar": "full",
+            "media_upload": 0,
+            "delay": 0
         }
     ],
     "location": [
@@ -100,5 +189,5 @@
     "hide_on_screen": "",
     "active": 1,
     "description": "",
-    "modified": 1600255473
+    "modified": 1600853899
 }

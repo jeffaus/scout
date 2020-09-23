@@ -123,3 +123,18 @@ function progress_order_status_action(){
     }
 
 }
+
+// Tells WP to do something at the do_action mentioned above
+add_action( 'all_admin_notices', 'admin_email_buttons');
+
+// This is the function specified in the "add_action" above
+function admin_email_buttons( ) {
+    // Do stuff here.
+    echo '<div style="margin-top: 30px; margin-bottom: 10px; display: inline-block;">
+            <form method="post">
+                <button type="submit" name="button1" class="button-primary">Send Production Email</button>
+                <button type="submit" name="button2" class="button-primary">Send Shipped Email</button>
+                <button type="submit" name="button3" class="button-primary">Send Delivered Email</button>
+            </form>
+        </div>';
+}
