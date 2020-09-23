@@ -18,7 +18,7 @@ function send_shipping_email() {
     $firstname = get_field( 'first_name' );
     $headers = 'From: Akela <no-reply@scout.supply>;' . '\r\n';
     $subject = get_field( 'email_shipped_subject', 'option');
-    $content = get_field( 'email_production', 'option');
+    $content = get_field( 'email_shipped', 'option');
 
     wp_mail( $email, $subject, '<h2>Dear ' . $firstname . ',</h2><br/>' . $content, $headers );
 }
@@ -28,7 +28,7 @@ function send_delivery_email() {
     $firstname = get_field( 'first_name' );
     $headers = 'From: Akela <no-reply@scout.supply>;' . '\r\n';
     $subject = get_field( 'email_delivered_subject', 'option');
-    $content = get_field( 'email_production', 'option');
+    $content = get_field( 'email_delivered', 'option');
 
     wp_mail( $email, $subject, '<h2>Dear ' . $firstname . ',</h2><br/>' . $content, $headers );
 }
