@@ -16,21 +16,21 @@ function admin_email_notice( ) {
         $subject = get_field( 'email_production_subject', 'option');
         $content = get_field( 'email_production', 'option');
 
-        wp_mail( $email, $subject, 'Dear ' . $firstname . ',<br/>' . $content, $headers );
+        wp_mail( $email, $subject, '<h2>Dear ' . $firstname . ',</h2><br/>' . $content, $headers );
     }
     if(isset($_POST['button2'])) {
         $notice = "Shipped Email Sent!";
         $subject = get_field( 'email_shipped_subject', 'option');
         $content = get_field( 'email_production', 'option');
 
-        wp_mail( $email, $subject, 'Dear ' . $firstname . ',<br/>' . $content, $headers );
+        wp_mail( $email, $subject, '<h2>Dear ' . $firstname . ',</h2><br/>' . $content, $headers );
     }
     if(isset($_POST['button3'])) {
         $notice = "Delivered Email Sent!";
         $subject = get_field( 'email_delivered_subject', 'option');
         $content = get_field( 'email_production', 'option');
 
-        wp_mail( $email, $subject, 'Dear ' . $firstname . ',<br/>' . $content, $headers );
+        wp_mail( $email, $subject, '<h2>Dear ' . $firstname . ',</h2><br/>' . $content, $headers );
     }
 
     if ( $notice ) {
