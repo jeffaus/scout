@@ -43,7 +43,7 @@ add_action('init', 'myprefix_unregister_tags');
 
 
 // Functions to handle new orders
-add_action('save_post', 'my_acf_save_post', 5);
+add_action('save_post', 'my_acf_save_post', 100);
 function my_acf_save_post( $post_id ) {
 
     // Get days from options page
@@ -56,6 +56,22 @@ function my_acf_save_post( $post_id ) {
     $post_date = get_the_date('Y-m-d', $post_id);
     $shipping_date = strtotime($post_date . '+ ' . $total_days . ' days');
     $shipping_date = date( 'Ymd', $shipping_date );
+
+    $excerpt = get_the_excerpt( $post_id );
+    $details = explode('|', $excerpt);
+
+    // Add First name if empty
+    if( empty ( get_field( 'first_name', $post_id ) ) ) {
+        update_field( 'first_name', $details[0], $post_id );
+    }
+    // Add Last name if empty
+    if( empty ( get_field( 'last_name', $post_id ) ) ) {
+        update_field( 'last_name', $details[1], $post_id );
+    }
+    // Add Email Address if empty
+    if( empty ( get_field( 'email_address', $post_id ) ) ) {
+        update_field( 'email_address', $details[2], $post_id );
+    }
 
     // Add estimated shipping date if empty
     if( empty ( get_field( 'expected_delivery_date', $post_id ) ) ) {
@@ -129,6 +145,8 @@ add_action( 'all_admin_notices', 'admin_email_buttons');
 
 // This is the function specified in the "add_action" above
 function admin_email_buttons( ) {
+
+    if ( 'post' == get_post_type() )
     // Do stuff here.
     echo '<div style="margin-top: 30px; margin-bottom: 10px; display: inline-block;">
             <form method="post">
