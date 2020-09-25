@@ -4,7 +4,10 @@
 add_action( 'all_admin_notices', 'admin_email_notice');
 
 
-function send_tracking_email($email_subject, $email_content) {
+function send_tracking_email($email_subject, $email_content, $header_image ) {
+    $content_header = '<div style="text-align: center;">
+  <img src="' . get_stylesheet_directory_uri() . '/dist/images/' . $header_image . '" alt="' . $email_subject . '" />
+</div>';
     $content_footer = '<div style="background-color: #010029; margin: 30px -20px -20px; text-align: center;">
 <table style="width: 100%">
     <tr>
@@ -24,17 +27,17 @@ function send_tracking_email($email_subject, $email_content) {
             <tr>
               <td style="padding: 10px 20px 0;">
                 <a href="#">
-                  <img src="http://track-my-order.akela.supply/app/uploads/2020/09/email-insta.png" alt="Instagram" />
+                  <img src="' . get_stylesheet_directory_uri() . '/dist/images/email-insta.png" alt="Instagram" />
                 </a>
               </td>
               <td style="padding: 10px 20px 0;">
                 <a href="#">
-                  <img src="http://track-my-order.akela.supply/app/uploads/2020/09/email-facebook.png" />
+                  <img src="' . get_stylesheet_directory_uri() . '/dist/images/email-facebook.png" alt="Facebook" />
                 </a>
               </td>
               <td style="padding: 10px 20px 0;">
                 <a href="#">
-                  <img src="http://track-my-order.akela.supply/app/uploads/2020/09/email-linkedin.png" />
+                  <img src="' . get_stylesheet_directory_uri() . '/dist/images/email-linkedin.png" alt="Linked In" />
                 </a>
               </td>
             </tr>
@@ -60,15 +63,15 @@ function admin_email_notice( ) {
 
     if(isset($_POST['button1'])) {
         $notice = "Production email sent!";
-        send_tracking_email( 'email_production_subject', 'email_production' );
+        send_tracking_email( 'email_production_subject', 'email_production', 'email-production.png' );
     }
     if(isset($_POST['button2'])) {
         $notice = "Shipped Email Sent!";
-        send_tracking_email( 'email_shipped_subject', 'email_shipped' );
+        send_tracking_email( 'email_shipped_subject', 'email_shipped', 'email-transit.png' );
     }
     if(isset($_POST['button3'])) {
         $notice = "Delivered Email Sent!";
-        send_tracking_email( 'email_delivered_subject', 'email_delivered' );
+        send_tracking_email( 'email_delivered_subject', 'email_delivered', 'email-delivered.png' );
     }
 
     if ( $notice ) {
