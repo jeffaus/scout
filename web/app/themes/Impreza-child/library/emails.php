@@ -40,20 +40,14 @@ style="background-color:#4248fb;border-radius:20px;color:#ffffff;display:inline-
           <p style="font-size: 14px; color: #515b99; font-weight: bold; margin: 30px auto 0;">Follow Us</p>
           <table style="width: 220px; margin: 0 auto;">
             <tr>
-              <td style="padding: 0 20px;">
-                <a href="#">
-                  <img src="' . get_stylesheet_directory_uri() . '/dist/images/email-insta.png" alt="Instagram" />
-                </a>
+              <td style="padding: 0 20px 30px;">
+                <a href="#"><img src="' . get_stylesheet_directory_uri() . '/dist/images/email-insta.png" alt="Instagram" /></a>
               </td>
-              <td style="padding: 0 20px;">
-                <a href="#">
-                  <img src="' . get_stylesheet_directory_uri() . '/dist/images/email-facebook.png" alt="Facebook" />
-                </a>
+              <td style="padding: 0 20px 30px;">
+                <a href="#"><img src="' . get_stylesheet_directory_uri() . '/dist/images/email-facebook.png" alt="Facebook" /></a>
               </td>
-              <td style="padding: 0 20px;">
-                <a href="#">
-                  <img src="' . get_stylesheet_directory_uri() . '/dist/images/email-linkedin.png" alt="Linked In" />
-                </a>
+              <td style="padding: 0 20px 30px;">
+                <a href="#"><img src="' . get_stylesheet_directory_uri() . '/dist/images/email-linkedin.png" alt="Linked In" /></a>
               </td>
             </tr>
           </table>
