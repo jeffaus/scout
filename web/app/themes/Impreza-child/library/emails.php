@@ -5,10 +5,25 @@ add_action( 'all_admin_notices', 'admin_email_notice');
 
 
 function send_tracking_email($email_subject, $email_content, $header_image ) {
+    $order_number = get_field( 'order_number' );
+
     $content_header = '<div style="text-align: center;">
   <img src="' . get_stylesheet_directory_uri() . '/dist/images/' . $header_image . '" alt="' . $email_subject . '" />
 </div>';
-    $content_footer = '<div style="background-color: #010029; text-align: center;">
+    $content_footer = '<div style="height: 40px;"></div>
+<div style="text-align: center;"><!--[if mso]>
+  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="' . get_the_permalink() . '" style="height:40px;v-text-anchor:middle;width:200px;" arcsize="50%" stroke="f" fillcolor="#4248fb">
+    <w:anchorlock/>
+    <center>
+  <![endif]-->
+      <a href="' . get_the_permalink() . '"
+style="background-color:#4248fb;border-radius:20px;color:#ffffff;display:inline-block;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:40px;text-align:center;text-decoration:none;width:200px;-webkit-text-size-adjust:none;">Track Order # ' . $order_number . '</a>
+  <!--[if mso]>
+    </center>
+  </v:roundrect>
+<![endif]--></div>
+<div style="height: 60px;"></div>
+<div style="background-color: #010029; text-align: center;">
 <table style="width: 100%">
     <tr>
       <td style="padding: 40px;border-bottom: 1px solid #515b99;">
@@ -53,7 +68,7 @@ function send_tracking_email($email_subject, $email_content, $header_image ) {
     $subject = get_field( $email_subject, 'option');
     $content = get_field( $email_content, 'option');
 
-    wp_mail( $email, $subject, $content_header . '<h2 style="text-align: center;">Dear ' . $firstname . ',</h2><br/>' . $content . $content_footer, $headers );
+    wp_mail( $email, $subject, $content_header . '<p style="text-align: center;">Hey ' . $firstname . ',</p><br/>' . $content . $content_footer, $headers );
 }
 
 
