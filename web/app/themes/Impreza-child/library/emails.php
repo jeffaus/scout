@@ -5,19 +5,18 @@ add_action( 'all_admin_notices', 'admin_email_notice');
 
 
 function send_tracking_email($email_subject, $email_content, $header_image ) {
-    $order_number = get_field( 'order_number' );
+    $order_number = get_field( 'order_id' );
 
     $content_header = '<div style="text-align: center;">
   <img src="' . get_stylesheet_directory_uri() . '/dist/images/' . $header_image . '" alt="' . $email_subject . '" />
 </div>';
-    $content_footer = '<div style="height: 40px;"></div>
-<div style="text-align: center;"><!--[if mso]>
+    $content_footer = '<div style="text-align: center;"><!--[if mso]>
   <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="' . get_the_permalink() . '" style="height:40px;v-text-anchor:middle;width:200px;" arcsize="50%" stroke="f" fillcolor="#4248fb">
     <w:anchorlock/>
     <center>
   <![endif]-->
       <a href="' . get_the_permalink() . '"
-style="background-color:#4248fb;border-radius:20px;color:#ffffff;display:inline-block;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:40px;text-align:center;text-decoration:none;width:200px;-webkit-text-size-adjust:none;">Track Order # ' . $order_number . '</a>
+style="background-color:#4248fb;border-radius:25px;color:#ffffff;display:inline-block;font-family:sans-serif;font-size:14px;font-weight:bold;line-height:40px;text-align:center;text-decoration:none;width:200px;padding:15px 40px;-webkit-text-size-adjust:none;">Track Order # ' . $order_number . '</a>
   <!--[if mso]>
     </center>
   </v:roundrect>
