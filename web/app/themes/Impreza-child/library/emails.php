@@ -8,7 +8,7 @@ function send_tracking_email($email_subject, $email_content, $header_image ) {
     $content_header = '<div style="text-align: center;">
   <img src="' . get_stylesheet_directory_uri() . '/dist/images/' . $header_image . '" alt="' . $email_subject . '" />
 </div>';
-    $content_footer = '<p style="background-color: #010029; margin: 30px -20px -20px; text-align: center;">
+    $content_footer = '<div style="background-color: #010029; text-align: center;">
 <table style="width: 100%">
     <tr>
       <td style="padding: 40px;border-bottom: 1px solid #515b99;">
@@ -45,7 +45,7 @@ function send_tracking_email($email_subject, $email_content, $header_image ) {
         </td>
     </tr>
 </table>
-</p>';
+</div>';
 
     $email = get_field( 'email_address' );
     $firstname = get_field( 'first_name' );
