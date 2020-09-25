@@ -71,15 +71,15 @@ function admin_email_notice( ) {
 
     if(isset($_POST['button1'])) {
         $notice = "Production email sent!";
-        send_tracking_email( 'email_production_subject', 'email_production', 'email-production.png' );
+        send_tracking_email( 'email_production_subject', 'email_production', 'header-production.png' );
     }
     if(isset($_POST['button2'])) {
         $notice = "Shipped Email Sent!";
-        send_tracking_email( 'email_shipped_subject', 'email_shipped', 'email-transit.png' );
+        send_tracking_email( 'email_shipped_subject', 'email_shipped', 'header-transit.png' );
     }
     if(isset($_POST['button3'])) {
         $notice = "Delivered Email Sent!";
-        send_tracking_email( 'email_delivered_subject', 'email_delivered', 'email-delivered.png' );
+        send_tracking_email( 'email_delivered_subject', 'email_delivered', 'header-delivered.png' );
     }
 
     if ( $notice ) {
