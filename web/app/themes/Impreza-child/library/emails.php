@@ -45,7 +45,7 @@ function send_tracking_email($email_subject, $email_content, $header_image ) {
         </td>
     </tr>
 </table>
-</p><style>#template_footer{border-top: none !important;}</style>';
+</p>';
 
     $email = get_field( 'email_address' );
     $firstname = get_field( 'first_name' );
