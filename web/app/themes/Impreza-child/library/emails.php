@@ -5,27 +5,43 @@ add_action( 'all_admin_notices', 'admin_email_notice');
 
 
 function send_tracking_email($email_subject, $email_content) {
-    $content_footer = '<div style="background-color: #010029;">
-
-<a href="https://www.akela.supply/" style="display: block;color: #515b99;text-decoration: none;font-weight: bold;font-size: 22px;padding: 40px;border-bottom: 1px solid #515b99;margin: -20px -20px 0">MY ACCOUNT</a>
-
-<a href="https://www.akela.supply/" style="display: block;color: #515b99;text-decoration: none;font-weight: bold;font-size: 22px;padding: 40px;border-bottom: 1px solid #515b99;margin: 0 -20px">CONTACT US</a>
-
-<div style="height: 30px;"></div>
-
-    <a href="#" style="display: inline-block; padding: 10px">
-      <img src="http://track-my-order.akela.supply/app/uploads/2020/09/email-insta.png" />
-    </a>
-
-    <a href="#" style="display: inline-block; padding: 10px">
-      <img src="http://track-my-order.akela.supply/app/uploads/2020/09/email-facebook.png" />
-    </a>
-
-    <a href="#" style="display: inline-block; padding: 10px">
-      <img src="http://track-my-order.akela.supply/app/uploads/2020/09/email-linkedin.png" />
-    </a>
-
-<div style="height: 20px;"></div>
+    $content_footer = '<div style="background-color: #010029; margin: 30px -20px -20px; text-align: center;">
+<table style="width: 100%">
+    <tr>
+      <td style="padding: 40px;border-bottom: 1px solid #515b99;">
+        <a href="https://www.akela.supply/" style="color: #515b99;text-decoration: none;font-weight: bold;font-size: 22px;">MY ACCOUNT</a>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 40px;border-bottom: 1px solid #515b99;">
+        <a href="https://www.akela.supply/" style="color: #515b99;text-decoration: none;font-weight: bold;font-size: 22px;">CONTACT US</a>
+      </td>
+    </tr>
+    <tr>
+        <td>
+          <p style="font-size: 14px; color: #515b99; font-weight: bold; margin: 30px auto 0;">Follow Us</p>
+          <table style="width: 220px; margin: 0 auto;">
+            <tr>
+              <td style="padding: 10px 20px 0;">
+                <a href="#">
+                  <img src="http://track-my-order.akela.supply/app/uploads/2020/09/email-insta.png" alt="Instagram" />
+                </a>
+              </td>
+              <td style="padding: 10px 20px 0;">
+                <a href="#">
+                  <img src="http://track-my-order.akela.supply/app/uploads/2020/09/email-facebook.png" />
+                </a>
+              </td>
+              <td style="padding: 10px 20px 0;">
+                <a href="#">
+                  <img src="http://track-my-order.akela.supply/app/uploads/2020/09/email-linkedin.png" />
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+    </tr>
+</table>
 </div>';
 
     $email = get_field( 'email_address' );
