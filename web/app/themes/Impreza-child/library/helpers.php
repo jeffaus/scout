@@ -147,10 +147,10 @@ function progress_order_status_action(){
 
 }
 
-// Tells WP to do something at the do_action mentioned above
+// Add the buttons to the admin notices area
 add_action( 'all_admin_notices', 'admin_email_buttons');
 
-// This is the function specified in the "add_action" above
+// Function that outputs the buttons
 function admin_email_buttons( ) {
 
     global $pagenow;
