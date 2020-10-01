@@ -26,12 +26,12 @@ style="background-color:#4248fb;border-radius:25px;color:#ffffff;display:inline-
 <table style="width: 100%">
     <tr>
       <td style="padding: 40px;border-bottom: 1px solid #515b99;">
-        <a href="https://www.akela.supply/" style="color: #515b99;text-decoration: none;font-weight: bold;font-size: 22px;">MY ACCOUNT</a>
+        <a href="https://www.akela.supply/_myacct" style="color: #515b99;text-decoration: none;font-weight: bold;font-size: 22px;">MY ACCOUNT</a>
       </td>
     </tr>
     <tr>
       <td style="padding: 40px;border-bottom: 1px solid #515b99;">
-        <a href="https://www.akela.supply/" style="color: #515b99;text-decoration: none;font-weight: bold;font-size: 22px;">CONTACT US</a>
+        <a href="https://scout.supply/contact-us/" style="color: #515b99;text-decoration: none;font-weight: bold;font-size: 22px;">CONTACT US</a>
       </td>
     </tr>
     <tr>
@@ -40,13 +40,13 @@ style="background-color:#4248fb;border-radius:25px;color:#ffffff;display:inline-
           <table style="width: 220px; margin: 0 auto;">
             <tr>
               <td style="padding: 0 20px 30px;">
-                <a href="#"><img src="' . get_stylesheet_directory_uri() . '/dist/images/email-insta.png" alt="Instagram" /></a>
+                <a href="https://www.instagram.com/scoutbrandsupply/"><img src="' . get_stylesheet_directory_uri() . '/dist/images/email-insta.png" alt="Instagram" /></a>
               </td>
               <td style="padding: 0 20px 30px;">
-                <a href="#"><img src="' . get_stylesheet_directory_uri() . '/dist/images/email-facebook.png" alt="Facebook" /></a>
+                <a href="https://www.facebook.com/scoutbrandsupply"><img src="' . get_stylesheet_directory_uri() . '/dist/images/email-facebook.png" alt="Facebook" /></a>
               </td>
               <td style="padding: 0 20px 30px;">
-                <a href="#"><img src="' . get_stylesheet_directory_uri() . '/dist/images/email-linkedin.png" alt="Linked In" /></a>
+                <a href="https://www.linkedin.com/company/scoutbrandsupply/"><img src="' . get_stylesheet_directory_uri() . '/dist/images/email-linkedin.png" alt="Linked In" /></a>
               </td>
             </tr>
           </table>
