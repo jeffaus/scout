@@ -38,7 +38,9 @@
                 "shipped": "Shipped",
                 "delivered": "Delivered"
             },
-            "default_value": [],
+            "default_value": [
+                "new"
+            ],
             "allow_null": 0,
             "multiple": 0,
             "ui": 0,
@@ -183,5 +185,5 @@
     "hide_on_screen": "",
     "active": 1,
     "description": "",
-    "modified": 1600858610
+    "modified": 1602062709
 }
