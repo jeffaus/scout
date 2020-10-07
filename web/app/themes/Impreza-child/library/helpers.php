@@ -118,7 +118,7 @@ function progress_order_status_action(){
                 return;
             } elseif ( $duration <= 1 ) {
 
-                if ( 'new' == $status ) {
+                if ( 'new' == $status || empty( $status ) ) {
                     update_field( 'order_status', 'production', get_the_ID() );
                     update_field( 'duration', $order_production, get_the_ID() );
                     send_tracking_email( 'email_production_subject', 'email_production', 'emails/production.png' );
